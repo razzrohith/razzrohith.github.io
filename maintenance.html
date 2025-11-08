@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Site Under Maintenance</title>
+<meta name="robots" content="noindex,nofollow" />
+<style>
+  :root{
+    --bg1:#0b1120; --bg2:#111827; --card:#0f172a; --text:#e5e7eb; --muted:#94a3b8; --accent:#4f46e5;
+  }
+  * { box-sizing: border-box }
+  html,body { height:100%; margin:0 }
+  body {
+    font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji","Segoe UI Emoji";
+    color:var(--text); background: radial-gradient(1200px 800px at 80% -10%, #1f2937 0, transparent 60%),
+                         radial-gradient(900px 600px at -10% 110%, #111827 0, transparent 60%),
+                         linear-gradient(135deg, var(--bg1), var(--bg2));
+    overflow:hidden;
+  }
+  /* subtle particles */
+  .stars { position:fixed; inset:0; pointer-events:none; background:
+            radial-gradient(2px 2px at 20% 30%, #ffffff66 50%, transparent 51%),
+            radial-gradient(2px 2px at 80% 20%, #ffffff33 50%, transparent 51%),
+            radial-gradient(2px 2px at 60% 70%, #ffffff55 50%, transparent 51%),
+            radial-gradient(2px 2px at 35% 80%, #ffffff22 50%, transparent 51%); 
+            animation: twinkle 6s linear infinite; filter: blur(.2px); }
+  @keyframes twinkle { 50% { opacity:.6 } }
+  /* floating blobs */
+  .blob{
+    position: fixed; width:46vmax; height:46vmax; border-radius:50%;
+    filter: blur(40px); opacity:.35; z-index:0; mix-blend-mode:screen;
+    background: conic-gradient(from 0turn, #22d3ee, #4f46e5, #a855f7, #22d3ee);
+    animation: spin 18s linear infinite;
+  }
+  .blob.b2{ width:52vmax; height:52vmax; top:-10vmax; left:-12vmax; animation-duration: 28s; opacity:.25 }
+  .blob.b3{ width:40vmax; height:40vmax; bottom:-8vmax; right:-10vmax; animation-duration: 22s; opacity:.25 }
+  @keyframes spin { to { transform: rotate(1turn) } }
+
+  /* card */
+  .wrap{ position:relative; z-index:2; height:100%; display:grid; place-items:center; padding:24px }
+  .card{
+    width:min(900px, 92vw);
+    background: linear-gradient(180deg, #0b1226, #0c142b) padding-box,
+                linear-gradient(135deg, #3b82f6, transparent 30%, #a78bfa) border-box;
+    border:1px solid transparent; border-radius:28px;
+    box-shadow: 0 10px 40px #00000055, inset 0 1px 0 #ffffff14;
+    padding: clamp(24px, 6vw, 48px);
+  }
+  .badge{
+    display:inline-flex; align-items:center; gap:.5rem;
+    background:#111c37; border:1px solid #24304a; color:#c7d2fe;
+    padding:.4rem .8rem; border-radius:999px; font-weight:600; letter-spacing:.3px;
+  }
+  .badge .dot{ width:8px; height:8px; border-radius:999px; background:#22c55e; box-shadow:0 0 12px 2px #22c55e; animation: pulse 1.5s infinite }
+  @keyframes pulse { 50% { transform: scale(1.3) } }
+
+  h1{
+    font-size: clamp(28px, 5vw, 56px);
+    line-height:1.05; margin:18px 0 10px;
+    background: linear-gradient(90deg,#fff,#c7d2fe 45%,#a5b4fc 80%);
+    -webkit-background-clip: text; background-clip:text; color: transparent;
+    text-shadow: 0 0 30px #5b21b630;
+  }
+  p.lead{ color:var(--muted); font-size:clamp(16px, 2.2vw, 19px); margin:0 0 18px }
+  .row{ display:flex; gap:16px; flex-wrap:wrap; margin-top:16px }
+  .pill{
+    background:#0b1226; border:1px solid #22304a; color:#cbd5e1;
+    padding:.7rem 1rem; border-radius:14px; display:flex; align-items:center; gap:.6rem
+  }
+  .cta{
+    margin-top:24px; display:flex; gap:12px; flex-wrap:wrap
+  }
+  .btn{
+    display:inline-flex; align-items:center; gap:.6rem; padding: .9rem 1.2rem; border-radius:12px;
+    border:1px solid #3b3b5c; background:#111936; color:#e5e7eb; text-decoration:none; font-weight:600;
+    transition: transform .15s ease, box-shadow .15s ease, background .2s ease;
+  }
+  .btn.primary{
+    background: linear-gradient(135deg, #4f46e5, #3b82f6); border-color: transparent;
+    box-shadow: 0 10px 24px #1d4ed822, inset 0 0 0 1px #ffffff22;
+  }
+  .btn:hover{ transform: translateY(-2px); box-shadow: 0 12px 28px #00000055 }
+  .timer{ font-feature-settings:"tnum"; font-variant-numeric: tabular-nums; font-size: clamp(18px, 3vw, 24px) }
+  footer{ margin-top:26px; border-top:1px solid #1f2937; padding-top:16px; color:#94a3b8; font-size:14px }
+  .gear{
+    width:52px; height:52px; margin-left:.2rem;
+    filter: drop-shadow(0 6px 18px #00000055);
+    animation: turn 4s linear infinite;
+  }
+  .gear.slow{ width:36px; height:36px; animation-duration: 7s; opacity:.8 }
+  @keyframes turn { to { transform: rotate(1turn) } }
+</style>
+</head>
+<body>
+<div class="blob"></div><div class="blob b2"></div><div class="blob b3"></div>
+<div class="stars"></div>
+
+<div class="wrap">
+  <div class="card">
+    <span class="badge"><span class="dot"></span> Scheduled Maintenance</span>
+    <h1>Rajesh is rebuilding this site</h1>
+    <p class="lead">I’m redesigning the homepage and polishing the content. While I work, the site is temporarily offline.</p>
+
+    <div class="row">
+      <span class="pill">Status: <strong>In Progress</strong></span>
+      <span class="pill">ETA: <span id="eta">Soon</span></span>
+      <span class="pill">Contact: <a class="btn" href="mailto:razzrohith@gmail.com">Email me</a></span>
+    </div>
+
+    <div class="cta">
+      <a class="btn primary" href="https://www.linkedin.com/in/razzrohith/" target="_blank" rel="noopener">Follow on LinkedIn</a>
+      <a class="btn" href="https://github.com/razzrohith" target="_blank" rel="noopener">GitHub</a>
+    </div>
+
+    <footer>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <svg class="gear" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M10.3 1.7h3.4l.5 2.1a7.7 7.7 0 012.2.9l1.9-1.2 2.4 2.4-1.2 1.9c.4.7.7 1.4.9 2.2l2.1.5v3.4l-2.1.5a7.7 7.7 0 01-.9 2.2l1.2 1.9-2.4 2.4-1.9-1.2c-.7.4-1.4.7-2.2.9l-.5 2.1h-3.4l-.5-2.1a7.7 7.7 0 01-2.2-.9l-1.9 1.2-2.4-2.4 1.2-1.9a7.7 7.7 0 01-.9-2.2L1.7 13v-3.4l2.1-.5c.2-.8.5-1.5.9-2.2L3.5 5l2.4-2.4 1.9 1.2c.7-.4 1.4-.7 2.2-.9l.5-2.1zM12 8a4 4 0 100 8 4 4 0 000-8z"/>
+        </svg>
+        <svg class="gear slow" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <use href="#g1"/>
+        </svg>
+        <span class="timer" id="timer">00:00:00</span>
+      </div>
+      <div style="margin-top:8px;">© <span id="year"></span> Rajesh</div>
+    </footer>
+  </div>
+</div>
+
+<script>
+  // playful timer since publish
+  const start = Date.now();
+  setInterval(()=>{
+    const d = Date.now()-start;
+    const s = Math.floor(d/1000)%60;
+    const m = Math.floor(d/60000)%60;
+    const h = Math.floor(d/3600000);
+    const pad = n => n.toString().padStart(2,'0');
+    document.getElementById('timer').textContent = `${pad(h)}:${pad(m)}:${pad(s)}`;
+  }, 1000);
+  document.getElementById('year').textContent = new Date().getFullYear();
+</script>
+</body>
+</html>

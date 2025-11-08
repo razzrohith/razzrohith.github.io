@@ -10,8 +10,61 @@
         <link href='https://cdn.jsdelivr.net/npm/boxicons@2.0.5/css/boxicons.min.css' rel='stylesheet'>
 
         <title>Rajesh karampudi</title>
+
+        <!-- TEMP: Hide entire site while rebuilding -->
+        <meta name="robots" content="noindex,nofollow" />
+        <style>
+        /* Full-screen maintenance overlay */
+        .u-progress {
+            position: fixed; inset: 0;
+            display: flex; align-items: center; justify-content: center;
+            background: #0f172a; color: #fff; z-index: 999999;
+            padding: 2rem; text-align: center;
+        }
+        .u-progress h1 { font-size: clamp(24px, 5vw, 42px); margin: 0 0 .5rem; }
+        .u-progress p  { opacity: .9; max-width: 48ch; margin: 0 auto; }
+        /* Prevent background scroll when overlay is active */
+        html.is-maintenance, body.is-maintenance { height: 100%; overflow: hidden; }
+        </style>
+        <script>
+        // Show maintenance overlay unless you append ?preview to the URL.
+        (function () {
+            var params = new URLSearchParams(location.search);
+            if (params.has('preview')) return;         // Secret bypass: ?preview
+            document.documentElement.classList.add('is-maintenance');
+            document.body.classList.add('is-maintenance');
+            // Block pointer events on all links/buttons behind the overlay
+            addEventListener('DOMContentLoaded', function () {
+            var overlay = document.createElement('div');
+            overlay.className = 'u-progress';
+            overlay.innerHTML =
+                '<div><h1>Site under progress</h1>' +
+                '<p>I’m rebuilding the homepage. Check back soon.</p></div>';
+            document.body.appendChild(overlay);
+            document.querySelectorAll('a,button,[role="button"]').forEach(function (el) {
+                el.style.pointerEvents = 'none';
+                el.tabIndex = -1;
+            });
+            });
+        })();
+        </script>
+
+
+
     </head>
     <body>
+
+                <!-- No-JS fallback -->
+        <noscript>
+        <div class="u-progress">
+            <div>
+            <h1>Site under progress</h1>
+            <p>I’m rebuilding the homepage. Check back soon.</p>
+            </div>
+        </div>
+        </noscript>
+
+
         <!--===== HEADER =====-->
         <header class="l-header">
             <nav class="nav bd-grid">

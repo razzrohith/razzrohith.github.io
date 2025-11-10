@@ -7,23 +7,27 @@
   <title>Redirecting…</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <meta name="robots" content="noindex,nofollow" />
-  <script>
+    <script>
     (function () {
-      var params = new URLSearchParams(location.search);
-      if (params.has('preview')) {
-        // You want to preview the real site? Change this URL to your *old* homepage file.
-        // Example: '/site/index.html' if you move your current site into /site
+        const params = new URLSearchParams(location.search);
+
+        // Private preview: loads your real site in /site
+        if (params.has('preview')) {
         location.replace('/site/index.html');
         return;
-      }
-      // Change this to wherever you host the maintenance page (can be same domain or different).
-      var target = 'https://razzrohith.com/maintenance.html';
-      // JS redirect (fastest)
-      location.replace(target);
+        }
+
+        // Redirect target = same origin (works on localhost AND prod)
+        const target = location.origin + '/maintenance.html';
+
+        // JS redirect (fast)
+        location.replace(target);
     })();
-  </script>
-  <!-- Meta refresh as a JS-disabled fallback -->
-  <meta http-equiv="refresh" content="0;url=https://razzrohith.com/maintenance.html" />
+    </script>
+
+    <!-- JS-disabled fallback (also origin-relative so it stays local in dev) -->
+    <meta http-equiv="refresh" content="0;url=/maintenance.html" />
+
 </head>
 <body>
   <p>If you are not redirected, <a href="https://razzrohith.com/maintenance.html">click here</a>.</p>

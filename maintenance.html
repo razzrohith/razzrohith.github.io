@@ -7,139 +7,405 @@
 <meta name="robots" content="noindex,nofollow" />
 <style>
   :root{
-    --bg1:#0b1120; --bg2:#111827; --card:#0f172a; --text:#e5e7eb; --muted:#94a3b8; --accent:#4f46e5;
+    --bg1:#0b1120; --bg2:#111827; --text:#e5e7eb; --muted:#94a3b8;
+    --card1:#0b1226; --card2:#0c142b; --b1:#3b82f6; --b2:#a78bfa;
+    --chip:#111c37; --chip-b:#24304a; --accent:#7aa2ff;
   }
-  * { box-sizing: border-box }
-  html,body { height:100%; margin:0 }
-  body {
-    font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji","Segoe UI Emoji";
-    color:var(--text); background: radial-gradient(1200px 800px at 80% -10%, #1f2937 0, transparent 60%),
-                         radial-gradient(900px 600px at -10% 110%, #111827 0, transparent 60%),
-                         linear-gradient(135deg, var(--bg1), var(--bg2));
-    overflow:hidden;
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0}
+  body{
+    font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial;
+    color:var(--text);
+    background:linear-gradient(135deg, var(--bg1), var(--bg2));
+    overflow-x:hidden;
   }
-  /* subtle particles */
-  .stars { position:fixed; inset:0; pointer-events:none; background:
-            radial-gradient(2px 2px at 20% 30%, #ffffff66 50%, transparent 51%),
-            radial-gradient(2px 2px at 80% 20%, #ffffff33 50%, transparent 51%),
-            radial-gradient(2px 2px at 60% 70%, #ffffff55 50%, transparent 51%),
-            radial-gradient(2px 2px at 35% 80%, #ffffff22 50%, transparent 51%); 
-            animation: twinkle 6s linear infinite; filter: blur(.2px); }
-  @keyframes twinkle { 50% { opacity:.6 } }
-  /* floating blobs */
-  .blob{
-    position: fixed; width:46vmax; height:46vmax; border-radius:50%;
-    filter: blur(40px); opacity:.35; z-index:0; mix-blend-mode:screen;
-    background: conic-gradient(from 0turn, #22d3ee, #4f46e5, #a855f7, #22d3ee);
-    animation: spin 18s linear infinite;
-  }
-  .blob.b2{ width:52vmax; height:52vmax; top:-10vmax; left:-12vmax; animation-duration: 28s; opacity:.25 }
-  .blob.b3{ width:40vmax; height:40vmax; bottom:-8vmax; right:-10vmax; animation-duration: 22s; opacity:.25 }
-  @keyframes spin { to { transform: rotate(1turn) } }
 
-  /* card */
-  .wrap{ position:relative; z-index:2; height:100%; display:grid; place-items:center; padding:24px }
+  /* Ambient */
+  .aurora{ pointer-events:none; position:fixed; inset:-20vh -20vw; filter: blur(60px);
+    background:
+      radial-gradient(50% 35% at 20% 20%, #2563eb40 0 40%, #0000 60%),
+      radial-gradient(45% 35% at 80% 10%, #a855f740 0 40%, #0000 60%),
+      radial-gradient(45% 35% at 10% 80%, #22d3ee40 0 40%, #0000 60%);
+    animation: drift 20s linear infinite; z-index:0; opacity:.65;
+  }
+  @keyframes drift{0%{transform:translate3d(0,0,0)}50%{transform:translate3d(2vw,-1vh,0) rotate(8deg) scale(1.03)}100%{transform:translate3d(0,0,0)}}
+  #stars{ position:fixed; inset:0; z-index:0; pointer-events:none; opacity:.45 }
+  .cursor{ position:fixed; width:280px; height:280px; border-radius:50%;
+    background: radial-gradient(closest-side, #7aa2ff22 0%, #7aa2ff10 40%, #0000 70%);
+    mix-blend-mode: screen; pointer-events:none; z-index:1; transform: translate(-50%,-50%);
+    transition: opacity .25s ease; }
+
+  /* Layout */
+  .wrap{ position:relative; z-index:2; padding:24px; min-height:100% }
+  .layout{ max-width:1280px; margin:0 auto; display:grid; gap:2rem; grid-template-columns:1fr }
+  @media (min-width:1024px){ .layout{ grid-template-columns:1.25fr .95fr } }
+
+  /* Tilt blocks */
+  .tilt{ transform-style:preserve-3d; transition: transform .25s ease, box-shadow .25s ease }
+  .tilt:hover{ transform: translateY(-2px); box-shadow:0 16px 50px #00000075 }
+
+  /* Card */
   .card{
-    width:min(900px, 92vw);
-    background: linear-gradient(180deg, #0b1226, #0c142b) padding-box,
-                linear-gradient(135deg, #3b82f6, transparent 30%, #a78bfa) border-box;
+    background: linear-gradient(180deg,var(--card1),var(--card2)) padding-box,
+                linear-gradient(135deg,var(--b1),transparent 30%,var(--b2)) border-box;
     border:1px solid transparent; border-radius:28px;
-    box-shadow: 0 10px 40px #00000055, inset 0 1px 0 #ffffff14;
+    box-shadow:0 10px 40px #00000055, inset 0 1px 0 #ffffff14;
     padding: clamp(24px, 6vw, 48px);
   }
-  .badge{
-    display:inline-flex; align-items:center; gap:.5rem;
-    background:#111c37; border:1px solid #24304a; color:#c7d2fe;
-    padding:.4rem .8rem; border-radius:999px; font-weight:600; letter-spacing:.3px;
-  }
-  .badge .dot{ width:8px; height:8px; border-radius:999px; background:#22c55e; box-shadow:0 0 12px 2px #22c55e; animation: pulse 1.5s infinite }
-  @keyframes pulse { 50% { transform: scale(1.3) } }
+  .badge{ display:inline-flex; align-items:center; gap:.5rem; background:var(--chip); border:1px solid var(--chip-b);
+    color:#c7d2fe; padding:.45rem .9rem; border-radius:999px; font-weight:600; letter-spacing:.2px }
+  .badge .dot{ width:8px; height:8px; border-radius:999px; background:#22c55e; box-shadow:0 0 12px 2px #22c55e; animation:pulse 1.6s infinite }
+  @keyframes pulse{50%{ transform:scale(1.25) }}
 
+  /* Headline + sparkle emitter */
   h1{
-    font-size: clamp(28px, 5vw, 56px);
-    line-height:1.05; margin:18px 0 10px;
-    background: linear-gradient(90deg,#fff,#c7d2fe 45%,#a5b4fc 80%);
-    -webkit-background-clip: text; background-clip:text; color: transparent;
-    text-shadow: 0 0 30px #5b21b630;
+    font-size: clamp(32px, 5.6vw, 68px); line-height:1.05; margin:18px 0 10px;
+    background:linear-gradient(90deg,#fff,#c7d2fe 45%,#a5b4fc 80%);
+    -webkit-background-clip:text;background-clip:text;color:transparent;text-shadow:0 0 30px #5b21b630;
+    position:relative; overflow:visible;
   }
-  p.lead{ color:var(--muted); font-size:clamp(16px, 2.2vw, 19px); margin:0 0 18px }
-  .row{ display:flex; gap:16px; flex-wrap:wrap; margin-top:16px }
-  .pill{
-    background:#0b1226; border:1px solid #22304a; color:#cbd5e1;
-    padding:.7rem 1rem; border-radius:14px; display:flex; align-items:center; gap:.6rem
-  }
-  .cta{
-    margin-top:24px; display:flex; gap:12px; flex-wrap:wrap
-  }
-  .btn{
-    display:inline-flex; align-items:center; gap:.6rem; padding: .9rem 1.2rem; border-radius:12px;
+  .spark{ position:absolute; width:8px; height:8px; border-radius:50%; pointer-events:none; opacity:0; filter:blur(.2px) }
+
+  p.lead{ color:#9fb0c9; font-size:clamp(16px, 2.1vw, 19px); margin:0 0 22px }
+
+  .row{ display:flex; flex-wrap:wrap; gap:16px; margin-top:10px }
+  .pill{ background:#0b1226; border:1px solid #22304a; color:#cbd5e1; padding:.8rem 1.1rem; border-radius:14px; display:flex; align-items:center; gap:.6rem }
+
+  /* Buttons (magnetic) */
+  .cta{ margin-top:26px; display:flex; gap:12px; flex-wrap:wrap }
+  .btn{ position:relative; display:inline-flex; align-items:center; gap:.6rem; padding:.95rem 1.25rem; border-radius:12px;
     border:1px solid #3b3b5c; background:#111936; color:#e5e7eb; text-decoration:none; font-weight:600;
-    transition: transform .15s ease, box-shadow .15s ease, background .2s ease;
+    transition: transform .15s ease, box-shadow .15s ease, background .2s ease; overflow:hidden; }
+  .btn.primary{ background:linear-gradient(135deg,#4f46e5,#3b82f6); border-color:transparent; box-shadow:0 10px 24px #1d4ed822, inset 0 0 0 1px #ffffff22 }
+  .btn:hover{ transform:translateY(-2px); box-shadow:0 12px 28px #0000008a }
+  .btn:active{ transform:translateY(0) scale(.99) }
+  .btn .r{ position:absolute; border-radius:50%; transform:translate(-50%,-50%) scale(.2);
+           background:#fff3; width:10px; height:10px; pointer-events:none; animation:rip .6s ease-out forwards }
+  @keyframes rip{ to{ transform:translate(-50%,-50%) scale(18); opacity:0 } }
+
+  /* Right panel */
+  .panel{
+    background: linear-gradient(180deg,var(--card1),var(--card2));
+    border:1px solid #1e293b; border-radius:24px; padding:20px;
+    box-shadow:0 10px 40px #00000055, inset 0 1px 0 #ffffff14;
   }
-  .btn.primary{
-    background: linear-gradient(135deg, #4f46e5, #3b82f6); border-color: transparent;
-    box-shadow: 0 10px 24px #1d4ed822, inset 0 0 0 1px #ffffff22;
-  }
-  .btn:hover{ transform: translateY(-2px); box-shadow: 0 12px 28px #00000055 }
-  .timer{ font-feature-settings:"tnum"; font-variant-numeric: tabular-nums; font-size: clamp(18px, 3vw, 24px) }
-  footer{ margin-top:26px; border-top:1px solid #1f2937; padding-top:16px; color:#94a3b8; font-size:14px }
-  .gear{
-    width:52px; height:52px; margin-left:.2rem;
-    filter: drop-shadow(0 6px 18px #00000055);
-    animation: turn 4s linear infinite;
-  }
-  .gear.slow{ width:36px; height:36px; animation-duration: 7s; opacity:.8 }
-  @keyframes turn { to { transform: rotate(1turn) } }
+  .panel h2{ margin:8px 0 16px; font-size: clamp(22px, 2.6vw, 34px); color:#dbe4ff }
+  .chip{ display:inline-flex; align-items:center; gap:.5rem; margin:4px 0 10px; padding:.35rem .75rem; border-radius:999px;
+         background:var(--chip); border:1px solid var(--chip-b); color:#c7d2fe; font-size:12px; font-weight:600 }
+  .chip .dot{ width:8px; height:8px; border-radius:50%; background:#22c55e; box-shadow:0 0 8px #22c55e }
+  .list{ display:grid; gap:16px }
+  .item{ position:relative; display:grid; grid-template-columns:56px 1fr auto; align-items:center; gap:14px;
+         background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.10); border-radius:16px; padding:14px 16px;
+         transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease; }
+  .item::after{ content:""; position:absolute; inset:0; border-radius:inherit; background:linear-gradient(120deg,#ffffff10 0,#ffffff00 35%); opacity:0; transition:opacity .25s }
+  .item:hover{ transform:translateY(-2px) scale(1.01); border-color:#7aa2ff55; box-shadow:0 12px 30px #00000066 }
+  .item:hover::after{ opacity:1 }
+  .thumb{ width:56px; height:56px; border-radius:14px; display:grid; place-items:center; font-size:24px;
+          background:linear-gradient(145deg,rgba(255,255,255,.10),rgba(255,255,255,.02)); border:1px solid rgba(255,255,255,.10) }
+  .meta h3{ margin:0; font-size:16px; color:#e8edff }
+  .meta p{ margin:3px 0 0; font-size:13px; color:#b7c1da }
+  .open{ padding:.45rem .8rem; border-radius:999px; font-weight:700; font-size:12px;
+         border:1px solid rgba(255,255,255,.18); background:rgba(255,255,255,.04); color:#e5ecff; text-decoration:none }
+
+  /* Progress */
+  .meter{ margin:22px 0 6px; width:100%; height:14px; border-radius:999px; background:#0e152a; border:1px solid #1f2a44; overflow:hidden; position:relative }
+  .bar{ height:100%; width:0%; border-radius:inherit; background:linear-gradient(90deg,#5b8bff 0%, #b086ff 50%, #5b8bff 100%); background-size:200% 100%;
+        animation: shine 2.2s linear infinite; }
+  @keyframes shine{ to{ background-position:-200% 0 } }
+  .meter-caption{ display:flex; justify-content:space-between; color:#bcd0ff; font-size:12px; margin-top:6px }
+  .rocket{ position:absolute; top:-18px; left:-24px; width:26px; height:26px; opacity:0; transition: opacity .2s }
+  .rocket svg{ width:100%; height:100% }
+
+  /* Footer */
+  .rule{ height:1px; background:#1f2937; margin:22px 0 }
+  .foot{ display:flex; align-items:center; gap:16px; color:#cbd5e1 }
+  .gear{ width:42px; height:42px; color:#cbd5e1 }
+  .timer{ font-feature-settings:"tnum"; font-variant-numeric: tabular-nums; font-size:clamp(18px,3vw,26px) }
+  .copyright{ margin-top:8px; color:#94a3b8; font-size:14px }
+
+  /* CELEBRATION OVERLAY */
+  .celebrate{ position:fixed; inset:0; background:radial-gradient(120% 120% at 50% 20%, #334155 0, #0b1120 60%); display:grid; place-items:center;
+              z-index:4; opacity:0; pointer-events:none; transition: opacity .4s ease }
+  .celebrate--show{ opacity:1; pointer-events:auto }
+  .modal{ text-align:center; max-width:720px; padding:32px 24px }
+  .modal h3{ margin:0 0 10px; font-size: clamp(26px, 4.4vw, 42px); background:linear-gradient(90deg,#fff,#c7d2fe 50%,#a5b4fc 90%);
+             -webkit-background-clip:text; background-clip:text; color:transparent }
+  .modal p{ color:#bcd0ff; margin:6px 0 18px }
+  .fireworks{ position:fixed; inset:0; z-index:5; pointer-events:none }
+  .boom-note{ color:#9fb0c9; font-size:13px }
+  .modal .btn{ margin-top:8px }
+
+  @keyframes lift { 0%{ transform:translateY(0) } 100%{ transform:translateY(-120vh) } }
 </style>
 </head>
 <body>
-<div class="blob"></div><div class="blob b2"></div><div class="blob b3"></div>
-<div class="stars"></div>
+  <!-- Ambient visuals -->
+  <canvas id="stars"></canvas>
+  <div class="aurora"></div>
+  <div class="cursor" id="cursor"></div>
 
-<div class="wrap">
-  <div class="card">
-    <span class="badge"><span class="dot"></span> Scheduled Maintenance</span>
-    <h1>Rajesh is rebuilding this site</h1>
-    <p class="lead">I’m redesigning the homepage and polishing the content. While I work, the site is temporarily offline.</p>
+  <div class="wrap">
+    <div class="layout">
 
-    <div class="row">
-      <span class="pill">Status: <strong>In Progress</strong></span>
-      <span class="pill">ETA: <span id="eta">Soon</span></span>
-      <span class="pill">Contact: <a class="btn" href="mailto:razzrohith@gmail.com">Email me</a></span>
+      <!-- LEFT -->
+      <section>
+        <div class="card tilt" id="card">
+          <span class="badge"><span class="dot"></span> Scheduled Maintenance</span>
+          <h1 id="headline">Raj is rebuilding this site</h1>
+          <p class="lead">I’m redesigning the homepage and polishing the content. While I work, the site is temporarily offline.</p>
+
+          <div class="row">
+            <span class="pill">Status: <strong>In Progress</strong></span>
+            <span class="pill">ETA: Soon</span>
+            <span class="pill">Contact: <a class="btn" href="mailto:razzrohith@gmail.com">Email me</a></span>
+          </div>
+
+          <!-- Progress -->
+          <div class="meter" aria-label="Rebuild progress" id="meter">
+            <div class="bar" id="progressBar"></div>
+            <div class="rocket" id="rocket">
+              <!-- tiny rocket -->
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M13 11l6-6a7 7 0 00-6-2l-2 2-2 2-2 2-2 2a7 7 0 006 6l6-6" stroke="#e5e7eb" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M8 16l-3 3 4-1 0-2z" fill="#f59e0b"/>
+              </svg>
+            </div>
+          </div>
+          <div class="meter-caption">
+            <span>Rebuild progress</span>
+            <span id="progressPct">0%</span>
+          </div>
+
+          <div class="cta">
+            <a class="btn primary burst magnet" href="https://www.linkedin.com/in/razzrohith/" target="_blank" rel="noopener">Follow on LinkedIn</a>
+            <a class="btn burst magnet" href="https://github.com/razzrohith" target="_blank" rel="noopener">GitHub</a>
+          </div>
+
+          <div class="rule"></div>
+          <div class="foot">
+            <svg class="gear" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M10.3 1.7h3.4l.5 2.1a7.7 7.7 0 012.2.9l1.9-1.2 2.4 2.4-1.2 1.9c.4.7.7 1.4.9 2.2l2.1.5v3.4l-2.1.5c-.2.8-.5 1.5-.9 2.2l1.2 1.9-2.4 2.4-1.9-1.2c-.7.4-1.4.7-2.2.9l-.5 2.1h-3.4l-.5-2.1a7.7 7.7 0 01-2.2-.9l-1.9 1.2-2.4-2.4 1.2-1.9c-.4-.7-.7-1.4-.9-2.2L1.7 13v-3.4l2.1-.5c.2-.8.5-1.5.9-2.2L3.5 5l2.4-2.4 1.9 1.2c.7-.4 1.4-.7 2.2-.9l.5-2.1zM12 8a4 4 0 100 8 4 4 0 000-8z"/>
+            </svg>
+            <span class="timer" id="timer">00:00:00</span>
+          </div>
+          <div class="copyright">© <span id="year"></span> Rajesh</div>
+        </div>
+      </section>
+
+      <!-- RIGHT -->
+      <aside>
+        <div class="panel tilt" id="panel">
+          <span class="chip"><span class="dot"></span> Curated picks</span>
+          <h2>Bored? <span style="color:#a5b4fc">Check these out…</span></h2>
+
+          <nav class="list">
+            <a class="item burst magnet" href="https://example.com/labs/play" target="_blank" rel="noopener">
+              <div class="thumb">🎮</div>
+              <div class="meta"><h3>Mini Games</h3><p>Quick games while I rebuild.</p></div>
+              <span class="open">Open</span>
+            </a>
+
+            <a class="item burst magnet" href="https://example.com/labs/css" target="_blank" rel="noopener">
+              <div class="thumb">🎨</div>
+              <div class="meta"><h3>CSS Playground</h3><p>Gradients, glass, micro-interactions.</p></div>
+              <span class="open">Open</span>
+            </a>
+
+            <a class="item burst magnet" href="https://example.com/case-study" target="_blank" rel="noopener">
+              <div class="thumb">📘</div>
+              <div class="meta"><h3>Case Study</h3><p>Sketch → wireframe → build.</p></div>
+              <span class="open">Open</span>
+            </a>
+          </nav>
+        </div>
+      </aside>
+
     </div>
-
-    <div class="cta">
-      <a class="btn primary" href="https://www.linkedin.com/in/razzrohith/" target="_blank" rel="noopener">Follow on LinkedIn</a>
-      <a class="btn" href="https://github.com/razzrohith" target="_blank" rel="noopener">GitHub</a>
-    </div>
-
-    <footer>
-      <div style="display:flex;align-items:center;gap:10px;">
-        <svg class="gear" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-          <path d="M10.3 1.7h3.4l.5 2.1a7.7 7.7 0 012.2.9l1.9-1.2 2.4 2.4-1.2 1.9c.4.7.7 1.4.9 2.2l2.1.5v3.4l-2.1.5a7.7 7.7 0 01-.9 2.2l1.2 1.9-2.4 2.4-1.9-1.2c-.7.4-1.4.7-2.2.9l-.5 2.1h-3.4l-.5-2.1a7.7 7.7 0 01-2.2-.9l-1.9 1.2-2.4-2.4 1.2-1.9a7.7 7.7 0 01-.9-2.2L1.7 13v-3.4l2.1-.5c.2-.8.5-1.5.9-2.2L3.5 5l2.4-2.4 1.9 1.2c.7-.4 1.4-.7 2.2-.9l.5-2.1zM12 8a4 4 0 100 8 4 4 0 000-8z"/>
-        </svg>
-        <svg class="gear slow" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-          <use href="#g1"/>
-        </svg>
-        <span class="timer" id="timer">00:00:00</span>
-      </div>
-      <div style="margin-top:8px;">© <span id="year"></span> Rajesh</div>
-    </footer>
   </div>
-</div>
+
+  <!-- Celebration overlay -->
+  <div class="celebrate" id="celebrate">
+    <canvas class="fireworks" id="fireworks"></canvas>
+    <div class="modal">
+      <h3>Build complete! 🚀</h3>
+      <p class="boom-note">Thanks for waiting — we’re lighting up the sky.</p>
+      <a class="btn primary" id="previewBtn" href="/site/index.html" target="_blank" rel="noopener">Preview site</a>
+      <p style="margin-top:10px;">Auto-closing in <span id="countdown">6</span>…</p>
+    </div>
+  </div>
 
 <script>
-  // playful timer since publish
-  const start = Date.now();
-  setInterval(()=>{
-    const d = Date.now()-start;
-    const s = Math.floor(d/1000)%60;
-    const m = Math.floor(d/60000)%60;
-    const h = Math.floor(d/3600000);
-    const pad = n => n.toString().padStart(2,'0');
-    document.getElementById('timer').textContent = `${pad(h)}:${pad(m)}:${pad(s)}`;
-  }, 1000);
-  document.getElementById('year').textContent = new Date().getFullYear();
+  /* ===== particles background ===== */
+  (function(){
+    const c = document.getElementById('stars'), ctx = c.getContext('2d');
+    const DPR = Math.min(devicePixelRatio || 1, 2); let W, H, stars, speed=0.02;
+    function resize(){ W=c.width=innerWidth*DPR; H=c.height=innerHeight*DPR; ctx.scale(DPR,DPR);
+      stars = Array.from({length: 90}, () => ({x:Math.random()*innerWidth,y:Math.random()*innerHeight,r:Math.random()*1.8+.4,s:Math.random()*0.3+0.05}));
+    }
+    resize(); addEventListener('resize', resize);
+    function tick(){
+      ctx.clearRect(0,0,innerWidth,innerHeight); ctx.fillStyle='#ffffff';
+      for(const s of stars){ ctx.globalAlpha=0.25+Math.abs(Math.sin((Date.now()*s.s)/1000))*0.35; ctx.beginPath(); ctx.arc(s.x,s.y,s.r,0,6.283); ctx.fill(); s.x+=speed; if(s.x>innerWidth+5)s.x=-5; }
+      requestAnimationFrame(tick);
+    } tick();
+    // expose booster for celebration
+    window.__boostStars = () => { speed = 0.9; setTimeout(()=>speed=0.04, 4000); };
+  })();
+
+  /* ===== cursor spotlight ===== */
+  (function(){
+    const cursor = document.getElementById('cursor'); let idle;
+    function move(e){ cursor.style.left=e.clientX+'px'; cursor.style.top=e.clientY+'px'; cursor.style.opacity=1; clearTimeout(idle); idle=setTimeout(()=>cursor.style.opacity=0,1200); }
+    addEventListener('mousemove', move, {passive:true});
+  })();
+
+  /* ===== 3D tilt on blocks ===== */
+  (function(){
+    function tilt(el){
+      const r = 12; // degrees
+      el.addEventListener('mousemove', (e)=>{
+        const b = el.getBoundingClientRect(), x=(e.clientX-b.left)/b.width, y=(e.clientY-b.top)/b.height;
+        const rx = (0.5-y)*r, ry = (x-0.5)*r;
+        el.style.transform = `rotateX(${rx}deg) rotateY(${ry}deg) translateY(-2px)`;
+      });
+      el.addEventListener('mouseleave', ()=> el.style.transform='rotateX(0) rotateY(0)');
+    }
+    document.querySelectorAll('.tilt').forEach(tilt);
+  })();
+
+  /* ===== magnetic hover (buttons + items) ===== */
+  (function(){
+    document.querySelectorAll('.magnet').forEach(el=>{
+      const strength = 12;
+      el.addEventListener('mousemove', e=>{
+        const b = el.getBoundingClientRect(); const dx = (e.clientX-(b.left+b.width/2))/b.width; const dy = (e.clientY-(b.top+b.height/2))/b.height;
+        el.style.transform = `translate(${dx*strength}px, ${dy*strength}px)`;
+      });
+      el.addEventListener('mouseleave', ()=> el.style.transform = 'translate(0,0)');
+    });
+  })();
+
+  /* ===== headline sparkles ===== */
+  (function(){
+    const h = document.getElementById('headline');
+    const colors = ['#7aa2ff','#a78bfa','#22d3ee','#eab308'];
+    h.addEventListener('mousemove', (e)=>{
+      if(Math.random()<0.5) return;
+      const b = h.getBoundingClientRect(); const x = e.clientX - b.left; const y = e.clientY - b.top;
+      const s = document.createElement('span'); s.className='spark';
+      const c = colors[Math.floor(Math.random()*colors.length)];
+      s.style.left = x+'px'; s.style.top = y+'px'; s.style.background = `radial-gradient(${c},#0000 60%)`;
+      h.appendChild(s);
+      const dy = - (30 + Math.random()*30), dx = (Math.random()-0.5)*40; const rot = (Math.random()*80-40);
+      s.animate([{opacity:.9, transform:`translate(0,0) rotate(0deg)`},{opacity:0, transform:`translate(${dx}px,${dy}px) rotate(${rot}deg)`}],{duration:700, easing:'ease-out'});
+      setTimeout(()=>s.remove(), 720);
+    });
+  })();
+
+  /* ===== ripple + confetti burst on clicks ===== */
+  (function(){
+    // ripple
+    document.addEventListener('click', e=>{
+      const t = e.target.closest('.btn'); if(!t) return;
+      const r = document.createElement('span'); r.className='r'; const b=t.getBoundingClientRect();
+      r.style.left=(e.clientX-b.left)+'px'; r.style.top=(e.clientY-b.top)+'px'; t.appendChild(r); setTimeout(()=>r.remove(), 650);
+    });
+    // confetti
+    function burst(x,y){
+      const colors = ['#7aa2ff','#a78bfa','#22d3ee','#eab308','#ef4444','#34d399']; const count = 24;
+      for(let i=0;i<count;i++){ const s=document.createElement('div'); s.style.cssText='position:fixed;width:8px;height:12px;pointer-events:none;z-index:3';
+        s.style.background = colors[i%colors.length]; s.style.left=x+'px'; s.style.top=y+'px';
+        const rot=Math.random()*360, dx=(Math.random()-0.5)*240, dy=(Math.random()*-260)-80, scale=.8+Math.random()*.8, dur=700+Math.random()*700;
+        s.style.transform=`translate(${x}px,${y}px) rotate(${rot}deg) scale(${scale})`; document.body.appendChild(s);
+        const t0=performance.now(); (function anim(now){ const k=Math.min(1,(now-t0)/dur), ez=1-Math.pow(1-k,3);
+          s.style.opacity=String(1-k); s.style.transform=`translate(${x+dx*ez}px, ${y+dy*ez+600*k}px) rotate(${rot+600*k}deg) scale(${scale})`;
+          if(k<1)requestAnimationFrame(anim); else s.remove();})(t0);
+      }}
+    
+    document.addEventListener('click', e=>{ const el=e.target.closest('.burst'); if(el) burst(e.clientX,e.clientY); 
+
+    });
+})(); 
+  /* ===== progress + rocket + celebration ===== */
+  (function(){
+    const bar = document.getElementById('progressBar');
+    const pct = document.getElementById('progressPct');
+    const rocket = document.getElementById('rocket');
+    const meter = document.getElementById('meter');
+    let p = 0, fired = false;
+
+    const iv = setInterval(()=>{
+      if(fired) return;
+      p = Math.min(100, p + (Math.random()*4+1));
+      bar.style.width = p + '%';
+      pct.textContent = Math.floor(p) + '%';
+      rocket.style.opacity = 1;
+      rocket.style.left = `calc(${p}% - 24px)`;
+      if(p >= 100 && !fired){ fired = true; launch(); clearInterval(iv); }
+    }, 900);
+
+    function launch(){
+      // speed up starfield
+      window.__boostStars && window.__boostStars();
+
+      // turn bar into launch flame and lift rocket
+      bar.style.background = 'linear-gradient(180deg,#ffd166 0%,#ff8c00 60%,#ff0000 100%)';
+      bar.style.width = '100%';
+      rocket.style.transition = 'transform 2.4s cubic-bezier(.2,.7,0,1), left .6s';
+      rocket.style.transform = 'translateY(-120vh)'; // CSS keyframes-like lift
+
+      // show overlay
+      const overlay = document.getElementById('celebrate');
+      overlay.classList.add('celebrate--show');
+      fireworks(); // start fireworks
+      // countdown auto-close
+      let c = 6; const cd = document.getElementById('countdown');
+      const closeIv = setInterval(()=>{ c--; cd.textContent = c; if(c<=0){ overlay.classList.remove('celebrate--show'); clearInterval(closeIv);} },1000);
+    }
+  })();
+
+  /* ===== fireworks engine ===== */
+  function fireworks(){
+    const canvas = document.getElementById('fireworks'), ctx = canvas.getContext('2d');
+    let W,H; function resize(){ W=canvas.width=innerWidth; H=canvas.height=innerHeight; }
+    resize(); addEventListener('resize', resize);
+    const GRAV = 0.12, COLORS=['#7aa2ff','#a78bfa','#22d3ee','#eab308','#ef4444','#34d399'];
+    let parts=[];
+    function spawn(x,y,color){
+      const n = 60 + Math.random()*30;
+      for(let i=0;i<n;i++){
+        const a = (Math.PI*2)*Math.random(), s = 2+Math.random()*4;
+        parts.push({x,y, vx:Math.cos(a)*s, vy:Math.sin(a)*s, life:80+Math.random()*40, c:color, r:2+Math.random()*2});
+      }
+    }
+    function tick(){
+      ctx.clearRect(0,0,W,H);
+      parts.forEach(p=>{
+        p.x+=p.vx; p.y+=p.vy; p.vy+=GRAV; p.life-=1.2;
+        ctx.globalAlpha = Math.max(0,p.life/120);
+        ctx.fillStyle=p.c; ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,6.283); ctx.fill();
+      });
+      parts = parts.filter(p=>p.life>0);
+      requestAnimationFrame(tick);
+    }
+    tick();
+
+    // burst schedule
+    let bursts = 10;
+    const timer = setInterval(()=>{
+      const x = 100 + Math.random()*(W-200), y = 100 + Math.random()*(H*0.5);
+      spawn(x,y, COLORS[Math.floor(Math.random()*COLORS.length)]);
+      if(--bursts<=0) clearInterval(timer);
+    }, 350);
+  }
+
+  /* ===== footer timer + year ===== */
+  (function(){
+    const start = Date.now(); const pad = n => String(n).padStart(2,'0');
+    setInterval(()=>{ const t=Date.now()-start, s=Math.floor(t/1000)%60, m=Math.floor(t/60000)%60, h=Math.floor(t/3600000);
+      document.getElementById('timer').textContent = `${pad(h)}:${pad(m)}:${pad(s)}`; },1000);
+    document.getElementById('year').textContent = new Date().getFullYear();
+  })();
 </script>
 </body>
 </html>

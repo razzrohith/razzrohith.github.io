@@ -1,3 +1,10 @@
 {
-  "root": "sequence"
+  "root": "sequence",
+  "build": {
+    "builder": "nixpacks"
+  },
+  "deploy": {
+    "command": "npm start",
+    "healthcheckPath": "/"
+  }
 }

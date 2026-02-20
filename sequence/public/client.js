@@ -115,7 +115,8 @@ function renderLobby(room) {
     el.readyBtn.textContent = me.ready ? 'Unready' : 'Ready';
     el.readyBtn.style.background = me.ready ? 'var(--success)' : '';
   }
-  // Start button for host
+  // Start button for host - make it prominent
+  el.startBtn.textContent = '▶ PLAY GAME';
   el.startBtn.classList.toggle('hidden', !isHost || room.players.length < 2);
 
   // Player list

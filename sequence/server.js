@@ -4,6 +4,9 @@ const { Server } = require('socket.io');
 const { v4: uuidv4 } = require('uuid');
 const path = require('path');
 
+// Immediate startup log to confirm process is running
+console.log('=== Sequence server starting ===');
+
 // Global error handlers to prevent silent crashes
 process.on('unhandledRejection', (err, promise) => {
   console.error('Unhandled Rejection at:', promise, 'reason:', err);

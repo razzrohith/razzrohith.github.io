@@ -330,12 +330,8 @@ io.on('connection', (socket) => {
       socket.emit('error', { message: 'Room not found' });
       return;
     }
-    const player = getPlayerWithId(room, socket.id);
-    if (!player) {
-      socket.emit('error', { message: 'You are not in this room' });
-      return;
-    }
-    if (!player.isHost) {
+    // Host check: compare socket.id to room.hostId
+    if (room.hostId !== socket.id) {
       socket.emit('error', { message: 'Only the host can start the game' });
       return;
     }

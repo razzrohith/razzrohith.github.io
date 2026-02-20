@@ -484,42 +484,24 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// Additional logging middleware
+// Logging middleware
 app.use((req, res, next) => {
   console.log(`${req.method} ${req.path}`);
   next();
 });
 
+// Start server
 const PORT = process.env.PORT || 3000;
-<<<<<<< HEAD
 const HOST = '0.0.0.0';
 
-console.error(`Starting server on ${HOST}:${PORT}`);
-console.error(`Working directory: ${process.cwd()}`);
-console.error(`Node version: ${process.version}`);
+console.log('=== Starting server ===');
+console.log('Working directory:', process.cwd());
+console.log('PORT:', PORT);
 
-function startServer() {
-  server.listen(PORT, HOST, () => {
-    console.error(`Server listening on http://${HOST}:${PORT}`);
-  });
-}
+server.listen(PORT, HOST, () => {
+  console.log(`Server listening on http://${HOST}:${PORT}`);
+});
 
 server.on('error', (err) => {
-  console.error('Server error:', err);
-  if (err.code === 'EADDRINUSE') {
-    console.error(`Port ${PORT} is busy, retrying in 1s...`);
-    setTimeout(startServer, 1000);
-  } else {
-    process.exit(1);
-  }
+  console.error('SERVER ERROR:', err);
 });
-
-startServer();
-=======
-server.listen(PORT, "0.0.0.0", () => {
-  console.log(`Sequence server listening on port ${PORT}`);
-});
-server.on('error', (err) => {
-  console.error('Server error:' , err);
-});
->>>>>>> origin/main

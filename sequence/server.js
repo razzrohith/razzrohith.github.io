@@ -326,11 +326,29 @@ io.on('connection', (socket) => {
 
   socket.on('startGame', ({ roomId }) => {
     const room = rooms[roomId];
-    if (!room) return;
-    const player = getPlayerWithId(room, socket.id);
-    if (player && player.isHost && room.players.length >= 2) {
-      initializeGame(room);
+    if (!room) {
+      socket.emit('error', { message: 'Room not found' });
+      return;
     }
+    const player = getPlayerWithId(room, socket.id);
+    if (!player) {
+      socket.emit('error', { message: 'You are not in this room' });
+      return;
+    }
+    if (!player.isHost) {
+      socket.emit('error', { message: 'Only the host can start the game' });
+      return;
+    }
+    if (room.players.length < 2) {
+      socket.emit('error', { message: 'Need at least 2 players to start' });
+      return;
+    }
+    if (room.gameStarted) {
+      socket.emit('error', { message: 'Game already started' });
+      return;
+    }
+    initializeGame(room);
+    socket.emit('gameStarted', { roomId });
   });
 
   socket.on('playCard', ({ roomId, cardIndex, boardPos }) => {

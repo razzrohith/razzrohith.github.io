@@ -157,7 +157,16 @@ el.readyBtn.addEventListener('click', () => {
 });
 
 el.startBtn.addEventListener('click', () => {
-  socket.emit('startGame', { roomId });
+  console.log('Start button clicked', { roomId, isHost });
+  if (!roomId) {
+    console.error('Cannot start: no roomId');
+    return;
+  }
+  socket.emit('startGame', { roomId }, (response) => {
+    if (response) {
+      console.log('startGame response:', response);
+    }
+  });
 });
 
 el.copyBtn.addEventListener('click', () => {

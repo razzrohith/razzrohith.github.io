@@ -59,21 +59,21 @@ el.joinBtn.addEventListener('click', () => {
   socket.emit('joinRoom', { roomId: code, userName: `Player${Math.floor(Math.random()*1000)}` });
 });
 
-socket.on('roomCreated', ({ roomId: rid, isHost }) => {
+socket.on('roomCreated', ({ roomId: rid, isHost: hostFlag }) => {
   roomId = rid;
   myPlayerId = socket.id;
   window.location.hash = roomId;
   el.roomCode.textContent = roomId;
-  this.isHost = isHost;
+  isHost = hostFlag;
   showScreen('lobby');
 });
 
-socket.on('joinedRoom', ({ roomId: rid, isHost }) => {
+socket.on('joinedRoom', ({ roomId: rid, isHost: hostFlag }) => {
   roomId = rid;
   myPlayerId = socket.id;
   window.location.hash = roomId;
   el.roomCode.textContent = roomId;
-  this.isHost = isHost;
+  isHost = hostFlag;
   showScreen('lobby');
 });
 
@@ -92,6 +92,7 @@ socket.on('roomUpdate', (room) => {
 
 // --- Lobby ---
 function renderLobby(room) {
+  console.log('renderLobby: isHost=', isHost, 'players=', room.players.length);
   const me = room.players.find(p => p.id === myPlayerId);
   myTeam = me.team;
   // Lobby controls
@@ -116,8 +117,12 @@ function renderLobby(room) {
     el.readyBtn.style.background = me.ready ? 'var(--success)' : '';
   }
   // Start button for host - make it prominent
-  el.startBtn.textContent = '▶ PLAY GAME';
-  el.startBtn.classList.toggle('hidden', !isHost || room.players.length < 2);
+  const shouldShowStart = isHost && room.players.length >= 2;
+  console.log('Start button should show?', shouldShowStart, 'isHost:', isHost, 'playerCount:', room.players.length);
+  el.startBtn.classList.toggle('hidden', !shouldShowStart);
+  if (isHost) {
+    el.startBtn.textContent = '▶ PLAY GAME';
+  }
 
   // Player list
   el.playerList.innerHTML = '';

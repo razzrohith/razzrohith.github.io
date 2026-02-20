@@ -167,6 +167,11 @@ h2 { font-size: 1.8rem; margin-bottom: 10px; }
   user-select: none;
 }
 .card:hover { transform: translateY(-5px); }
+.card.jack {
+  border: 2px solid #f59e0b;
+  box-shadow: 0 0 8px rgba(245, 158, 11, 0.4);
+  background: linear-gradient(135deg, #1e293b, #0f172a);
+}
 .card.selected { border-color: var(--accent); background: rgba(59,130,246,0.2); }
 .card .rank { font-size: 1.4rem; font-weight: 800; }
 .card .suit { font-size: 1.6rem; }

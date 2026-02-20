@@ -142,6 +142,11 @@ el.teamInput.addEventListener('change', () => {
 });
 
 el.readyBtn.addEventListener('click', () => {
+  if (!roomId) {
+    el.lobbyError.textContent = 'Room error: not connected. Refresh and try again.';
+    return;
+  }
+  el.lobbyError.textContent = '';
   socket.emit('toggleReady', { roomId });
 });
 

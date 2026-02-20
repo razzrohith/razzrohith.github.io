@@ -284,11 +284,18 @@ io.on('connection', (socket) => {
 
   socket.on('toggleReady', ({ roomId }) => {
     const room = rooms[roomId];
-    const player = getPlayerWithId(room, socket.id);
-    if (player && !player.isHost) {
-      player.ready = !player.ready;
-      broadcastRoom(roomId);
+    if (!room) {
+      socket.emit('error', { message: 'Room not found. Rejoin?' });
+      return;
     }
+    const player = getPlayerWithId(room, socket.id);
+    if (!player) {
+      socket.emit('error', { message: 'You are not in this room' });
+      return;
+    }
+    // Anyone can toggle ready
+    player.ready = !player.ready;
+    broadcastRoom(roomId);
   });
 
   socket.on('startGame', ({ roomId }) => {

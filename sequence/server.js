@@ -38,9 +38,12 @@ const CORNERS = [
 ];
 
 // --- Helper Functions ---
+function isCorner(r, c) {
+  return CORNERS.some(cor => cor.r === r && cor.c === c);
+}
+
 function createDeck() {
   const deck = [];
-  // Two standard decks
   for (let d = 0; d < 2; d++) {
     for (let s of SUITS) {
       for (let r of RANKS) {
@@ -57,13 +60,11 @@ function createDeck() {
 }
 
 function getBoardCardPositions() {
-  // Map non-jack cards to two positions on the board (except corners which are wild)
-  // We'll assign each card (except Jacks) to 2 random non-corner cells
   const positions = {};
   const availableCells = [];
   for (let r = 0; r < BOARD_SIZE; r++) {
     for (let c = 0; c < BOARD_SIZE; c++) {
-      if (!CORNERS.find(cor => cor.r === r && cor.c === c)) {
+      if (!isCorner(r, c)) {
         availableCells.push({ r, c });
       }
     }
@@ -73,16 +74,12 @@ function getBoardCardPositions() {
     const j = Math.floor(Math.random() * (i + 1));
     [availableCells[i], availableCells[j]] = [availableCells[j], availableCells[i]];
   }
-  // For each non-jack card, assign next 2 cells
   const nonJackCards = RANKS.filter(r => r !== 'J');
   let idx = 0;
   for (let s of SUITS) {
     for (let r of nonJackCards) {
       const cardId = `${r}${s}`;
-      positions[cardId] = [
-        availableCells[idx++],
-        availableCells[idx++]
-      ];
+      positions[cardId] = [availableCells[idx++], availableCells[idx++]];
     }
   }
   return positions;
@@ -96,42 +93,36 @@ function isTwoEyedJack(card) {
   return card.rank === 'J' && (card.suit === '♥' || card.suit === '♦');
 }
 
-function checkSequence(board, playerColor, cornersAsWild = true) {
+function checkSequence(board, playerColor) {
   const sequences = [];
-  const directions = [
-    [1, 0], [0, 1], [1, 1], [1, -1]
-  ];
+  const directions = [[1,0],[0,1],[1,1],[1,-1]];
   const visited = new Set();
+
+  function cellFits(r, c) {
+    if (r < 0 || r >= BOARD_SIZE || c < 0 || c >= BOARD_SIZE) return false;
+    if (isCorner(r, c)) return true;
+    const cell = board[r][c];
+    return cell && cell.color === playerColor;
+  }
 
   for (let r = 0; r < BOARD_SIZE; r++) {
     for (let c = 0; c < BOARD_SIZE; c++) {
-      const cell = board[r][c];
-      if (!cell || cell.color !== playerColor) continue;
+      if (!cellFits(r, c)) continue;
       const key = `${r},${c}`;
       if (visited.has(key)) continue;
-
       for (let [dr, dc] of directions) {
         let line = [{ r, c }];
-        // forward
         let nr = r + dr, nc = c + dc;
-        while (nr >= 0 && nr < BOARD_SIZE && nc >= 0 && nc < BOARD_SIZE) {
-          const next = board[nr][nc];
-          if (next && next.color === playerColor) {
-            line.push({ r: nr, c: nc });
-            nr += dr; nc += dc;
-          } else break;
+        while (cellFits(nr, nc)) {
+          line.push({ r: nr, c: nc });
+          nr += dr; nc += dc;
         }
-        // backward (opposite direction)
         nr = r - dr; nc = c - dc;
-        while (nr >= 0 && nr < BOARD_SIZE && nc >= 0 && nc < BOARD_SIZE) {
-          const prev = board[nr][nc];
-          if (prev && prev.color === playerColor) {
-            line.unshift({ r: nr, c: nc });
-            nr -= dr; nc -= dc;
-          } else break;
+        while (cellFits(nr, nc)) {
+          line.unshift({ r: nr, c: nc });
+          nr -= dr; nc -= dc;
         }
         if (line.length >= 5) {
-          // Mark cells as visited to avoid duplicate detection
           line.forEach(p => visited.add(`${p.r},${p.c}`));
           sequences.push(line);
         }
@@ -173,7 +164,6 @@ function getPlayerWithId(room, playerId) {
 function nextTurn(room) {
   const playerCount = room.players.length;
   let next = (room.turnIndex + 1) % playerCount;
-  // Skip dead players? Not needed; all players must have cards.
   room.turnIndex = next;
 }
 
@@ -204,22 +194,34 @@ function serializeRoom(room) {
 }
 
 function initializeGame(room) {
-  // Shuffle deck
+  // Auto-assign teams for any unassigned player
+  for (let p of room.players) {
+    if (p.team === null) {
+      // Find a team with fewer than 2 players (max 2 per team for visuals)
+      for (let t = 0; t < COLORS.length; t++) {
+        const count = room.players.filter(pp => pp.team === t).length;
+        if (count < 2) {
+          p.team = t;
+          break;
+        }
+      }
+      // If all teams full, assign sequentially
+      if (p.team === null) p.team = room.players.indexOf(p) % COLORS.length;
+    }
+  }
+
   room.deck = createDeck();
   room.discardPile = [];
   room.board = Array(BOARD_SIZE).fill(null).map(() => Array(BOARD_SIZE).fill(null));
-  // Mark corners as wild: they are always available for any color but cannot be occupied initially? Actually corners count as chips for all but cannot be occupied by chips. In digital version, we'll treat them as always contributing to sequences but no chip placed. So board[r][c] remains null for corners.
   room.sequences = [];
   room.winner = null;
   room.gameStarted = true;
-  // Deal cards
   const playerCount = room.players.length;
   const cardsPerPlayer = CARD_DISTRIBUTION[playerCount] || 3;
   for (let p of room.players) {
     p.cards = [];
     for (let i = 0; i < cardsPerPlayer; i++) {
       if (room.deck.length === 0) {
-        // reshuffle discard if needed
         room.deck = room.discardPile;
         room.discardPile = [];
       }
@@ -230,14 +232,13 @@ function initializeGame(room) {
   broadcastRoom(room.id);
 }
 
-// --- Socket.io Events ---
+// --- Socket Events ---
 io.on('connection', (socket) => {
   console.log('Client connected', socket.id);
 
   socket.on('createRoom', ({ userName }) => {
     const roomId = createRoom(socket.id, userName);
     const room = rooms[roomId];
-    // Add host as player
     room.players.push({
       id: socket.id,
       name: userName,
@@ -260,7 +261,6 @@ io.on('connection', (socket) => {
       socket.emit('error', { message: 'Game already in progress' });
       return;
     }
-    // Join
     socket.join(roomId);
     room.players.push({
       id: socket.id,
@@ -295,7 +295,6 @@ io.on('connection', (socket) => {
     const room = rooms[roomId];
     const player = getPlayerWithId(room, socket.id);
     if (player && player.isHost && room.players.length >= 2) {
-      // All players must be ready or skipping ready check? We'll start regardless.
       initializeGame(room);
     }
   });
@@ -313,9 +312,8 @@ io.on('connection', (socket) => {
     const card = player.cards[cardIndex];
     if (!card) return;
 
-    // Handle one-eyed jack removal
+    // One-eyed Jack: remove opponent chip
     if (isOneEyedJack(card)) {
-      // boardPos must be provided with chip to remove
       if (!boardPos) {
         socket.emit('error', { message: 'Select a chip to remove' });
         return;
@@ -329,11 +327,8 @@ io.on('connection', (socket) => {
         socket.emit('error', { message: 'Cannot remove a locked sequence chip' });
         return;
       }
-      const targetColor = target.color;
-      // Cannot remove from corner (corners not occupied anyway)
       // Remove chip
       room.board[boardPos.r][boardPos.c] = null;
-      // Discard the one-eyed jack
       player.cards.splice(cardIndex, 1);
       room.discardPile.push(card);
       // Draw new card
@@ -343,14 +338,12 @@ io.on('connection', (socket) => {
       }
       player.cards.push(room.deck.pop());
       nextTurn(room);
-      // Re-check sequences after removal? Usually removed chip remains locked? We'll keep locked status separate. In our implementation, locked chips are not removable, so any removal doesn't affect sequences.
       broadcastRoom(roomId);
       return;
     }
 
-    // Two-eyed jack or normal card
+    // Two-eyed Jack or normal card
     if (isTwoEyedJack(card)) {
-      // Can place on any empty cell
       if (!boardPos) {
         socket.emit('error', { message: 'Select an empty cell' });
         return;
@@ -359,60 +352,55 @@ io.on('connection', (socket) => {
         socket.emit('error', { message: 'Cell occupied' });
         return;
       }
-      // Place chip
-      room.board[boardPos.r][boardPos.c] = { color: player.team || player.id, locked: false };
-      // Discard played card
+      if (isCorner(boardPos.r, boardPos.c)) {
+        socket.emit('error', { message: 'Cannot place on corner' });
+        return;
+      }
+      room.board[boardPos.r][boardPos.c] = { color: player.team !== null ? player.team : player.id, locked: false };
       player.cards.splice(cardIndex, 1);
       room.discardPile.push(card);
     } else {
-      // Normal card: must use one of its two board positions
+      // Normal card
       const positions = room.cardPositions[card.id];
       if (!positions) {
         socket.emit('error', { message: 'Invalid card' });
         return;
       }
-      // Find an available position
-      let chosen = boardPos;
-      if (!chosen) {
-        // frontend should send chosen position
+      if (!boardPos) {
         socket.emit('error', { message: 'Select a board position' });
         return;
       }
-      const valid = positions.find(p => p.r === chosen.r && p.c === chosen.c);
+      const valid = positions.find(p => p.r === boardPos.r && p.c === boardPos.c);
       if (!valid) {
         socket.emit('error', { message: 'Invalid position for this card' });
         return;
       }
-      const cell = room.board[chosen.r][chosen.c];
-      if (cell) {
+      if (room.board[boardPos.r][boardPos.c]) {
         socket.emit('error', { message: 'Position already occupied' });
         return;
       }
-      room.board[chosen.r][chosen.c] = { color: player.team || player.id, locked: false };
+      room.board[boardPos.r][boardPos.c] = { color: player.team !== null ? player.team : player.id, locked: false };
       player.cards.splice(cardIndex, 1);
       room.discardPile.push(card);
     }
 
-    // Draw replacement
+    // Draw replacement card
     if (room.deck.length === 0) {
       room.deck = room.discardPile;
       room.discardPile = [];
     }
     player.cards.push(room.deck.pop());
 
-    // Check for new sequences for this player color
-    const color = player.team || player.id;
+    // Check for new sequences
+    const color = player.team !== null ? player.team : player.id;
     const newSequences = checkSequence(room.board, color);
-    // New sequences: lock chips that formed them if not already locked
     for (let seq of newSequences) {
-      // Check if this sequence was already counted? We'll maintain room.sequences as array of sequences (sets of positions). We need to avoid duplicates.
       const positionsSet = new Set(seq.map(p => `${p.r},${p.c}`));
       const alreadyCounted = room.sequences.some(existing =>
         existing.every(pos => positionsSet.has(`${pos.r},${pos.c}`))
       );
       if (!alreadyCounted) {
         room.sequences.push(seq);
-        // Lock chips
         for (let p of seq) {
           if (room.board[p.r][p.c]) room.board[p.r][p.c].locked = true;
         }
@@ -437,13 +425,11 @@ io.on('connection', (socket) => {
   });
 
   socket.on('disconnect', () => {
-    // Remove player from rooms
     for (let roomId in rooms) {
       const room = rooms[roomId];
       const idx = room.players.findIndex(p => p.id === socket.id);
       if (idx !== -1) {
         room.players.splice(idx, 1);
-        // If host left, assign new host or delete room if empty
         if (room.hostId === socket.id) {
           if (room.players.length > 0) {
             room.hostId = room.players[0].id;
@@ -452,14 +438,12 @@ io.on('connection', (socket) => {
             return;
           }
         }
-        // If game in progress and a player leaves, consider ending game or continue?
-        // We'll continue but mark that player as left.
         broadcastRoom(roomId);
         break;
       }
     }
   });
-}
+});
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {

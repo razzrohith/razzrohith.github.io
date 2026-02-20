@@ -22,6 +22,15 @@ const io = new Server(server, {
 // Serve static files from the 'public' directory
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Health check endpoint for Railway
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// Log startup info
+console.log('Working directory:', process.cwd());
+console.log('PORT from env:', process.env.PORT);
+
 // --- Game Constants ---
 const BOARD_SIZE = 10;
 const CARD_DISTRIBUTION = {

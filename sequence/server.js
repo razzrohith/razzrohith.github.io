@@ -9,6 +9,9 @@ const server = http.createServer(app);
 const io = new Server(server, {
   cors: { origin: '*' }
 });
+server.on('error', (err) => {
+  console.error('Server error:' , err);
+});
 
 // Serve static files
 app.use(express.static(path.join(__dirname, 'public')));
@@ -451,8 +454,14 @@ io.on('connection', (socket) => {
     }
   });
 });
+server.on('error', (err) => {
+  console.error('Server error:' , err);
+});
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
+server.listen(PORT, "0.0.0.0", () => {
   console.log(`Sequence server listening on port ${PORT}`);
+});
+server.on('error', (err) => {
+  console.error('Server error:' , err);
 });

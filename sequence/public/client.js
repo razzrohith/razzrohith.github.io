@@ -216,7 +216,7 @@ function renderBoard(room, player) {
         const card = player.cards[selectedCardIdx];
         if (card) {
           if (isTwoEyedJack(card)) {
-            validMove = !cellData;
+            validMove = !cellData && !isCorner(r, c);
           } else if (isOneEyedJack(card)) {
             validMove = cellData && cellData.color !== (player.team !== null ? player.team : player.id) && !cellData.locked;
           } else {
@@ -308,6 +308,9 @@ function isTwoEyedJack(card) {
 }
 function isOneEyedJack(card) {
   return card.rank === 'J' && (card.suit === '♠' || card.suit === '♣');
+}
+function isCorner(r, c) {
+  return CORNERS.some(cor => cor.r === r && cor.c === c);
 }
 
 // Board size constant used for corners

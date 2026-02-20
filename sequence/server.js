@@ -463,10 +463,38 @@ io.on('connection', (socket) => {
   });
 });
 
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, '0.0.0.0', () => {
-  console.log(`Sequence server listening on port ${PORT}`);
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
+
+// Additional logging middleware
+app.use((req, res, next) => {
+  console.log(`${req.method} ${req.path}`);
+  next();
+});
+
+const PORT = process.env.PORT || 3000;
+const HOST = '0.0.0.0';
+
+console.error(`Starting server on ${HOST}:${PORT}`);
+console.error(`Working directory: ${process.cwd()}`);
+console.error(`Node version: ${process.version}`);
+
+function startServer() {
+  server.listen(PORT, HOST, () => {
+    console.error(`Server listening on http://${HOST}:${PORT}`);
+  });
+}
+
 server.on('error', (err) => {
   console.error('Server error:', err);
+  if (err.code === 'EADDRINUSE') {
+    console.error(`Port ${PORT} is busy, retrying in 1s...`);
+    setTimeout(startServer, 1000);
+  } else {
+    process.exit(1);
+  }
 });
+
+startServer();

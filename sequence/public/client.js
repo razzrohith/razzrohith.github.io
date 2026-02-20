@@ -59,8 +59,8 @@ el.joinBtn.addEventListener('click', () => {
   socket.emit('joinRoom', { roomId: code, userName: `Player${Math.floor(Math.random()*1000)}` });
 });
 
-socket.on('roomCreated', ({ roomId, isHost }) => {
-  roomId = roomId;
+socket.on('roomCreated', ({ roomId: rid, isHost }) => {
+  roomId = rid;
   myPlayerId = socket.id;
   window.location.hash = roomId;
   el.roomCode.textContent = roomId;
@@ -68,8 +68,8 @@ socket.on('roomCreated', ({ roomId, isHost }) => {
   showScreen('lobby');
 });
 
-socket.on('joinedRoom', ({ roomId, isHost }) => {
-  roomId = roomId;
+socket.on('joinedRoom', ({ roomId: rid, isHost }) => {
+  roomId = rid;
   myPlayerId = socket.id;
   window.location.hash = roomId;
   el.roomCode.textContent = roomId;

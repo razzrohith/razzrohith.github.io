@@ -198,7 +198,8 @@ function serializeRoom(room) {
     turnIndex: room.turnIndex,
     sequences: room.sequences,
     winner: room.winner,
-    gameStarted: room.gameStarted
+    gameStarted: room.gameStarted,
+    cardPositions: room.cardPositions
   };
 }
 

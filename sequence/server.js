@@ -4,13 +4,22 @@ const { Server } = require('socket.io');
 const { v4: uuidv4 } = require('uuid');
 const path = require('path');
 
+// Global error handlers to prevent silent crashes
+process.on('unhandledRejection', (err, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', err);
+});
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught Exception:', err);
+  process.exit(1);
+});
+
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: { origin: '*' }
 });
 
-// Serve static files
+// Serve static files from the 'public' directory
 app.use(express.static(path.join(__dirname, 'public')));
 
 // --- Game Constants ---
@@ -446,6 +455,9 @@ io.on('connection', (socket) => {
 });
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
+server.listen(PORT, '0.0.0.0', () => {
   console.log(`Sequence server listening on port ${PORT}`);
+});
+server.on('error', (err) => {
+  console.error('Server error:', err);
 });

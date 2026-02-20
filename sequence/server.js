@@ -219,19 +219,19 @@ function serializeRoom(room) {
 }
 
 function initializeGame(room) {
-  // Auto-assign teams for any unassigned player
+  // Auto-assign distinct team colors to unassigned players (balanced)
   for (let p of room.players) {
     if (p.team === null) {
-      // Find a team with fewer than 2 players (max 2 per team for visuals)
+      let minCount = Infinity;
+      let bestTeam = 0;
       for (let t = 0; t < COLORS.length; t++) {
         const count = room.players.filter(pp => pp.team === t).length;
-        if (count < 2) {
-          p.team = t;
-          break;
+        if (count < minCount) {
+          minCount = count;
+          bestTeam = t;
         }
       }
-      // If all teams full, assign sequentially
-      if (p.team === null) p.team = room.players.indexOf(p) % COLORS.length;
+      p.team = bestTeam;
     }
   }
 

@@ -18,6 +18,9 @@ const server = http.createServer(app);
 const io = new Server(server, {
   cors: { origin: '*' }
 });
+server.on('error', (err) => {
+  console.error('Server error:' , err);
+});
 
 // Serve static files from the 'public' directory
 app.use(express.static(path.join(__dirname, 'public')));
@@ -302,11 +305,18 @@ io.on('connection', (socket) => {
 
   socket.on('toggleReady', ({ roomId }) => {
     const room = rooms[roomId];
-    const player = getPlayerWithId(room, socket.id);
-    if (player && !player.isHost) {
-      player.ready = !player.ready;
-      broadcastRoom(roomId);
+    if (!room) {
+      socket.emit('error', { message: 'Room not found. Rejoin?' });
+      return;
     }
+    const player = getPlayerWithId(room, socket.id);
+    if (!player) {
+      socket.emit('error', { message: 'You are not in this room' });
+      return;
+    }
+    // Anyone can toggle ready
+    player.ready = !player.ready;
+    broadcastRoom(roomId);
   });
 
   socket.on('startGame', ({ roomId }) => {
@@ -462,6 +472,9 @@ io.on('connection', (socket) => {
     }
   });
 });
+server.on('error', (err) => {
+  console.error('Server error:' , err);
+});
 
 // Health check endpoint
 app.get('/health', (req, res) => {
@@ -475,6 +488,7 @@ app.use((req, res, next) => {
 });
 
 const PORT = process.env.PORT || 3000;
+<<<<<<< HEAD
 const HOST = '0.0.0.0';
 
 console.error(`Starting server on ${HOST}:${PORT}`);
@@ -498,3 +512,11 @@ server.on('error', (err) => {
 });
 
 startServer();
+=======
+server.listen(PORT, "0.0.0.0", () => {
+  console.log(`Sequence server listening on port ${PORT}`);
+});
+server.on('error', (err) => {
+  console.error('Server error:' , err);
+});
+>>>>>>> origin/main

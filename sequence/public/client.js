@@ -92,9 +92,9 @@ socket.on('roomUpdate', (room) => {
 
 // --- Lobby ---
 function renderLobby(room) {
-  console.log('renderLobby: isHost=', isHost, 'players=', room.players.length);
+  console.log('renderLobby: room.hostId=', room.hostId, 'myPlayerId=', myPlayerId);
   const me = room.players.find(p => p.id === myPlayerId);
-  myTeam = me.team;
+  myTeam = me ? me.team : null;
   // Lobby controls
   if (me) {
     el.teamSelect.classList.toggle('hidden', me.team !== null);
@@ -116,11 +116,12 @@ function renderLobby(room) {
     el.readyBtn.textContent = me.ready ? 'Unready' : 'Ready';
     el.readyBtn.style.background = me.ready ? 'var(--success)' : '';
   }
-  // Start button for host - make it prominent
-  const shouldShowStart = isHost && room.players.length >= 2;
-  console.log('Start button should show?', shouldShowStart, 'isHost:', isHost, 'playerCount:', room.players.length);
+  // Start button for host - use me.isHost from server
+  const isHostNow = me ? me.isHost : false;
+  const shouldShowStart = isHostNow && room.players.length >= 2;
+  console.log('Start button should show?', shouldShowStart, 'isHost:', isHostNow, 'playerCount:', room.players.length);
   el.startBtn.classList.toggle('hidden', !shouldShowStart);
-  if (isHost) {
+  if (isHostNow) {
     el.startBtn.textContent = '▶ PLAY GAME';
   }
 

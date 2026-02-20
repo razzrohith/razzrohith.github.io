@@ -127,6 +127,18 @@ h2 { font-size: 1.8rem; margin-bottom: 10px; }
 .cell.wild::after { content: '★'; color: #fbbf24; font-size: 1.2rem; }
 .cell.highlight { border-color: var(--accent); box-shadow: 0 0 10px var(--accent); }
 .cell.locked::after { content: '🔒'; position: absolute; top: 2px; right: 2px; font-size: .6rem; }
+.card-label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: .65rem;
+  color: rgba(255,255,255,0.7);
+  font-weight: 700;
+  text-shadow: 0 0 2px rgba(0,0,0,0.5);
+  pointer-events: none;
+}
 .chip {
   width: 70%; height: 70%;
   border-radius: 50%;

@@ -203,9 +203,19 @@ function renderGame(room) {
 
 function renderBoard(room, player) {
   el.board.innerHTML = '';
-  // Get color for my team
-  const teamColor = COLORS[player.team !== null ? player.team : 0];
-  // Dynamic CSS for team colors
+
+  // Build a map: "r,c" -> card id for labeling cells
+  const posToCard = {};
+  if (room.cardPositions) {
+    for (const cardId in room.cardPositions) {
+      const positions = room.cardPositions[cardId];
+      for (const pos of positions) {
+        posToCard[`${pos.r},${pos.c}`] = cardId;
+      }
+    }
+  }
+
+  // Dynamic team colors
   let dynamicStyle = document.getElementById('dynamicTeamStyle');
   if (!dynamicStyle) {
     dynamicStyle = document.createElement('style');
@@ -231,10 +241,40 @@ function renderBoard(room, player) {
         cell.appendChild(chip);
         if (cellData.locked) cell.classList.add('locked');
       }
-      // Determine if this cell is a valid move for selected card
+      // Show card rank/suit if this cell corresponds to a board card
+      const cardId = posToCard[`${r},${c}`];
+      if (cardId && !cellData) {
+        const label = document.createElement('div');
+        label.className = 'card-label';
+        label.textContent = cardId;
+        label.title = cardId;
+        cell.appendChild(label);
+      }
+
+      // Highlight valid positions for selected card
       let validMove = false;
       if (selectedCardIdx !== null && myTurn) {
         const card = player.cards[selectedCardIdx];
+        if (card) {
+          if (isTwoEyedJack(card)) {
+            validMove = !cellData && !isCorner(r, c);
+          } else if (isOneEyedJack(card)) {
+            validMove = cellData && cellData.color !== (player.team !== null ? player.team : player.id) && !cellData.locked;
+          } else {
+            const pos = room.cardPositions[card.id];
+            if (pos) {
+              validMove = pos.some(p => p.r === r && p.c === c) && !cellData;
+            }
+          }
+        }
+      }
+      if (validMove) cell.classList.add('highlight');
+
+      cell.addEventListener('click', () => handleCellClick(r, c, myTurn));
+      el.board.appendChild(cell);
+    }
+  }
+}
         if (card) {
           if (isTwoEyedJack(card)) {
             validMove = !cellData && !isCorner(r, c);

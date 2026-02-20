@@ -182,6 +182,7 @@ function createRoom(hostId, hostName) {
 }
 
 function getPlayerWithId(room, playerId) {
+  if (!room || !room.players) return null;
   return room.players.find(p => p.id === playerId);
 }
 
@@ -299,6 +300,7 @@ io.on('connection', (socket) => {
 
   socket.on('setTeam', ({ roomId, team }) => {
     const room = rooms[roomId];
+    if (!room) return;
     const player = getPlayerWithId(room, socket.id);
     if (player) {
       player.team = team;
@@ -324,6 +326,7 @@ io.on('connection', (socket) => {
 
   socket.on('startGame', ({ roomId }) => {
     const room = rooms[roomId];
+    if (!room) return;
     const player = getPlayerWithId(room, socket.id);
     if (player && player.isHost && room.players.length >= 2) {
       initializeGame(room);

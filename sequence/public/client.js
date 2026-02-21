@@ -1,70 +1,62 @@
 document.addEventListener('DOMContentLoaded', () => {
-  console.log('DOM ready');
-
-  // --- Element getter (re‑query if needed) ---
-  function getEl() {
-    return {
-      home: document.getElementById('home'),
-      lobby: document.getElementById('lobby'),
-      game: document.getElementById('game'),
-      end: document.getElementById('end'),
-      createBtn: document.getElementById('createBtn'),
-      joinBtn: document.getElementById('joinBtn'),
-      roomInput: document.getElementById('roomInput'),
-      homeError: document.getElementById('homeError'),
-      roomCode: document.getElementById('roomCode'),
-      copyBtn: document.getElementById('copyBtn'),
-      inviteBtn: document.getElementById('inviteBtn'),
-      inviteMsg: document.getElementById('inviteMsg'),
-      teamSelect: document.getElementById('teamSelect'),
-      teamInput: document.getElementById('teamInput'),
-      readyBtn: document.getElementById('readyBtn'),
-      startBtn: document.getElementById('startBtn'),
-      lobbyError: document.getElementById('lobbyError'),
-      leaveLobbyBtn: document.getElementById('leaveLobbyBtn'),
-      board: document.getElementById('board'),
-      hand: document.getElementById('hand'),
-      currentPlayer: document.getElementById('currentPlayer'),
-      winCount: document.getElementById('winCount'),
-      leaveGameBtn: document.getElementById('leaveGameBtn'),
-      winnerText: document.getElementById('winnerText'),
-      winnerSubtext: document.getElementById('winnerSubtext'),
-      playAgainBtn: document.getElementById('playAgainBtn'),
-      backLobbyBtn: document.getElementById('backLobbyBtn'),
-      playerList: document.getElementById('playerList')
-    };
-  }
-
-  let el = getEl();
+  // Elements
+  const el = {
+    home: document.getElementById('home'),
+    lobby: document.getElementById('lobby'),
+    game: document.getElementById('game'),
+    end: document.getElementById('end'),
+    createBtn: document.getElementById('createBtn'),
+    joinBtn: document.getElementById('joinBtn'),
+    roomInput: document.getElementById('roomInput'),
+    homeError: document.getElementById('homeError'),
+    roomCode: document.getElementById('roomCode'),
+    copyBtn: document.getElementById('copyBtn'),
+    inviteBtn: document.getElementById('inviteBtn'),
+    inviteMsg: document.getElementById('inviteMsg'),
+    teamSelect: document.getElementById('teamSelect'),
+    teamInput: document.getElementById('teamInput'),
+    readyBtn: document.getElementById('readyBtn'),
+    startBtn: document.getElementById('startBtn'),
+    lobbyError: document.getElementById('lobbyError'),
+    leaveLobbyBtn: document.getElementById('leaveLobbyBtn'),
+    board: document.getElementById('board'),
+    hand: document.getElementById('hand'),
+    currentPlayer: document.getElementById('currentPlayer'),
+    winCount: document.getElementById('winCount'),
+    leaveGameBtn: document.getElementById('leaveGameBtn'),
+    winnerText: document.getElementById('winnerText'),
+    winnerSubtext: document.getElementById('winnerSubtext'),
+    playAgainBtn: document.getElementById('playAgainBtn'),
+    backLobbyBtn: document.getElementById('backLobbyBtn'),
+    playerList: document.getElementById('playerList')
+  };
 
   // State
   let roomId = null;
   let myPlayerId = null;
   let isHost = false;
-  let myTeam = null;
   let selectedCardIdx = null;
   let lastRoom = null;
 
   const socket = io();
   socket.on('connect', () => console.log('Socket connected', socket.id));
-  socket.on('connect_error', (e) => console.error('Socket connect_error', e));
-  socket.on('error', (e) => console.error('Socket error', e));
+  socket.on('error', e => console.error('Socket error', e));
 
-  socket.on('roomCreated', ({ roomId: rid, isHost: hostFlag }) => {
-    roomId = rid; myPlayerId = socket.id; isHost = hostFlag;
+  socket.on('roomCreated', ({ roomId: rid, isHost: host }) => {
+    roomId = rid; myPlayerId = socket.id; isHost = host;
     window.location.hash = roomId;
     if (el.roomCode) el.roomCode.textContent = roomId;
     showScreen('lobby');
   });
 
-  socket.on('joinedRoom', ({ roomId: rid, isHost: hostFlag }) => {
-    roomId = rid; myPlayerId = socket.id; isHost = hostFlag;
+  socket.on('joinedRoom', ({ roomId: rid, isHost: host }) => {
+    roomId = rid; myPlayerId = socket.id; isHost = host;
     window.location.hash = roomId;
     if (el.roomCode) el.roomCode.textContent = roomId;
     showScreen('lobby');
   });
 
-  socket.on('roomUpdate', (room) => {
+  socket.on('roomUpdate', room => {
     lastRoom = room;
     if (!room.gameStarted) renderLobby(room);
     else {
@@ -79,7 +71,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   socket.on('error', ({ message }) => {
     console.error('Server error:', message);
-    if (el.lobby && el.lobbyError && el.lobby.classList.contains('hidden') === false) el.lobbyError.textContent = message;
+    if (el.lobby && !el.lobby.classList.contains('hidden') && el.lobbyError) el.lobbyError.textContent = message;
     else if (el.home && el.homeError) el.homeError.textContent = message;
   });
 
@@ -125,7 +117,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // Auto‑join from URL ?room=CODE
+  // Auto‑join from URL
   (() => {
     const params = new URLSearchParams(window.location.search);
     const code = params.get('room');
@@ -140,17 +132,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Lobby
   function renderLobby(room) {
-    // Refresh element references in case DOM changed
-    el = getEl();
     const me = room.players.find(p => p.id === myPlayerId);
-    myTeam = me ? me.team : null;
-
     if (!me) return;
 
     // Team selection always visible
     if (el.teamSelect) {
       el.teamSelect.classList.remove('hidden');
       if (me.team === null) {
+        // Show dropdown
         el.teamSelect.innerHTML = '';
         const label = document.createElement('label');
         label.textContent = 'Choose Team:';
@@ -173,7 +162,7 @@ document.addEventListener('DOMContentLoaded', () => {
         el.teamSelect.appendChild(label);
         el.teamSelect.appendChild(select);
       } else {
-        // Already selected: show current + change button
+        // Show current team + Change button
         el.teamSelect.innerHTML = '';
         const cur = document.createElement('span');
         cur.style.color = COLORS[me.team] || '#fff';
@@ -190,25 +179,24 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
-    // Ready button
+    // Ready
     if (el.readyBtn) {
       el.readyBtn.textContent = me.ready ? 'Unready' : 'Ready';
       el.readyBtn.style.background = me.ready ? 'var(--success)' : '';
     }
 
     // Start button: host only, all ready
-    const isHostNow = me.isHost;
     const allReady = room.players.every(p => p.ready);
-    const shouldShow = isHostNow && room.players.length >= 2 && allReady;
+    const shouldShow = isHost && room.players.length >= 2 && allReady;
     if (el.startBtn) {
       el.startBtn.classList.toggle('hidden', !shouldShow);
-      if (isHostNow) {
+      if (isHost) {
         el.startBtn.textContent = allReady ? '▶ PLAY GAME' : `Waiting (${room.players.filter(p=>!p.ready).length} not ready)`;
         el.startBtn.disabled = !allReady;
       }
     }
 
-    // Player list with invites
+    // Player list with Invite buttons
     if (el.playerList) {
       el.playerList.innerHTML = '';
       room.players.forEach(p => {
@@ -267,7 +255,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
-    // Team color CSS
+    // Team colors
     let dyn = document.getElementById('dynamicTeamStyle');
     if (!dyn) { dyn = document.createElement('style'); dyn.id = 'dynamicTeamStyle'; document.head.appendChild(dyn); }
     let css = '';
@@ -369,6 +357,7 @@ document.addEventListener('DOMContentLoaded', () => {
     selectedCardIdx = null;
   }
 
+  // Globals
   window.isTwoEyedJack = c => c.rank==='J' && (c.suit==='♥'||c.suit==='♦');
   window.isOneEyedJack = c => c.rank==='J' && (c.suit==='♠'||c.suit==='♣');
 

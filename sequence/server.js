@@ -304,6 +304,10 @@ function detectSequencesForChip(room, r, c) {
       const key = line.map(p => `${p.r},${p.c}`).join('|');
       if (!room.sequences.includes(key)) {
         room.sequences.push(key);
+        // Lock all cells in this sequence
+        line.forEach(p => {
+          if (room.board[p.r][p.c]) room.board[p.r][p.c].locked = true;
+        });
         newSeqs.push(key);
       }
     }
@@ -506,6 +510,10 @@ io.on('connection', (socket) => {
         return;
       }
       const target = room.board[boardPos.r][boardPos.c];
+      if (target && target.locked) {
+        socket.emit('error', { message: 'Cannot remove chip from a completed sequence' });
+        return;
+      }
       if (!target) {
         socket.emit('error', { message: 'No chip at that position' });
         return;

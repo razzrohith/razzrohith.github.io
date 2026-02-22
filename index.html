@@ -1,33 +1,149 @@
-<!-- testing -->
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <title>Redirecting…</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <meta name="robots" content="noindex,nofollow" />
-    <script>
-    (function () {
-        const params = new URLSearchParams(location.search);
-
-        // Private preview: loads your real site in /site
-        if (params.has('preview')) {
-        location.replace('/site/index.html');
-        return;
-        }
-
-        // JS redirect (fast)
-        const target = location.origin + '/game.html';
-        location.replace(target);
-    })();
-    </script>
-
-    <!-- JS-disabled fallback (also origin-relative so it stays local in dev) -->
-    <meta http-equiv="refresh" content="0;url=/game.html" />
-
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Razzrohith - Games</title>
+  <style>
+    :root {
+      --bg: #0a0a0a;
+      --surface: #141414;
+      --surface-hover: #1a1a1a;
+      --primary: #3b82f6;
+      --primary-hover: #2563eb;
+      --accent: #8b5cf6;
+      --text: #f3f4f6;
+      --text-secondary: #9ca3af;
+      --border: #262626;
+      --radius: 20px;
+      --shadow: 0 20px 60px rgba(0,0,0,0.6);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: radial-gradient(ellipse at top, #1a1a2e 0%, var(--bg) 70%);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 20px;
+    }
+    header {
+      text-align: center;
+      margin-bottom: 60px;
+    }
+    h1 {
+      font-size: 3.5rem;
+      font-weight: 900;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 8px;
+      letter-spacing: -0.03em;
+    }
+    .subtitle {
+      color: var(--text-secondary);
+      font-size: 1.2rem;
+    }
+    .games {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 32px;
+      width: 100%;
+      max-width: 1200px;
+    }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 32px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+      box-shadow: var(--shadow);
+      text-decoration: none;
+      color: inherit;
+    }
+    .card:hover {
+      transform: translateY(-12px);
+      border-color: var(--primary);
+      box-shadow: 0 30px 80px rgba(59, 130, 246, 0.2);
+    }
+    .card-icon {
+      font-size: 5rem;
+      margin-bottom: 20px;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .card h2 {
+      font-size: 2rem;
+      margin-bottom: 12px;
+      color: var(--text);
+    }
+    .card p {
+      color: var(--text-secondary);
+      margin-bottom: 24px;
+      line-height: 1.6;
+    }
+    .btn {
+      padding: 12px 32px;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+      color: white;
+      border: none;
+      border-radius: var(--radius);
+      font-weight: 700;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: 0.2s;
+      box-shadow: 0 8px 20px rgba(59,130,246,0.25);
+    }
+    .btn:hover {
+      filter: brightness(1.1);
+      transform: scale(1.05);
+    }
+    .note {
+      margin-top: 60px;
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      text-align: center;
+      max-width: 600px;
+    }
+    @media (max-width: 768px) {
+      h1 { font-size: 2.5rem; }
+      .games { grid-template-columns: 1fr; }
+    }
+  </style>
 </head>
 <body>
-  <p>If you are not redirected, <a href="https://razzrohith.com/game.html">click here</a>.</p>
+  <header>
+    <h1>Razzrohith's Games</h1>
+    <p class="subtitle">A collection of fun multiplayer games</p>
+  </header>
+
+  <main class="games">
+    <a href="https://sequencegame-61fk.onrender.com/" class="card" target="_blank" rel="noopener">
+      <div class="card-icon">🃏</div>
+      <h2>Sequence</h2>
+      <p>Classic board game: form sequences of five chips, use wild corners and jacks strategically. Play with friends in real-time.</p>
+      <button class="btn">Play Sequence</button>
+    </a>
+
+    <a href="./snake/" class="card" id="snakeCard">
+      <div class="card-icon">🐍</div>
+      <h2>Snake</h2>
+      <p>Classic arcade snake game. Eat the food, grow longer, avoid hitting the walls or yourself. More details coming soon.</p>
+      <button class="btn">Play Snake</button>
+    </a>
+  </main>
+
+  <p class="note">
+    Note: The Snake game link is a placeholder. Replace <code>./snake/</code> with the actual Snake game URL when deployed.
+  </p>
 </body>
 </html>

@@ -1,79 +1,70 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Sequence Game</title>
-  <link rel="stylesheet" href="style.css" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sequence Board Game</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="app">
-    <!-- Home Screen -->
-    <div id="home" class="screen">
-      <h1>Sequence</h1>
-      <p class="subtitle">Multiplayer Board Game</p>
-      <div class="actions">
-        <button id="createBtn" class="btn primary">Create Room</button>
-        <div class="divider">or</div>
-        <input type="text" id="roomInput" placeholder="Enter room code" maxlength="6" />
-        <button id="joinBtn" class="btn">Join Room</button>
-      </div>
-      <p id="homeError" class="error"></p>
-    </div>
-
-    <!-- Lobby Screen -->
-    <div id="lobby" class="screen hidden">
-      <h2>Lobby</h2>
-      <p class="room-code">Room Code: <span id="roomCode"></span> <button id="copyBtn" class="small">Copy</button></p>
-      <div class="player-list" id="playerList"></div>
-      <div class="lobby-controls">
-        <div id="teamSelect" class="team-select hidden">
-          <label>Your Team:</label>
-          <select id="teamInput"></select>
-        </div>
-        <button id="readyBtn" class="btn">Ready</button>
-        <button id="startBtn" class="btn primary hidden">Start Game</button>
-      </div>
-      <p id="lobbyError" class="error"></p>
-      <button id="leaveLobbyBtn" class="btn small danger">Leave</button>
-    </div>
-
-    <!-- Game Board Screen -->
-    <div id="game" class="screen hidden">
-      <div class="game-header">
-        <div class="turn-indicator">
-          Turn: <span id="currentPlayer">-</span>
-        </div>
-        <div class="sequences-win">
-          Sequences needed: <span id="winCount">-</span>
-        </div>
-        <button id="leaveGameBtn" class="btn small danger">Leave</button>
-      </div>
-
-      <div class="board-container">
-        <div id="board" class="board"></div>
-      </div>
-
-      <div class="hand-area">
-        <h3>Your Hand</h3>
-        <div id="hand" class="hand"></div>
-      </div>
-    </div>
-
-    <!-- End Screen -->
-    <div id="end" class="screen hidden overlay">
-      <div class="modal">
-        <h2 id="winnerText">Winner</h2>
-        <p id="winnerSubtext"></p>
-        <div class="modal-actions">
-          <button id="playAgainBtn" class="btn primary">Play Again</button>
-          <button id="backLobbyBtn" class="btn">Back to Lobby</button>
-        </div>
-      </div>
+  <!-- Home / Lobby Selection -->
+  <div id="home" class="screen active">
+    <h1>Sequence</h1>
+    <div id="homeError" class="error"></div>
+    <button id="createBtn">Create Room</button>
+    <div class="join">
+      <input type="text" id="roomInput" placeholder="Room code" maxlength="4">
+      <input type="text" id="nameInput" placeholder="Your name">
+      <button id="joinBtn">Join</button>
     </div>
   </div>
 
-  <script src="/socket.io/socket.io.js"></script>
-  <script src="client.js"></script>
+  <!-- Lobby screen -->
+  <div id="lobby" class="screen">
+    <h2>Lobby</h2>
+    <p>Room: <span id="roomCode"></span>
+    <button id="copyBtn">Copy Code</button>
+    <span id="copyMsg" class="msg"></span></p>
+    <div id="playerList" class="list"></div>
+    <div class="controls">
+      <select id="teamSelect">
+        <option value="default">Choose team</option>
+        <option value="red">Red</option>
+        <option value="blue">Blue</option>
+        <option value="green">Green</option>
+        <option value="yellow">Yellow</option>
+        <option value="purple">Purple</option>
+        <option value="orange">Orange</option>
+        <option value="black">Black</option>
+        <option value="pink">Pink</option>
+        <option value="cyan">Cyan</option>
+        <option value="lime">Lime</option>
+      </select>
+      <button id="readyBtn">Ready</button>
+      <button id="startBtn" class="hidden">Start Game</button>
+    </div>
+    <div id="lobbyError" class="error"></div>
+    <button id="leaveLobbyBtn">Leave</button>
+  </div>
+
+  <!-- Game screen -->
+  <div id="game" class="screen">
+    <div id="statusBar">
+      <span id="currentPlayer"></span>
+      <span id="winCount"></span>
+      <button id="leaveGameBtn">Leave</button>
+    </div>
+    <div id="board"></div>
+    <div id="hand"></div>
+  </div>
+
+  <!-- End screen -->
+  <div id="end" class="screen">
+    <h2>Game Over</h2>
+    <p id="winnerText"></p>
+    <p id="winnerSubtext"></p>
+    <button id="playAgainBtn">Play Again</button>
+    <button id="backLobbyBtn">Back to Lobby</button>
+  </div>
 </body>
 </html>

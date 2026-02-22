@@ -1,7 +1,7 @@
 {
-  "name": "sequence-game",
+  "name": "sequence",
   "version": "1.0.0",
-  "description": "Multiplayer Sequence board game",
+  "description": "Sequence board game",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
@@ -9,7 +9,6 @@
   },
   "dependencies": {
     "express": "^4.19.2",
-    "socket.io": "^4.7.2",
-    "uuid": "^9.0.0"
+    "socket.io": "^4.7.2"
   }
 }

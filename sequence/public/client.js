@@ -317,23 +317,63 @@ socket.on('connect', () => {
   if (urlRoom) {
     el.roomInput.value = urlRoom;
   }
+  // Offer rejoin if a saved session exists
+  const saved = JSON.parse(localStorage.getItem('seqSession') || 'null');
+  if (saved) {
+    const rejoinSec = document.getElementById('rejoinSection');
+    if (rejoinSec) {
+      rejoinSec.style.display = 'block';
+      rejoinSec.querySelector('p').textContent = `You were in room ${saved.roomId} as "${saved.name}". Rejoin?`;
+    }
+  }
 });
+
+// Rejoin buttons
+const rejoinBtn = document.getElementById('rejoinBtn');
+const dismissRejoin = document.getElementById('dismissRejoin');
+if (rejoinBtn) {
+  rejoinBtn.onclick = () => {
+    const saved = JSON.parse(localStorage.getItem('seqSession') || 'null');
+    if (!saved) return;
+    el.nameInput.value = saved.name;
+    socket.emit('rejoinRoom', { roomId: saved.roomId, name: saved.name });
+  };
+}
+if (dismissRejoin) {
+  dismissRejoin.onclick = () => {
+    localStorage.removeItem('seqSession');
+    document.getElementById('rejoinSection').style.display = 'none';
+  };
+}
 
 socket.on('roomCreated', ({ roomId: id, room }) => {
   roomId = id;
+  myPlayer = room.players.find(p => p.id === socket.id);
+  if (myPlayer) localStorage.setItem('seqSession', JSON.stringify({ roomId: id, name: myPlayer.name }));
   showScreen('lobby');
   renderLobby(room);
 });
 
 socket.on('joinedRoom', ({ roomId: id, room }) => {
   roomId = id;
-  showScreen('lobby');
-  renderLobby(room);
+  myPlayer = room.players.find(p => p.id === socket.id);
+  if (myPlayer) localStorage.setItem('seqSession', JSON.stringify({ roomId: id, name: myPlayer.name }));
+  if (room.gameStarted) {
+    showScreen('game');
+    renderGame(room);
+  } else {
+    showScreen('lobby');
+    renderLobby(room);
+  }
 });
 
 socket.on('roomUpdate', (room) => {
   // Refresh myPlayer reference
   myPlayer = room.players.find(p => p.id === socket.id);
+
+  // Handle pause overlay
+  const overlay = document.getElementById('pauseOverlay');
+  if (overlay) overlay.style.display = room.paused ? 'flex' : 'none';
 
   // Enforce Synchronization
   if (room.gameStarted) {
@@ -346,16 +386,31 @@ socket.on('roomUpdate', (room) => {
   }
 });
 
+socket.on('playerDisconnected', ({ playerName, room }) => {
+  const overlay = document.getElementById('pauseOverlay');
+  if (overlay) {
+    overlay.style.display = 'flex';
+    const msg = document.getElementById('pauseMessage');
+    if (msg) msg.textContent = `"${playerName}" disconnected. Game paused. Waiting for them to rejoin...`;
+  }
+  if (room) {
+    myPlayer = room.players.find(p => p.id === socket.id);
+    renderGame(room);
+  }
+});
+
 socket.on('gameStarted', ({ roomId: id }) => {
   roomId = id;
   showScreen('game');
 });
 
 socket.on('gameOver', ({ winner }) => {
+  localStorage.removeItem('seqSession');
   el.winnerText.textContent = `${winner} wins!`;
   el.winnerSubtext.textContent = 'Congratulations!';
   showScreen('end');
 });
+
 
 socket.on('error', ({ message }) => {
   // Determine which screen currently active

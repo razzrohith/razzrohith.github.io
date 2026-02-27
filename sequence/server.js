@@ -150,7 +150,8 @@ function serializeRoom(room) {
       team: p.team,
       ready: p.ready,
       cards: p.cards,
-      isHost: p.id === room.hostId
+      isHost: p.id === room.hostId,
+      connected: (p.socketIds && p.socketIds.length > 0)
     })),
     board: room.board.map(row => row.map(cell => cell ? { color: cell.color, locked: cell.locked } : null)),
     turnIndex: room.turnIndex,
@@ -158,7 +159,8 @@ function serializeRoom(room) {
     sequences: room.sequences,
     winner: room.winner,
     gameStarted: room.gameStarted,
-    cardPositions: room.cardPositions
+    cardPositions: room.cardPositions,
+    paused: room.paused || false
   };
 }
 
@@ -372,6 +374,33 @@ io.on('connection', (socket) => {
       socket.emit('error', { message: 'Failed to join room' });
     }
   });
+  // ─── Rejoin a game in progress ───────────────────────────
+  socket.on('rejoinRoom', async ({ roomId, name }) => {
+    try {
+      const room = await Room.findOne({ id: roomId });
+      if (!room) {
+        socket.emit('error', { message: 'Room not found' });
+        return;
+      }
+      const existing = room.players.find(p => p.name === name);
+      if (!existing) {
+        socket.emit('error', { message: 'Player not found in room – try joining as a new player' });
+        return;
+      }
+      // Update socket
+      existing.socketIds.push(socket.id);
+      // Unpause the game
+      room.paused = false;
+      room.markModified('players');
+      await room.save();
+      socket.join(room.id);
+      socket.emit('joinedRoom', { roomId: room.id, room: serializeRoom(room) });
+      await broadcastToRoom(room.id, 'roomUpdate', serializeRoom(room));
+    } catch (err) {
+      console.error(err);
+      socket.emit('error', { message: 'Failed to rejoin room' });
+    }
+  });
 
 
   socket.on('toggleReady', async ({ roomId }) => {
@@ -412,6 +441,10 @@ io.on('connection', (socket) => {
     const room = await Room.findOne({ id: roomId });
     if (!room || !room.gameStarted) {
       socket.emit('error', { message: 'Game not in progress' });
+      return;
+    }
+    if (room.paused) {
+      socket.emit('error', { message: 'Game is paused – waiting for a player to reconnect' });
       return;
     }
     const player = room.players.find(p => p.id === socket.id);
@@ -600,10 +633,23 @@ io.on('connection', (socket) => {
           // If game started, just remove the socket connection
           const player = room.players[idx];
           player.socketIds = player.socketIds.filter(id => id !== socket.id);
+
           // If no active sockets left across ALL players in a started game, nuke it
           const anyActive = room.players.some(p => p.socketIds && p.socketIds.length > 0);
           if (!anyActive) {
             await Room.deleteOne({ id: room.id });
+            continue;
+          }
+
+          // Player has no remaining sockets - pause game and notify others
+          if (player.socketIds.length === 0) {
+            room.paused = true;
+            room.markModified('players');
+            await room.save();
+            await broadcastToRoom(room.id, 'playerDisconnected', {
+              playerName: player.name,
+              room: serializeRoom(room)
+            });
             continue;
           }
         }

@@ -1,149 +1,533 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Razzrohith - Games</title>
+  <title>Razzrohith's Games</title>
+  <meta name="description" content="Play Snake and Sequence online – fun multiplayer games by Razzrohith.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;700;900&display=swap" rel="stylesheet">
   <style>
-    :root {
-      --bg: #0a0a0a;
-      --surface: #141414;
-      --surface-hover: #1a1a1a;
-      --primary: #3b82f6;
-      --primary-hover: #2563eb;
-      --accent: #8b5cf6;
-      --text: #f3f4f6;
-      --text-secondary: #9ca3af;
-      --border: #262626;
-      --radius: 20px;
-      --shadow: 0 20px 60px rgba(0,0,0,0.6);
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
     }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #06060f;
+      --primary: #6c63ff;
+      --accent: #ff6584;
+      --gold: #f5c518;
+      --text: #f0f0ff;
+      --muted: #9090b0;
+      --card-bg: rgba(255, 255, 255, 0.04);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --radius: 24px;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
     body {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: radial-gradient(ellipse at top, #1a1a2e 0%, var(--bg) 70%);
+      font-family: 'Outfit', sans-serif;
+      background: var(--bg);
       color: var(--text);
       min-height: 100vh;
+      overflow-x: hidden;
+      cursor: none;
+    }
+
+    /* ── Custom Cursor ── */
+    #cursor {
+      position: fixed;
+      width: 14px;
+      height: 14px;
+      background: var(--primary);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 9999;
+      transform: translate(-50%, -50%);
+      transition: width .15s, height .15s, background .15s, opacity .15s;
+      mix-blend-mode: screen;
+    }
+
+    #cursor-ring {
+      position: fixed;
+      width: 40px;
+      height: 40px;
+      border: 2px solid rgba(108, 99, 255, 0.5);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 9998;
+      transform: translate(-50%, -50%);
+      transition: width .3s, height .3s, border-color .3s;
+    }
+
+    body:has(a:hover) #cursor {
+      width: 22px;
+      height: 22px;
+      background: var(--accent);
+    }
+
+    body:has(a:hover) #cursor-ring {
+      width: 56px;
+      height: 56px;
+      border-color: var(--accent);
+    }
+
+    /* ── Canvas stars ── */
+    #stars-canvas {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      opacity: .6;
+    }
+
+    /* ── Layout ── */
+    .page {
+      position: relative;
+      z-index: 1;
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 40px 20px;
+      padding: 60px 24px 80px;
+      min-height: 100vh;
     }
-    header {
+
+    /* ── Hero ── */
+    .hero {
       text-align: center;
-      margin-bottom: 60px;
+      margin-bottom: 72px;
     }
-    h1 {
-      font-size: 3.5rem;
+
+    .hero-badge {
+      display: inline-block;
+      padding: 6px 18px;
+      border-radius: 999px;
+      border: 1px solid rgba(108, 99, 255, .4);
+      background: rgba(108, 99, 255, .1);
+      color: var(--primary);
+      font-size: .85rem;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      margin-bottom: 24px;
+      animation: fadeInDown .6s ease both;
+    }
+
+    .hero h1 {
+      font-size: clamp(2.8rem, 7vw, 5.5rem);
       font-weight: 900;
-      background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+      line-height: 1.05;
+      letter-spacing: -.03em;
+      background: linear-gradient(135deg, #ffffff 0%, var(--primary) 50%, var(--accent) 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
-      margin-bottom: 8px;
-      letter-spacing: -0.03em;
+      animation: fadeInDown .7s .1s ease both;
     }
-    .subtitle {
-      color: var(--text-secondary);
-      font-size: 1.2rem;
+
+    .hero-sub {
+      margin-top: 18px;
+      color: var(--muted);
+      font-size: 1.18rem;
+      font-weight: 300;
+      animation: fadeInDown .7s .2s ease both;
     }
+
+    /* ── Floating blobs ── */
+    .blob {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: .18;
+      pointer-events: none;
+      animation: blobFloat 10s ease-in-out infinite;
+    }
+
+    .blob1 {
+      width: 500px;
+      height: 500px;
+      background: var(--primary);
+      top: -120px;
+      left: -150px;
+      animation-delay: 0s;
+    }
+
+    .blob2 {
+      width: 400px;
+      height: 400px;
+      background: var(--accent);
+      bottom: -100px;
+      right: -100px;
+      animation-delay: 4s;
+    }
+
+    .blob3 {
+      width: 300px;
+      height: 300px;
+      background: var(--gold);
+      top: 40%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      animation-delay: 2s;
+    }
+
+    /* ── Cards grid ── */
     .games {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-      gap: 32px;
+      gap: 28px;
       width: 100%;
-      max-width: 1200px;
+      max-width: 960px;
     }
+
     .card {
-      background: var(--surface);
-      border: 1px solid var(--border);
+      position: relative;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
       border-radius: var(--radius);
-      padding: 32px;
+      padding: 40px 32px;
       display: flex;
       flex-direction: column;
       align-items: center;
       text-align: center;
-      transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
-      box-shadow: var(--shadow);
       text-decoration: none;
       color: inherit;
+      overflow: hidden;
+      backdrop-filter: blur(12px);
+      transition: transform .35s cubic-bezier(.22, 1, .36, 1), box-shadow .35s, border-color .35s;
+      animation: fadeInUp .6s ease both;
     }
+
+    .card:nth-child(2) {
+      animation-delay: .12s;
+    }
+
+    /* glowing top line on hover */
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--primary), transparent);
+      transform: scaleX(0);
+      transition: transform .4s ease;
+    }
+
+    .card:hover::before {
+      transform: scaleX(1);
+    }
+
+    /* shimmer */
+    .card::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(255, 255, 255, .04) 0%, transparent 60%);
+      opacity: 0;
+      transition: opacity .4s;
+    }
+
+    .card:hover::after {
+      opacity: 1;
+    }
+
     .card:hover {
-      transform: translateY(-12px);
-      border-color: var(--primary);
-      box-shadow: 0 30px 80px rgba(59, 130, 246, 0.2);
+      transform: translateY(-14px) scale(1.01);
+      border-color: rgba(108, 99, 255, .45);
+      box-shadow: 0 32px 80px rgba(108, 99, 255, .22), 0 0 0 1px rgba(108, 99, 255, .1);
     }
+
     .card-icon {
       font-size: 5rem;
       margin-bottom: 20px;
-      background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
+      transform: rotate(-3deg);
+      display: block;
+      filter: drop-shadow(0 0 16px rgba(108, 99, 255, .5));
+      transition: transform .4s, filter .4s;
     }
+
+    .card:hover .card-icon {
+      transform: rotate(3deg) scale(1.12);
+      filter: drop-shadow(0 0 28px rgba(255, 101, 132, .7));
+    }
+
     .card h2 {
       font-size: 2rem;
-      margin-bottom: 12px;
-      color: var(--text);
+      font-weight: 900;
+      margin-bottom: 10px;
+      letter-spacing: -.02em;
     }
+
     .card p {
-      color: var(--text-secondary);
-      margin-bottom: 24px;
-      line-height: 1.6;
+      color: var(--muted);
+      font-size: 1rem;
+      line-height: 1.65;
+      margin-bottom: 28px;
     }
+
+    /* tag chips */
+    .tags {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-bottom: 28px;
+    }
+
+    .tag {
+      padding: 4px 12px;
+      border-radius: 999px;
+      background: rgba(108, 99, 255, .15);
+      border: 1px solid rgba(108, 99, 255, .3);
+      font-size: .75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      color: #a89fff;
+    }
+
     .btn {
-      padding: 12px 32px;
+      position: relative;
+      padding: 14px 36px;
       background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
       color: white;
       border: none;
-      border-radius: var(--radius);
+      border-radius: 999px;
+      font-family: inherit;
       font-weight: 700;
       font-size: 1rem;
-      cursor: pointer;
-      transition: 0.2s;
-      box-shadow: 0 8px 20px rgba(59,130,246,0.25);
+      cursor: none;
+      overflow: hidden;
+      transition: transform .2s, box-shadow .2s;
+      box-shadow: 0 8px 24px rgba(108, 99, 255, .35);
     }
+
+    .btn::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(255, 255, 255, .15), transparent);
+    }
+
     .btn:hover {
-      filter: brightness(1.1);
       transform: scale(1.05);
+      box-shadow: 0 12px 32px rgba(108, 99, 255, .5);
     }
-    .note {
-      margin-top: 60px;
-      color: var(--text-secondary);
-      font-size: 0.9rem;
+
+    /* Card-specific accent colors */
+    .card.sequence:hover {
+      box-shadow: 0 32px 80px rgba(245, 197, 24, .18), 0 0 0 1px rgba(245, 197, 24, .15);
+      border-color: rgba(245, 197, 24, .4);
+    }
+
+    .card.sequence::before {
+      background: linear-gradient(90deg, transparent, var(--gold), transparent);
+    }
+
+    .card.sequence:hover .card-icon {
+      filter: drop-shadow(0 0 28px #f5c518aa);
+    }
+
+    .card.sequence .tag {
+      background: rgba(245, 197, 24, .12);
+      border-color: rgba(245, 197, 24, .3);
+      color: #f5e07a;
+    }
+
+    .card.sequence .btn {
+      background: linear-gradient(135deg, #b8860b, var(--gold));
+      box-shadow: 0 8px 24px rgba(245, 197, 24, .3);
+    }
+
+    /* ── Footer ── */
+    footer {
+      margin-top: 72px;
       text-align: center;
-      max-width: 600px;
+      color: var(--muted);
+      font-size: .9rem;
     }
-    @media (max-width: 768px) {
-      h1 { font-size: 2.5rem; }
-      .games { grid-template-columns: 1fr; }
+
+    /* ── Animations ── */
+    @keyframes fadeInDown {
+      from {
+        opacity: 0;
+        transform: translateY(-22px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes blobFloat {
+
+      0%,
+      100% {
+        transform: translateY(0) scale(1);
+      }
+
+      50% {
+        transform: translateY(-30px) scale(1.06);
+      }
+    }
+
+    @media (max-width: 600px) {
+      body {
+        cursor: auto;
+      }
+
+      #cursor,
+      #cursor-ring {
+        display: none;
+      }
+
+      .games {
+        grid-template-columns: 1fr;
+      }
+
+      .hero h1 {
+        font-size: 2.5rem;
+      }
     }
   </style>
 </head>
+
 <body>
-  <header>
-    <h1>Razzrohith's Games</h1>
-    <p class="subtitle">A collection of fun multiplayer games</p>
-  </header>
+  <!-- Custom cursors -->
+  <div id="cursor"></div>
+  <div id="cursor-ring"></div>
 
-  <main class="games">
-    <a href="https://sequencegame-61fk.onrender.com/" class="card" target="_blank" rel="noopener">
-      <div class="card-icon">🃏</div>
-      <h2>Sequence</h2>
-      <p>Classic board game: form sequences of five chips, use wild corners and jacks strategically. Play with friends in real-time.</p>
-      <button class="btn">Play Sequence</button>
-    </a>
+  <!-- Floating colour blobs -->
+  <div class="blob blob1"></div>
+  <div class="blob blob2"></div>
+  <div class="blob blob3"></div>
 
-    <a href="./snake/" class="card" id="snakeCard">
-      <div class="card-icon">🐍</div>
-      <h2>Snake</h2>
-      <p>Classic arcade snake game. Eat the food, grow longer, avoid hitting the walls or yourself. More details coming soon.</p>
-      <button class="btn">Play Snake</button>
-    </a>
-  </main>
+  <!-- Particle star canvas -->
+  <canvas id="stars-canvas"></canvas>
 
-  <p class="note">
-    Note: The Snake game link is a placeholder. Replace <code>./snake/</code> with the actual Snake game URL when deployed.
-  </p>
+  <div class="page">
+    <!-- Hero -->
+    <header class="hero">
+      <span class="hero-badge">🎮 Game Hub</span>
+      <h1>Razzrohith's<br>Games</h1>
+      <p class="hero-sub">Pick a game, invite your friends &amp; start playing instantly.</p>
+    </header>
+
+    <!-- Game Cards -->
+    <main class="games">
+      <a href="https://sequencegame-61fk.onrender.com/" class="card sequence" target="_blank" rel="noopener"
+        id="sequenceCard">
+        <span class="card-icon">🃏</span>
+        <h2>Sequence</h2>
+        <p>Form rows of five chips on the board while blocking your opponents. Use Jacks as wild cards.</p>
+        <div class="tags">
+          <span class="tag">Multiplayer</span>
+          <span class="tag">Strategy</span>
+          <span class="tag">Mobile-Friendly</span>
+        </div>
+        <button class="btn">Play Sequence →</button>
+      </a>
+
+      <a href="./snake/" class="card" id="snakeCard">
+        <span class="card-icon">🐍</span>
+        <h2>Snake</h2>
+        <p>Classic arcade snake. Eat the food, grow longer, avoid the walls and your own tail.</p>
+        <div class="tags">
+          <span class="tag">Arcade</span>
+          <span class="tag">Solo</span>
+          <span class="tag">High Score</span>
+        </div>
+        <button class="btn">Play Snake →</button>
+      </a>
+    </main>
+
+    <footer>
+      <p>Made with ❤️ by Razzrohith &nbsp;|&nbsp; <a href="https://github.com/razzrohith"
+          style="color:var(--primary);text-decoration:none">GitHub</a></p>
+    </footer>
+  </div>
+
+  <script>
+    // ── Custom cursor ──
+    const cursor = document.getElementById('cursor');
+    const ring = document.getElementById('cursor-ring');
+    let mx = 0, my = 0, rx = 0, ry = 0;
+    document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
+    function animCursor() {
+      cursor.style.left = mx + 'px'; cursor.style.top = my + 'px';
+      rx += (mx - rx) * 0.12;
+      ry += (my - ry) * 0.12;
+      ring.style.left = rx + 'px'; ring.style.top = ry + 'px';
+      requestAnimationFrame(animCursor);
+    }
+    animCursor();
+
+    // ── Star particle canvas ──
+    const canvas = document.getElementById('stars-canvas');
+    const ctx = canvas.getContext('2d');
+    let stars = [];
+    function resize() { canvas.width = innerWidth; canvas.height = innerHeight; }
+    resize();
+    window.addEventListener('resize', resize);
+    function makeStar() {
+      return {
+        x: Math.random() * canvas.width, y: Math.random() * canvas.height,
+        r: Math.random() * 1.4 + .3, a: Math.random(), da: (Math.random() - .5) * .006,
+        dx: (Math.random() - .5) * .15, dy: (Math.random() - .5) * .15
+      };
+    }
+    for (let i = 0; i < 180; i++) stars.push(makeStar());
+    function drawStars() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      for (const s of stars) {
+        s.a += s.da; if (s.a <= 0 || s.a >= 1) s.da *= -1;
+        s.x += s.dx; s.y += s.dy;
+        if (s.x < 0) s.x = canvas.width; if (s.x > canvas.width) s.x = 0;
+        if (s.y < 0) s.y = canvas.height; if (s.y > canvas.height) s.y = 0;
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(160,140,255,${s.a})`;
+        ctx.fill();
+      }
+      requestAnimationFrame(drawStars);
+    }
+    drawStars();
+
+    // ── Mouse-move card tilt ──
+    document.querySelectorAll('.card').forEach(card => {
+      card.addEventListener('mousemove', e => {
+        const r = card.getBoundingClientRect();
+        const x = (e.clientX - r.left) / r.width - .5;
+        const y = (e.clientY - r.top) / r.height - .5;
+        card.style.transform = `translateY(-14px) scale(1.01) rotateX(${-y * 8}deg) rotateY(${x * 8}deg)`;
+      });
+      card.addEventListener('mouseleave', () => {
+        card.style.transform = '';
+      });
+    });
+  </script>
 </body>
+
 </html>

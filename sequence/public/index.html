@@ -6,6 +6,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sequence Board Game</title>
   <link rel="stylesheet" href="style.css">
+  <!-- Anime.js for smooth animations -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+  <!-- Canvas Confetti for sequence celebrations -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
 </head>
 
 <body>
@@ -95,7 +99,10 @@
     </div>
 
     <div class="board-container">
-      <div id="board"></div>
+      <div class="board-frame">
+        <div class="board-title">✦ &nbsp; S E Q U E N C E &nbsp; ✦</div>
+        <div id="board"></div>
+      </div>
     </div>
 
     <div class="hand-container">

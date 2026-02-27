@@ -2,6 +2,8 @@ const socket = io();
 let roomId = null;
 let myPlayer = null;
 let selectedCardIdx = null;
+let lastPlacedPos = null;  // track most recently placed chip {r,c}
+let prevSequenceCount = 0; // detect new sequences for confetti
 
 const screens = {
   home: document.getElementById('home'),
@@ -86,68 +88,110 @@ function renderLobby(room) {
   }
 }
 
+// Chip colour → image filename mapping
+const CHIP_IMAGES = {
+  red: 'chip_red.png',
+  blue: 'chip_blue.png',
+  green: 'chip_green.png',
+  yellow: 'chip_red.png',
+  purple: 'chip_blue.png',
+  orange: 'chip_red.png',
+  black: 'chip_green.png',
+  pink: 'chip_red.png',
+  cyan: 'chip_blue.png',
+  lime: 'chip_green.png',
+};
+
 function renderBoard(room) {
   el.board.innerHTML = '';
   for (let r = 0; r < 10; r++) {
     for (let c = 0; c < 10; c++) {
       const cell = document.createElement('div');
       cell.className = 'cell';
+
       if (isCorner(r, c)) {
         cell.classList.add('wild');
       } else {
-        const picture = room.cardPositions[r][c];
+        const picture = room.cardPositions[r][c];  // e.g. "K♥"
         if (picture) {
-          const mini = document.createElement('span');
-          mini.className = 'cardMini';
-          mini.textContent = picture;
+          const rank = picture.slice(0, -1);
+          const suit = picture.slice(-1);
+          const isRed = suit === '♥' || suit === '♦';
+          const colorClass = isRed ? ' red' : '';
 
-          if (picture.includes('♥') || picture.includes('♦')) {
-            mini.classList.add('red-suit');
-            mini.style.color = '#dc2626';
+          // Rank label top-left
+          const tlEl = document.createElement('span');
+          tlEl.className = 'rank-tl' + colorClass;
+          tlEl.textContent = rank + suit;
+          cell.appendChild(tlEl);
+
+          // Rank label bottom-right (rotated)
+          const brEl = document.createElement('span');
+          brEl.className = 'rank-br' + colorClass;
+          brEl.textContent = rank + suit;
+          cell.appendChild(brEl);
+
+          // Face card image for K and Q
+          if (rank === 'K') {
+            const img = document.createElement('img');
+            img.src = 'king_face.png';
+            img.alt = 'K'; img.className = 'face-img';
+            cell.appendChild(img);
+          } else if (rank === 'Q') {
+            const img = document.createElement('img');
+            img.src = 'queen_face.png';
+            img.alt = 'Q'; img.className = 'face-img';
+            cell.appendChild(img);
           } else {
-            mini.style.color = '#1f2937';
+            // Suit pips in centre
+            const mini = document.createElement('span');
+            mini.className = 'cardMini' + (isRed ? ' red-suit' : '');
+            mini.textContent = suit;
+            cell.appendChild(mini);
           }
-
-          cell.appendChild(mini);
         }
       }
 
+      // Chip / coin
       const chip = room.board[r][c];
+      const isMyTurn = myPlayer && room.players[room.turnIndex]?.id === socket.id;
+      const selCard = (isMyTurn && selectedCardIdx !== null) ? myPlayer?.cards[selectedCardIdx] : null;
+
       if (chip) {
-        const chipEl = document.createElement('div');
-        chipEl.style.backgroundColor = chip.color;
-        chipEl.className = 'chip';
-        if (chip.color && !chip.color.startsWith('#')) chipEl.classList.add(chip.color);
-        if (chip.locked) chipEl.classList.add('locked');
-        cell.appendChild(chipEl);
+        const chipImg = document.createElement('img');
+        // Pick chip image by team colour
+        const teamColor = chip.color;
+        chipImg.src = CHIP_IMAGES[teamColor] || 'chip_blue.png';
+        chipImg.style.width = '30px'; chipImg.style.height = '30px';
+        chipImg.className = 'chip';
+        if (chip.locked) chipImg.classList.add('locked');
+
+        // Recent chip glow
+        if (lastPlacedPos && lastPlacedPos.r === r && lastPlacedPos.c === c) {
+          chipImg.classList.add('recent');
+        }
+        cell.appendChild(chipImg);
 
         // One-eyed Jack can remove unprotected enemy chips
-        if (myPlayer && room.players[room.turnIndex]?.id === socket.id && selectedCardIdx !== null) {
-          const selCard = myPlayer.cards[selectedCardIdx];
-          if (selCard && isOneEyedJack(selCard) && chip.color !== myPlayer.team && !chip.locked) {
-            cell.style.cursor = 'pointer';
-            cell.title = 'Remove this chip';
-          }
+        if (selCard && isOneEyedJack(selCard) && chip.color !== myPlayer.team && !chip.locked) {
+          cell.style.cursor = 'pointer'; cell.title = 'Remove this chip';
         }
       } else {
-        // Cursor hints based on selected card type
-        if (myPlayer && room.players[room.turnIndex]?.id === socket.id && selectedCardIdx !== null) {
-          const selCard = myPlayer.cards[selectedCardIdx];
-          if (selCard) {
-            if (isTwoEyedJack(selCard)) {
-              if (!isCorner(r, c)) { cell.style.cursor = 'pointer'; cell.title = 'Place chip here (wild)'; }
-            } else {
-              cell.style.cursor = 'pointer';
-            }
+        if (selCard) {
+          if (isTwoEyedJack(selCard)) {
+            if (!isCorner(r, c)) { cell.style.cursor = 'pointer'; cell.title = 'Place chip here (wild)'; }
+          } else {
+            cell.style.cursor = 'pointer';
           }
         }
       }
-      cell.dataset.r = r;
-      cell.dataset.c = c;
+
+      cell.dataset.r = r; cell.dataset.c = c;
       el.board.appendChild(cell);
     }
   }
 }
+
 
 function renderHand(room) {
   el.hand.innerHTML = '';
@@ -189,10 +233,8 @@ function renderHand(room) {
 
 function updateTurn(room) {
   const current = room.players[room.turnIndex];
-
   const currentPlayerSpan = document.getElementById('currentPlayer');
-  const recentCardContainer = document.getElementById('recentCardContainer');
-  const lastPlayedCardDiv = document.getElementById('lastPlayedCard');
+  const handContainer = document.querySelector('.hand-container');
 
   if (current) {
     currentPlayerSpan.textContent = `Turn: ${current.name}`;
@@ -200,34 +242,15 @@ function updateTurn(room) {
     currentPlayerSpan.textContent = 'Waiting for players...';
   }
 
-  if (room.discardPile && room.discardPile.length > 0) {
-    const topCard = room.discardPile[room.discardPile.length - 1];
+  // Glow hand container only when it is MY turn
+  const isMyTurn = myPlayer && current && current.id === socket.id;
+  if (handContainer) {
+    handContainer.classList.toggle('my-turn', isMyTurn);
+  }
 
-    let suitHtml = topCard.suit || '';
-    let rankHtml = topCard.rank || '';
-
-    if (isTwoEyedJack(topCard)) {
-      suitHtml = '👁️👁️';
-      rankHtml = '<span style="font-size: 0.6rem; letter-spacing: 0;">WILD</span>';
-    } else if (isOneEyedJack(topCard)) {
-      suitHtml = '👁️';
-      rankHtml = '<span style="font-size: 0.6rem; letter-spacing: 0;">REMOVE</span>';
-    }
-
-    const suitClass = (topCard.suit === '♥' || topCard.suit === '♦') ? 'red' : '';
-
-    lastPlayedCardDiv.innerHTML = `
-      <div class="card ${suitClass}" style="transform: scale(0.6); pointer-events: none; margin: 0; box-shadow: 0 4px 10px rgba(0,0,0,0.8);">
-        <div class="suit">${suitHtml}</div>
-        <div class="rank">${rankHtml}</div>
-      </div>
-    `;
-    lastPlayedCardDiv.style.opacity = '1';
-    recentCardContainer.querySelector('span').textContent = "Last Played";
-  } else {
-    lastPlayedCardDiv.innerHTML = '';
-    lastPlayedCardDiv.style.opacity = '0.5';
-    recentCardContainer.querySelector('span').textContent = "Discard Empty";
+  // Animate turn indicator with Anime.js if available
+  if (typeof anime !== 'undefined') {
+    anime({ targets: '#currentPlayer', scale: [0.85, 1], opacity: [0.4, 1], duration: 500, easing: 'easeOutElastic(1,.8)' });
   }
 }
 
@@ -241,12 +264,26 @@ function updateWinCount(room) {
   el.winCount.textContent = parts.join(' | ');
 }
 
+function fireConfetti(origin = 0.5) {
+  if (typeof confetti === 'undefined') return;
+  confetti({ particleCount: 120, angle: 60, spread: 70, origin: { x: origin - 0.15, y: 0.6 } });
+  confetti({ particleCount: 120, angle: 120, spread: 70, origin: { x: origin + 0.15, y: 0.6 } });
+}
+
 function renderGame(room) {
   renderBoard(room);
   renderHand(room);
   updateTurn(room);
   updateWinCount(room);
+
+  // Fire confetti when a new sequence is detected
+  const seqCount = (room.sequences || []).length;
+  if (seqCount > prevSequenceCount) {
+    fireConfetti(0.5);
+    prevSequenceCount = seqCount;
+  }
 }
+
 
 // --- Event Listeners ---
 el.createBtn.onclick = () => {
@@ -324,7 +361,9 @@ el.board.addEventListener('click', (e) => {
   if (selectedCardIdx === null) return;
   const card = myPlayer.cards[selectedCardIdx];
   if (!card) return;
+  lastPlacedPos = { r, c };
   socket.emit('placeCard', { roomId, card, boardPos: { r, c } });
+  selectedCardIdx = null;
 });
 
 // Socket events
@@ -422,9 +461,19 @@ socket.on('gameStarted', ({ roomId: id }) => {
 
 socket.on('gameOver', ({ winner }) => {
   localStorage.removeItem('seqSession');
-  el.winnerText.textContent = `${winner} wins!`;
+  el.winnerText.textContent = `${winner} wins! 🏆`;
   el.winnerSubtext.textContent = 'Congratulations!';
   showScreen('end');
+  // Big confetti celebration
+  if (typeof confetti !== 'undefined') {
+    const end = Date.now() + 3500;
+    const colors = ['#f5c518', '#ff0000', '#0000ff', '#00cc44', '#ffffff'];
+    (function frame() {
+      confetti({ particleCount: 6, angle: 60, spread: 55, origin: { x: 0 }, colors });
+      confetti({ particleCount: 6, angle: 120, spread: 55, origin: { x: 1 }, colors });
+      if (Date.now() < end) requestAnimationFrame(frame);
+    })();
+  }
 });
 
 

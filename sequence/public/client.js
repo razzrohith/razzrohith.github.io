@@ -139,53 +139,8 @@ function renderBoard(room) {
                 'assets/jack_face.png';
             faceImg.alt = rank; faceImg.className = 'face-img';
             cell.appendChild(faceImg);
-          } else {
-            // Number / Ace Cards - Generate accurate Pip grid
-            const grid = document.createElement('div');
-            grid.className = 'pip-grid';
-
-            // Define how many pips go into which columns (Left, Center, Right)
-            // Reduced symbols per user request (max 3)
-            // Only 1 center symbol so it never overlaps the corner text
-            const pipLayouts = {
-              'A': { L: 0, C: 1, R: 0, bigC: true },
-              '2': { L: 0, C: 1, R: 0 },
-              '3': { L: 0, C: 1, R: 0 },
-              '4': { L: 0, C: 1, R: 0 },
-              '5': { L: 0, C: 1, R: 0 },
-              '6': { L: 0, C: 1, R: 0 },
-              '7': { L: 0, C: 1, R: 0 },
-              '8': { L: 0, C: 1, R: 0 },
-              '9': { L: 0, C: 1, R: 0 },
-              '10': { L: 0, C: 1, R: 0 }
-            };
-
-            const layout = pipLayouts[rank];
-            if (layout) {
-              // Left Column
-              const colL = document.createElement('div'); colL.className = 'pip-col';
-              for (let i = 0; i < layout.L; i++) colL.innerHTML += `<span>${suit}</span>`;
-              if (layout.L > 0) grid.appendChild(colL);
-
-              // Center Column
-              if (layout.C > 0) {
-                const colC = document.createElement('div');
-                colC.className = 'pip-col center-col num-' + rank;
-                if (layout.bigC) colC.classList.add('ace');
-
-                for (let i = 0; i < layout.C; i++) colC.innerHTML += `<span>${suit}</span>`;
-                grid.appendChild(colC);
-              }
-
-              // Right Column
-              const colR = document.createElement('div'); colR.className = 'pip-col';
-              for (let i = 0; i < layout.R; i++) colR.innerHTML += `<span>${suit}</span>`;
-              if (layout.R > 0) grid.appendChild(colR);
-
-              if (isRed) grid.classList.add('red-suit');
-              cell.appendChild(grid);
-            }
           }
+          // Number / Ace cards: only the two corner labels already placed above are shown.
         }
       }
 

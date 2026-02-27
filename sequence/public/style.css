@@ -118,6 +118,17 @@ body {
   }
 }
 
+/* ── In-Game Felt Override ── */
+body.in-game {
+  background: radial-gradient(circle at 50% 50%, #114220 0%, #082811 100%);
+}
+
+body.in-game #stars,
+body.in-game #stars2,
+body.in-game #stars3 {
+  display: none;
+}
+
 /* ── Screens ─────────────────────────────────────────────────── */
 .screen {
   display: none;
@@ -734,6 +745,26 @@ input[type="text"]:focus {
   100% {
     transform: translateY(110vh) rotate(720deg);
     opacity: 0;
+  }
+}
+
+/* ── Sequence 5-Chip Lock Glow ── */
+.chip.locked {
+  filter: drop-shadow(0 0 12px gold) drop-shadow(0 0 4px white) !important;
+  animation: sequenceGlow 1.5s ease-in-out infinite alternate !important;
+  opacity: 1 !important;
+}
+
+@keyframes sequenceGlow {
+  0% {
+    filter: drop-shadow(0 0 8px gold);
+    transform: scale(1);
+  }
+
+  100% {
+    filter: drop-shadow(0 0 16px #ffeb3b) brightness(1.2);
+    transform: scale(1.08);
+    z-index: 10;
   }
 }
 

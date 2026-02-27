@@ -47,6 +47,13 @@ const isOneEyedJack = c => c.rank === 'J' && (c.suit === '♠' || c.suit === '�
 function showScreen(name) {
   Object.values(screens).forEach(s => s.classList.remove('active'));
   screens[name].classList.add('active');
+
+  // Toggle green felt vs galaxy background
+  if (name === 'game') {
+    document.body.classList.add('in-game');
+  } else {
+    document.body.classList.remove('in-game');
+  }
 }
 
 function formatCard(card) {
@@ -167,18 +174,15 @@ function renderBoard(room) {
         const chipEl = document.createElement('div');
         // Authentic poker chip: center dot + stripe ring + outer rim in team color
         chipEl.className = 'chip';
+        // Authentic Poker Chip Image
+        const chipImg = document.createElement('img');
+        chipImg.src = 'assets/' + CHIP_IMAGES[c];
+        chipImg.style.cssText = 'width:100%; height:100%; object-fit:contain; border-radius:50%; box-shadow: 0 4px 6px rgba(0,0,0,0.5); pointer-events:none;';
+        chipEl.appendChild(chipImg);
+
         chipEl.style.cssText = `
           width:26px; height:26px; border-radius:50%;
           position:absolute; z-index:5; pointer-events:none;
-          background: radial-gradient(circle at 50% 50%,
-            white 0%, white 18%,
-            ${c} 18%, ${c} 28%,
-            white 28%, white 35%,
-            ${c} 35%, ${c} 65%,
-            white 65%, white 72%,
-            ${c} 72%, ${c} 82%,
-            white 82%, white 100%);
-          box-shadow: 0 0 0 2px ${c}, 0 2px 6px rgba(0,0,0,.6), inset 0 1px 3px rgba(255,255,255,.4);
           animation: chipDrop .35s cubic-bezier(.22,1,.36,1) both;
         `;
         if (chip.locked) chipEl.classList.add('locked');
@@ -393,11 +397,13 @@ function renderGame(room) {
   const codeEl = document.getElementById('gameCodeDisplay');
   if (codeEl && room.id) codeEl.textContent = room.id;
 
-  // Fire confetti when a new sequence is detected
-  const seqCount = (room.sequences || []).length;
-  if (seqCount > prevSequenceCount) {
+  // Fire confetti and popup when a new sequence is detected
+  const totalSeqCount = Object.values(room.teamWinCounts || {}).reduce((a, b) => a + b, 0);
+  if (totalSeqCount > prevSequenceCount) {
     fireConfetti(0.5);
-    prevSequenceCount = seqCount;
+    const justScored = room.players[(room.turnIndex - 1 + room.players.length) % room.players.length];
+    showToast(`🌟 ${justScored ? justScored.name : 'A player'} completed a Sequence of 5! 🌟`);
+    prevSequenceCount = totalSeqCount;
   }
 }
 

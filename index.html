@@ -498,28 +498,22 @@
       frame.src = path;
       titleEl.textContent = title;
       overlay.classList.add('active');
-      // Clean URL update
-      window.history.replaceState({ game: id }, title, '/?game=' + id);
+      // Clean URL update -- commented out to keep URL completely static
+      // window.history.replaceState({ game: id }, title, '/?game=' + id);
       document.body.style.overflow = 'hidden'; // stop page scroll
     }
 
     closeBtn.addEventListener('click', () => {
       overlay.classList.remove('active');
       frame.src = ''; // stop game
-      window.history.replaceState({}, document.title, window.location.pathname);
+      // window.history.replaceState({}, document.title, window.location.pathname);
       document.body.style.overflow = '';
     });
 
     document.getElementById('sequenceCard').addEventListener('click', e => openGame(e, './sequence-play.html', 'sequence', 'SEQUENCE'));
     document.getElementById('snakeCard').addEventListener('click', e => openGame(e, './snake/', 'snake', 'SNAKE'));
 
-    // If loaded with ?game= query, open automatically
-    window.addEventListener('DOMContentLoaded', () => {
-      const params = new URLSearchParams(window.location.search);
-      const game = params.get('game');
-      if (game === 'sequence') document.getElementById('sequenceCard').click();
-      if (game === 'snake') document.getElementById('snakeCard').click();
-    });
+    // (URL parsing removed since we no longer alter the URL)
 
     // ── Glowing cursor ──
     const cursor = document.getElementById('cursor');

@@ -369,28 +369,31 @@ input[type="text"]:focus {
   text-shadow: 0 0 8px rgba(245, 197, 24, .8);
 }
 
-/* Card rank/suit mini text in each cell */
+/* Card rank/suit labels — top-left */
 .cell .rank-tl {
   position: absolute;
   top: 2px;
   left: 3px;
-  font-size: .55rem;
+  font-size: .75rem;
   font-weight: 900;
   line-height: 1;
   color: var(--text-dark);
   font-family: 'Georgia', serif;
+  z-index: 2;
 }
 
+/* Bottom-right NOT mirrored — straight readable text */
 .cell .rank-br {
   position: absolute;
   bottom: 2px;
   right: 3px;
-  font-size: .55rem;
+  font-size: .75rem;
   font-weight: 900;
   line-height: 1;
   color: var(--text-dark);
-  transform: rotate(180deg);
+  /* NO transform: rotate(180deg) */
   font-family: 'Georgia', serif;
+  z-index: 2;
 }
 
 .cell .rank-tl.red,
@@ -398,13 +401,19 @@ input[type="text"]:focus {
   color: #b91c1c;
 }
 
-/* face card image overlay (K/Q) */
+/* face card image — sits in middle zone, leaving room for corner labels */
 .cell .face-img {
-  width: 100%;
-  height: 100%;
+  position: absolute;
+  top: 16px;
+  left: 2px;
+  right: 2px;
+  bottom: 16px;
+  width: calc(100% - 4px);
+  height: calc(100% - 32px);
   object-fit: cover;
-  opacity: .88;
+  opacity: .92;
   border-radius: 2px;
+  z-index: 1;
 }
 
 /* suit pips in center */
@@ -422,15 +431,13 @@ input[type="text"]:focus {
 
 /* ── Chip (Poker Coin) ───────────────────────────────────────── */
 .chip {
-  width: 30px;
-  height: 30px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
   position: absolute;
   z-index: 5;
   object-fit: cover;
-  /* used when rendered as <img> */
   pointer-events: none;
-  /* drop-in animation */
   animation: chipDrop .35s cubic-bezier(.22, 1, .36, 1) both;
 }
 

@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -132,6 +133,55 @@
       font-size: 0.85rem;
     }
 
+    /* D-Pad Joystick for mobile */
+    .dpad {
+      display: none;
+      /* shown only on touch devices via JS */
+      margin: 20px auto 0;
+      width: 180px;
+      user-select: none;
+    }
+
+    .dpad-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 56px);
+      grid-template-rows: repeat(3, 56px);
+      gap: 4px;
+    }
+
+    .dpad-btn {
+      width: 56px;
+      height: 56px;
+      background: linear-gradient(135deg, #312e81, #4c1d95);
+      border: 2px solid #7c3aed;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.6rem;
+      cursor: pointer;
+      color: white;
+      box-shadow: 0 4px 12px rgba(124, 58, 237, .5);
+      transition: background .1s, transform .1s;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+
+    .dpad-btn:active {
+      background: linear-gradient(135deg, #6d28d9, #7c3aed);
+      transform: scale(0.92);
+    }
+
+    .dpad-center {
+      background: rgba(30, 10, 60, .5);
+      border-color: transparent;
+      cursor: default;
+    }
+
+    .dpad-center:active {
+      transform: none;
+    }
+
     @media (max-width: 600px) {
       .stats {
         flex-direction: column;
@@ -139,6 +189,7 @@
     }
   </style>
 </head>
+
 <body>
   <div class="container">
     <h1>Snake Game</h1>
@@ -164,8 +215,24 @@
     </div>
 
     <div class="instructions">
-      <p><strong>Controls:</strong> Use <kbd>↑</kbd> <kbd>↓</kbd> <kbd>←</kbd> <kbd>→</kbd> keys or swipe on touch devices.</p>
+      <p><strong>Controls:</strong> Use <kbd>↑</kbd> <kbd>↓</kbd> <kbd>←</kbd> <kbd>→</kbd> keys or the joystick below
+        on mobile.</p>
       <p style="margin-top: 8px;">Eat the food to grow. Don't hit the walls or yourself!</p>
+    </div>
+
+    <!-- Mobile D-Pad (shown on touch screens) -->
+    <div class="dpad" id="dpad">
+      <div class="dpad-grid">
+        <div></div>
+        <button class="dpad-btn" id="dUp">&#9650;</button>
+        <div></div>
+        <button class="dpad-btn" id="dLeft">&#9664;</button>
+        <div class="dpad-btn dpad-center">&#9899;</div>
+        <button class="dpad-btn" id="dRight">&#9654;</button>
+        <div></div>
+        <button class="dpad-btn" id="dDown">&#9660;</button>
+        <div></div>
+      </div>
     </div>
   </div>
 
@@ -403,8 +470,33 @@
 
     restartBtn.addEventListener('click', initGame);
 
+    // ── Mobile D-Pad ──────────────────────────────────────────
+    function showDpad() {
+      const dpad = document.getElementById('dpad');
+      if (dpad) dpad.style.display = 'block';
+    }
+    // Show dpad if touch device
+    window.addEventListener('touchstart', showDpad, { once: true, passive: true });
+
+    function dpadPress(dx, dy) {
+      if (!isGameRunning) { initGame(); return; }
+      if (dx === 0 && dy === -1 && direction.y !== 1) nextDirection = { x: 0, y: -1 };
+      if (dx === 0 && dy === 1 && direction.y !== -1) nextDirection = { x: 0, y: 1 };
+      if (dx === -1 && dy === 0 && direction.x !== 1) nextDirection = { x: -1, y: 0 };
+      if (dx === 1 && dy === 0 && direction.x !== -1) nextDirection = { x: 1, y: 0 };
+    }
+
+    ['dUp', 'dDown', 'dLeft', 'dRight'].forEach(id => {
+      const btn = document.getElementById(id);
+      if (!btn) return;
+      const map = { dUp: [0, -1], dDown: [0, 1], dLeft: [-1, 0], dRight: [1, 0] };
+      btn.addEventListener('touchstart', e => { e.preventDefault(); dpadPress(...map[id]); }, { passive: false });
+      btn.addEventListener('click', () => dpadPress(...map[id]));
+    });
+
     // Start game
     initGame();
   </script>
 </body>
+
 </html>

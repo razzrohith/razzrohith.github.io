@@ -162,7 +162,7 @@ function renderBoard(room) {
         // Pick chip image by team colour
         const teamColor = chip.color;
         chipImg.src = CHIP_IMAGES[teamColor] || 'chip_blue.png';
-        chipImg.style.width = '30px'; chipImg.style.height = '30px';
+        chipImg.style.width = '24px'; chipImg.style.height = '24px';
         chipImg.className = 'chip';
         if (chip.locked) chipImg.classList.add('locked');
 

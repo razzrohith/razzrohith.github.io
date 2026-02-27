@@ -115,19 +115,30 @@ function renderBoard(room) {
       const chip = room.board[r][c];
       if (chip) {
         const chipEl = document.createElement('div');
-        chipEl.style.backgroundColor = chip.color; // The server currently sends HEX color codes directly!
+        chipEl.style.backgroundColor = chip.color;
         chipEl.className = 'chip';
-        // Add a class string fallback incase we use the old team strings
-        if (chip.color && !chip.color.startsWith('#')) {
-          chipEl.classList.add(chip.color);
-        }
+        if (chip.color && !chip.color.startsWith('#')) chipEl.classList.add(chip.color);
+        if (chip.locked) chipEl.classList.add('locked');
         cell.appendChild(chipEl);
-      } else {
-        const current = room.players[room.turnIndex];
-        if (current && current.id === socket.id && selectedCardIdx !== null) {
-          const card = myPlayer.cards[selectedCardIdx];
-          if (card) {
+
+        // One-eyed Jack can remove unprotected enemy chips
+        if (myPlayer && room.players[room.turnIndex]?.id === socket.id && selectedCardIdx !== null) {
+          const selCard = myPlayer.cards[selectedCardIdx];
+          if (selCard && isOneEyedJack(selCard) && chip.color !== myPlayer.team && !chip.locked) {
             cell.style.cursor = 'pointer';
+            cell.title = 'Remove this chip';
+          }
+        }
+      } else {
+        // Cursor hints based on selected card type
+        if (myPlayer && room.players[room.turnIndex]?.id === socket.id && selectedCardIdx !== null) {
+          const selCard = myPlayer.cards[selectedCardIdx];
+          if (selCard) {
+            if (isTwoEyedJack(selCard)) {
+              if (!isCorner(r, c)) { cell.style.cursor = 'pointer'; cell.title = 'Place chip here (wild)'; }
+            } else {
+              cell.style.cursor = 'pointer';
+            }
           }
         }
       }
@@ -146,22 +157,27 @@ function renderHand(room) {
     if (card.suit === '♥' || card.suit === '♦') cardEl.classList.add('red');
     if (idx === selectedCardIdx) cardEl.classList.add('selected');
 
-    let suitHtml = card.suit || '';
-    let rankHtml = card.rank || '';
-
-    // Check Jack rules
     if (isTwoEyedJack(card)) {
-      suitHtml = '👁️👁️';
-      rankHtml = '<span style="font-size: 0.6rem; letter-spacing: 0;">WILD</span>';
+      // Show image for two-eyed Jack
+      cardEl.innerHTML = `
+        <img src="jack_two_eye.png" alt="Two-Eye Jack" style="width:100%;height:80%;object-fit:cover;border-radius:4px;">
+        <div class="rank" style="font-size:0.55rem;text-align:center;margin-top:2px;color:#b91c1c;font-weight:900;">WILD JACK</div>
+      `;
+      cardEl.title = 'Two-Eyed Jack: Place your chip ANYWHERE on the board';
     } else if (isOneEyedJack(card)) {
-      suitHtml = '👁️';
-      rankHtml = '<span style="font-size: 0.6rem; letter-spacing: 0;">REMOVE</span>';
+      // Show image for one-eyed Jack
+      cardEl.innerHTML = `
+        <img src="jack_one_eye.png" alt="One-Eye Jack" style="width:100%;height:80%;object-fit:cover;border-radius:4px;">
+        <div class="rank" style="font-size:0.55rem;text-align:center;margin-top:2px;color:#1e3a5f;font-weight:900;">REMOVE</div>
+      `;
+      cardEl.title = 'One-Eyed Jack: Remove an opponent\'s chip from the board';
+    } else {
+      cardEl.innerHTML = `
+        <div class="suit">${card.suit || ''}</div>
+        <div class="rank">${card.rank || ''}</div>
+      `;
     }
 
-    cardEl.innerHTML = `
-      <div class="suit">${suitHtml}</div>
-      <div class="rank">${rankHtml}</div>
-    `;
     cardEl.onclick = () => {
       selectedCardIdx = idx;
       renderBoard(room);

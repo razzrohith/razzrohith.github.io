@@ -467,29 +467,38 @@ io.on('connection', (socket) => {
       socket.emit('error', { message: 'Invalid board position' });
       return;
     }
-    // Corners are wild: any card can be placed on a corner (including jokers) as long as cell empty
-    const corner = isCorner(boardPos.r, boardPos.c);
-    if (!corner) {
-      // Normal placement: card must match picture on board at that position
-      const expected = room.cardPositions[boardPos.r][boardPos.c];
-      if (!expected) {
-        socket.emit('error', { message: 'No card picture at this position' });
-        return;
+
+    // Helper to draw a card & advance turn
+    async function finishTurn() {
+      if (room.deck.length === 0) {
+        room.deck = [...room.discardPile];
+        room.discardPile = [];
+        shuffle(room.deck);
       }
-      // Build expected card object
-      const expectedCard = { rank: expected.slice(0, -1), suit: expected.slice(-1), display: expected };
-      if (!cardEquals(card, expectedCard)) {
-        socket.emit('error', { message: 'Card does not match board position' });
-        return;
-      }
+      player.cards.push(room.deck.pop());
+      nextTurn(room);
+      updateSequencesAndLocks(room);
+      room.markModified('board');
+      room.markModified('players');
+      room.markModified('deck');
+      room.markModified('discardPile');
+      room.markModified('sequences');
+      await room.save();
+      await broadcastToRoom(roomId, 'roomUpdate', serializeRoom(room));
     }
-    // Check if cell already occupied
-    if (room.board[boardPos.r][boardPos.c]) {
-      socket.emit('error', { message: 'Cell already occupied' });
-      return;
-    }
-    // Two-eyed Jack (wild) placement: allowed anywhere (including corners)
+
+    // ── Two-eyed Jack (♥ or ♦ J): place chip ANYWHERE unoccupied ────────────
     if (isTwoEyedJack(card)) {
+      const cellCorner = isCorner(boardPos.r, boardPos.c);
+      if (cellCorner) {
+        // Corners are permanently wild – Jacks can't place there
+        socket.emit('error', { message: 'Cannot place on a corner (already wild)' });
+        return;
+      }
+      if (room.board[boardPos.r][boardPos.c]) {
+        socket.emit('error', { message: 'Cell already occupied' });
+        return;
+      }
       room.board[boardPos.r][boardPos.c] = { color: player.team, locked: false };
       player.cards.splice(cardIndex, 1);
       room.discardPile.push(card);
@@ -497,43 +506,22 @@ io.on('connection', (socket) => {
       if (room.winner) {
         const winnerPlayer = room.players.find(p => p.team === room.winner);
         await broadcastToRoom(roomId, 'gameOver', { winner: winnerPlayer ? winnerPlayer.name : 'Unknown' });
-        // Delete room data entirely upon game match completion
         await Room.deleteOne({ id: room.id });
         return;
       }
-      if (room.deck.length === 0) {
-        room.deck = room.discardPile;
-        room.discardPile = [];
-        shuffle(room.deck);
-      }
-      player.cards.push(room.deck.pop());
-      nextTurn(room);
-
-      updateSequencesAndLocks(room);
-
-      room.markModified('board');
-      room.markModified('players');
-      room.markModified('deck');
-      room.markModified('discardPile');
-      room.markModified('sequences');
-
-      await room.save();
-      await broadcastToRoom(roomId, 'roomUpdate', serializeRoom(room));
+      await finishTurn();
       return;
     }
-    // One-eyed Jack: remove opponent's chip
+
+    // ── One-eyed Jack (♠ or ♣ J): remove an OPPONENT's chip ─────────────────
     if (isOneEyedJack(card)) {
-      if (!boardPos || boardPos.r < 0 || boardPos.r >= BOARD_SIZE || boardPos.c < 0 || boardPos.c >= BOARD_SIZE) {
-        socket.emit('error', { message: 'Invalid cell' });
-        return;
-      }
       const target = room.board[boardPos.r][boardPos.c];
-      if (target && target.locked) {
-        socket.emit('error', { message: 'Cannot remove chip from a completed sequence' });
+      if (!target) {
+        socket.emit('error', { message: 'No chip at that position to remove' });
         return;
       }
-      if (!target) {
-        socket.emit('error', { message: 'No chip at that position' });
+      if (target.locked) {
+        socket.emit('error', { message: 'Cannot remove a chip that is part of a completed sequence' });
         return;
       }
       if (target.color === player.team) {
@@ -543,24 +531,31 @@ io.on('connection', (socket) => {
       room.board[boardPos.r][boardPos.c] = null;
       player.cards.splice(cardIndex, 1);
       room.discardPile.push(card);
-      if (room.deck.length === 0) {
-        room.deck = room.discardPile;
-        room.discardPile = [];
-        shuffle(room.deck);
-      }
-      player.cards.push(room.deck.pop());
-      nextTurn(room);
-
-      room.markModified('board');
-      room.markModified('players');
-      room.markModified('deck');
-      room.markModified('discardPile');
-
-      await room.save();
-      await broadcastToRoom(roomId, 'roomUpdate', serializeRoom(room));
+      await finishTurn();
       return;
     }
+
+    // ── Normal card placement ─────────────────────────────────────────────────
+    const corner = isCorner(boardPos.r, boardPos.c);
+    if (!corner) {
+      const expected = room.cardPositions[boardPos.r][boardPos.c];
+      if (!expected) {
+        socket.emit('error', { message: 'No card picture at this position' });
+        return;
+      }
+      const expectedCard = { rank: expected.slice(0, -1), suit: expected.slice(-1), display: expected };
+      if (!cardEquals(card, expectedCard)) {
+        socket.emit('error', { message: 'Card does not match board position' });
+        return;
+      }
+    }
+    if (room.board[boardPos.r][boardPos.c]) {
+      socket.emit('error', { message: 'Cell already occupied' });
+      return;
+    }
+
     // Normal card placement
+
     room.board[boardPos.r][boardPos.c] = { color: player.team, locked: false };
     player.cards.splice(cardIndex, 1);
     room.discardPile.push(card);

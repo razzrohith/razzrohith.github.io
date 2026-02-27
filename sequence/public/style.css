@@ -413,29 +413,46 @@ select option {
 }
 
 .chip {
-  width: 48px;
-  height: 48px;
+  width: 34px;
+  height: 34px;
   border-radius: 50%;
   position: absolute;
   box-shadow: var(--shadow-chip);
   transition: transform 0.2s, box-shadow 0.2s;
   z-index: 5;
-  border: 4px solid rgba(255, 255, 255, 0.1);
+  border: 3px solid rgba(255, 255, 255, 0.2);
 }
 
 .chip:hover {
-  transform: scale(1.15);
+  transform: scale(1.08);
 }
 
 .chip::after {
   content: '';
   position: absolute;
-  top: 6px;
-  left: 6px;
-  width: 8px;
-  height: 8px;
+  top: 5px;
+  left: 5px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.35);
+}
+
+.chip.locked {
+  box-shadow: 0 0 0 3px #f5c518, 0 0 12px 2px rgba(245, 197, 24, 0.55);
+  animation: chipPulse 1.8s ease-in-out infinite;
+}
+
+@keyframes chipPulse {
+
+  0%,
+  100% {
+    box-shadow: 0 0 0 3px #f5c518, 0 0 12px 2px rgba(245, 197, 24, 0.4);
+  }
+
+  50% {
+    box-shadow: 0 0 0 3px #f5c518, 0 0 22px 6px rgba(245, 197, 24, 0.7);
+  }
 }
 
 .chip.red {

@@ -95,19 +95,7 @@ function renderLobby(room) {
   }
 }
 
-// Chip colour → image filename mapping
-const CHIP_IMAGES = {
-  red: 'chip_red.png',
-  blue: 'chip_blue.png',
-  green: 'chip_green.png',
-  yellow: 'chip_red.png',
-  purple: 'chip_blue.png',
-  orange: 'chip_red.png',
-  black: 'chip_green.png',
-  pink: 'chip_red.png',
-  cyan: 'chip_blue.png',
-  lime: 'chip_green.png',
-};
+// (Legacy CHIP_IMAGES mapping removed)
 
 function renderBoard(room) {
   el.board.innerHTML = '';
@@ -207,12 +195,18 @@ function renderBoard(room) {
 
       if (chip) {
         const c = chip.color;
+
+        // Map server hex team colors to literal chip PNGs
+        let chipFileName = 'chip_blue.png';
+        if (c === '#e63946' || c === 'red' || c === '#f72585' || c === '#ffd166') chipFileName = 'chip_red.png';
+        if (c === '#06d6a0' || c === 'green') chipFileName = 'chip_green.png';
+        if (c === '#4cc9f0' || c === 'blue' || c === '#7209b7' || c === '#3a0ca3') chipFileName = 'chip_blue.png';
+
         const chipEl = document.createElement('div');
-        // Authentic poker chip: center dot + stripe ring + outer rim in team color
         chipEl.className = 'chip';
         // Authentic Poker Chip Image
         const chipImg = document.createElement('img');
-        chipImg.src = 'assets/' + CHIP_IMAGES[c];
+        chipImg.src = 'assets/' + chipFileName;
         chipImg.style.cssText = 'width:100%; height:100%; object-fit:contain; border-radius:50%; box-shadow: 0 4px 6px rgba(0,0,0,0.5); pointer-events:none;';
         chipEl.appendChild(chipImg);
         if (chip.locked) chipEl.classList.add('locked');

@@ -387,13 +387,11 @@ input[type="text"]:focus {
 /* Outer ornate frame wrapper */
 .board-frame {
   position: relative;
-  background-image: url('assets/board_border_pattern.png');
-  /* Seamless pattern */
-  background-repeat: repeat;
-  background-size: 140px;
-  padding: 32px;
+  background: #112d19;
+  /* Standard dark background */
+  padding: 12px;
   border-radius: 6px;
-  box-shadow: 0 0 0 4px #1c2b1a, 0 15px 40px rgba(0, 0, 0, .9), inset 0 0 15px rgba(0, 0, 0, .8);
+  box-shadow: 0 0 0 4px #1c2b1a, 0 15px 40px rgba(0, 0, 0, .6);
 }
 
 /* Inner board title */
@@ -402,11 +400,11 @@ input[type="text"]:focus {
   font-family: 'Times New Roman', serif;
   font-size: 1.2rem;
   font-weight: 700;
-  color: #e4c173;
+  color: #fff;
   letter-spacing: .4em;
   text-transform: uppercase;
-  margin-bottom: 12px;
-  text-shadow: 1px 1px 3px rgba(0, 0, 0, 1);
+  margin-bottom: 8px;
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, .5);
 }
 
 #board {
@@ -512,16 +510,69 @@ input[type="text"]:focus {
   z-index: 1;
 }
 
-/* suit pips in center */
-.cell .cardMini {
-  font-size: .72rem;
-  color: var(--text-dark);
-  font-weight: 800;
-  line-height: 1;
-  text-align: center;
+/* ── Authentic Playing Card Pip Grids ── */
+.cell .pip-grid {
+  position: absolute;
+  top: 15%;
+  bottom: 15%;
+  left: 18%;
+  right: 18%;
+  display: flex;
+  justify-content: space-between;
+  align-items: stretch;
+  z-index: 1;
 }
 
-.cell .cardMini.red-suit {
+.cell .pip-col {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  font-size: .80rem;
+  color: var(--text-dark);
+  line-height: 1;
+}
+
+.cell .pip-col.center-col {
+  justify-content: space-around;
+}
+
+/* For Ace, make the center pip huge */
+.cell .pip-col.center-col.ace {
+  font-size: 1.8rem;
+  justify-content: center;
+}
+
+/* Adjust sizes based on number density to fit */
+.cell .pip-col.num-8,
+.cell .pip-col.num-9,
+.cell .pip-col.num-10 {
+  font-size: .65rem;
+}
+
+/* Middle pips on 7, 8, 9, 10 shift vertically to match real cards */
+.cell .pip-col.center-col.num-7 {
+  justify-content: flex-start;
+  padding-top: 5%;
+}
+
+.cell .pip-col.center-col.num-8 {
+  justify-content: space-between;
+  padding-top: 5%;
+  padding-bottom: 5%;
+}
+
+.cell .pip-col.center-col.num-9 {
+  justify-content: center;
+}
+
+.cell .pip-col.center-col.num-10 {
+  justify-content: space-between;
+  padding-top: 15%;
+  padding-bottom: 15%;
+}
+
+.cell .pip-grid.red-suit .pip-col {
   color: #b91c1c;
 }
 

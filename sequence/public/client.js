@@ -143,23 +143,59 @@ function renderBoard(room) {
           brEl.textContent = rank + suit;
           cell.appendChild(brEl);
 
-          // Face card image for K and Q
-          if (rank === 'K') {
-            const img = document.createElement('img');
-            img.src = 'assets/king_face.png';
-            img.alt = 'K'; img.className = 'face-img';
-            cell.appendChild(img);
-          } else if (rank === 'Q') {
-            const img = document.createElement('img');
-            img.src = 'assets/queen_face.png';
-            img.alt = 'Q'; img.className = 'face-img';
-            cell.appendChild(img);
+          // Face card image for K, Q, J
+          if (rank === 'K' || rank === 'Q' || rank === 'J') {
+            const faceImg = document.createElement('img');
+            faceImg.src = rank === 'K' ? 'assets/king_anglo.png' :
+              rank === 'Q' ? 'assets/queen_anglo.png' :
+                'assets/jack_anglo.png';
+            faceImg.alt = rank; faceImg.className = 'face-img';
+            cell.appendChild(faceImg);
           } else {
-            // Suit pips in centre
-            const mini = document.createElement('span');
-            mini.className = 'cardMini' + (isRed ? ' red-suit' : '');
-            mini.textContent = suit;
-            cell.appendChild(mini);
+            // Number / Ace Cards - Generate accurate Pip grid
+            const grid = document.createElement('div');
+            grid.className = 'pip-grid';
+
+            // Define how many pips go into which columns (Left, Center, Right)
+            // e.g. a '10' has 4 left, 2 middle, 4 right
+            const pipLayouts = {
+              'A': { L: 0, C: 1, R: 0, bigC: true },
+              '2': { L: 0, C: 2, R: 0 },
+              '3': { L: 0, C: 3, R: 0 },
+              '4': { L: 2, C: 0, R: 2 },
+              '5': { L: 2, C: 1, R: 2 },
+              '6': { L: 3, C: 0, R: 3 },
+              '7': { L: 3, C: 1, R: 3 }, // center pip goes top-mid
+              '8': { L: 3, C: 2, R: 3 },
+              '9': { L: 4, C: 1, R: 4 }, // center pip goes exact middle
+              '10': { L: 4, C: 2, R: 4 }
+            };
+
+            const layout = pipLayouts[rank];
+            if (layout) {
+              // Left Column
+              const colL = document.createElement('div'); colL.className = 'pip-col';
+              for (let i = 0; i < layout.L; i++) colL.innerHTML += `<span>${suit}</span>`;
+              if (layout.L > 0) grid.appendChild(colL);
+
+              // Center Column
+              if (layout.C > 0) {
+                const colC = document.createElement('div');
+                colC.className = 'pip-col center-col num-' + rank;
+                if (layout.bigC) colC.classList.add('ace');
+
+                for (let i = 0; i < layout.C; i++) colC.innerHTML += `<span>${suit}</span>`;
+                grid.appendChild(colC);
+              }
+
+              // Right Column
+              const colR = document.createElement('div'); colR.className = 'pip-col';
+              for (let i = 0; i < layout.R; i++) colR.innerHTML += `<span>${suit}</span>`;
+              if (layout.R > 0) grid.appendChild(colR);
+
+              if (isRed) grid.classList.add('red-suit');
+              cell.appendChild(grid);
+            }
           }
         }
       }

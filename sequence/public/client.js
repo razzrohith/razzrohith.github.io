@@ -146,12 +146,12 @@ function renderBoard(room) {
           // Face card image for K and Q
           if (rank === 'K') {
             const img = document.createElement('img');
-            img.src = 'king_face.png';
+            img.src = 'assets/king_face.png';
             img.alt = 'K'; img.className = 'face-img';
             cell.appendChild(img);
           } else if (rank === 'Q') {
             const img = document.createElement('img');
-            img.src = 'queen_face.png';
+            img.src = 'assets/queen_face.png';
             img.alt = 'Q'; img.className = 'face-img';
             cell.appendChild(img);
           } else {
@@ -224,26 +224,30 @@ function renderHand(room) {
 
     if (isTwoEyedJack(card)) {
       cardEl.innerHTML = `
-        <img src="jack_two_eye.png" alt="Two-Eye Jack" style="width:100%;height:80%;object-fit:cover;border-radius:4px;">
-        <div class="rank" style="font-size:0.55rem;text-align:center;margin-top:2px;color:#b91c1c;font-weight:900;">WILD JACK</div>
+        <span class="rank-tl${isRed ? ' red' : ''}" style="position:absolute;top:3px;left:4px;font-size:.75rem;">J${card.suit}</span>
+        <img src="assets/jack_face.png" alt="Two-Eye Jack" style="width:90%;height:65%;object-fit:cover;border-radius:3px;margin-top:4px;">
+        <span class="rank-br${isRed ? ' red' : ''}" style="position:absolute;bottom:3px;right:4px;font-size:.75rem;">J${card.suit}</span>
+        <div class="rank" style="font-size:0.50rem;text-align:center;position:absolute;bottom:2px;width:100%;color:#b91c1c;font-weight:900;">TWO-EYE (WILD)</div>
       `;
       cardEl.title = 'Two-Eyed Jack: Place chip ANYWHERE on board';
     } else if (isOneEyedJack(card)) {
       cardEl.innerHTML = `
-        <img src="jack_one_eye.png" alt="One-Eye Jack" style="width:100%;height:80%;object-fit:cover;border-radius:4px;">
-        <div class="rank" style="font-size:0.55rem;text-align:center;margin-top:2px;color:#1e3a5f;font-weight:900;">REMOVE</div>
+        <span class="rank-tl${isRed ? ' red' : ''}" style="position:absolute;top:3px;left:4px;font-size:.75rem;">J${card.suit}</span>
+        <img src="assets/jack_face.png" alt="One-Eye Jack" style="width:90%;height:65%;object-fit:cover;border-radius:3px;margin-top:4px;">
+        <span class="rank-br${isRed ? ' red' : ''}" style="position:absolute;bottom:3px;right:4px;font-size:.75rem;">J${card.suit}</span>
+        <div class="rank" style="font-size:0.50rem;text-align:center;position:absolute;bottom:2px;width:100%;color:#1e3a5f;font-weight:900;">ONE-EYE (REMOVE)</div>
       `;
       cardEl.title = "One-Eyed Jack: Remove opponent's chip";
     } else if (card.rank === 'K') {
       cardEl.innerHTML = `
         <span class="rank-tl${isRed ? ' red' : ''}" style="position:absolute;top:3px;left:4px;font-size:.75rem;">K${card.suit}</span>
-        <img src="king_face.png" alt="King" style="width:90%;height:65%;object-fit:cover;border-radius:3px;margin-top:4px;">
+        <img src="assets/king_face.png" alt="King" style="width:90%;height:65%;object-fit:cover;border-radius:3px;margin-top:4px;">
         <span class="rank-br${isRed ? ' red' : ''}" style="position:absolute;bottom:3px;right:4px;font-size:.75rem;">K${card.suit}</span>
       `;
     } else if (card.rank === 'Q') {
       cardEl.innerHTML = `
         <span class="rank-tl${isRed ? ' red' : ''}" style="position:absolute;top:3px;left:4px;font-size:.75rem;">Q${card.suit}</span>
-        <img src="queen_face.png" alt="Queen" style="width:90%;height:65%;object-fit:cover;border-radius:3px;margin-top:4px;">
+        <img src="assets/queen_face.png" alt="Queen" style="width:90%;height:65%;object-fit:cover;border-radius:3px;margin-top:4px;">
         <span class="rank-br${isRed ? ' red' : ''}" style="position:absolute;bottom:3px;right:4px;font-size:.75rem;">Q${card.suit}</span>
       `;
     } else {

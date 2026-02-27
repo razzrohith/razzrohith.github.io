@@ -163,13 +163,24 @@ function renderBoard(room) {
       const selCard = (isMyTurn && selectedCardIdx !== null) ? myPlayer?.cards[selectedCardIdx] : null;
 
       if (chip) {
+        const c = chip.color;
         const chipEl = document.createElement('div');
-        chipEl.style.cssText = `width:24px;height:24px;border-radius:50%;position:absolute;z-index:5;pointer-events:none;
-          background:radial-gradient(circle at 35% 30%, color-mix(in srgb, ${chip.color} 40%, white), ${chip.color} 55%, color-mix(in srgb, ${chip.color} 70%, black));
-          box-shadow:0 2px 6px rgba(0,0,0,.5), inset 0 1px 2px rgba(255,255,255,.35);
-          border:2px solid rgba(255,255,255,.25);
-          animation:chipDrop .35s cubic-bezier(.22,1,.36,1) both;`;
+        // Authentic poker chip: center dot + stripe ring + outer rim in team color
         chipEl.className = 'chip';
+        chipEl.style.cssText = `
+          width:26px; height:26px; border-radius:50%;
+          position:absolute; z-index:5; pointer-events:none;
+          background: radial-gradient(circle at 50% 50%,
+            white 0%, white 18%,
+            ${c} 18%, ${c} 28%,
+            white 28%, white 35%,
+            ${c} 35%, ${c} 65%,
+            white 65%, white 72%,
+            ${c} 72%, ${c} 82%,
+            white 82%, white 100%);
+          box-shadow: 0 0 0 2px ${c}, 0 2px 6px rgba(0,0,0,.6), inset 0 1px 3px rgba(255,255,255,.4);
+          animation: chipDrop .35s cubic-bezier(.22,1,.36,1) both;
+        `;
         if (chip.locked) chipEl.classList.add('locked');
         if (room.lastPlacedPos && room.lastPlacedPos.r === r && room.lastPlacedPos.c === c) {
           chipEl.classList.add('recent');
@@ -295,13 +306,19 @@ function renderPlayers(room) {
   room.players.forEach(p => {
     const isMe = p.id === socket.id;
     const isHost = p.id === room.hostId;
+    const isOnline = p.connected !== false; // default true
     const pill = document.createElement('div');
     pill.style.cssText = `display:flex;align-items:center;gap:6px;background:rgba(0,0,0,.35);
-      border:1px solid rgba(255,255,255,.12);border-radius:20px;padding:4px 12px;
-      font-size:.82rem;font-family:Georgia,serif;`;
+      border:1px solid ${isOnline ? 'rgba(255,255,255,.12)' : 'rgba(255,80,80,.25)'};border-radius:20px;padding:4px 12px;
+      font-size:.82rem;font-family:Georgia,serif;opacity:${isOnline ? '1' : '0.6'};`;
+    const statusDot = isOnline
+      ? `<span style="width:7px;height:7px;border-radius:50%;background:#22c55e;box-shadow:0 0 5px #22c55e;flex-shrink:0;"></span>`
+      : `<span style="width:7px;height:7px;border-radius:50%;background:#666;flex-shrink:0;" title="Offline"></span>`;
     pill.innerHTML = `
+      ${statusDot}
       <span style="width:10px;height:10px;border-radius:50%;background:${p.team};border:1px solid rgba(255,255,255,.4);flex-shrink:0;"></span>
       <span style="color:${isMe ? '#f5c518' : '#e2e8f0'};font-weight:${isMe ? '900' : '600'};">${p.name}</span>
+      ${!isOnline ? '<span style="font-size:.62rem;color:#f87171;">offline</span>' : ''}
       ${isHost ? '<span style="font-size:.65rem;padding:1px 5px;background:#c29535;color:#000;border-radius:6px;font-weight:800;">HOST</span>' : ''}
       ${isMe ? '<span style="font-size:.65rem;padding:1px 5px;background:#3b82f6;color:#fff;border-radius:6px;font-weight:800;">ME</span>' : ''}
     `;

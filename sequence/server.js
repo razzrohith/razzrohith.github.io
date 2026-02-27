@@ -626,15 +626,12 @@ io.on('connection', (socket) => {
             continue;
           }
 
-          // Player has no remaining sockets - pause game and notify others
+          // Player has no remaining sockets — mark offline, game continues
           if (player.socketIds.length === 0) {
-            room.paused = true;
+            // Do NOT pause — just notify others so they see "offline" status
             room.markModified('players');
             await room.save();
-            await broadcastToRoom(room.id, 'playerDisconnected', {
-              playerName: player.name,
-              room: serializeRoom(room)
-            });
+            await broadcastToRoom(room.id, 'roomUpdate', serializeRoom(room));
             continue;
           }
         }

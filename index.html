@@ -42,42 +42,39 @@
       cursor: none;
     }
 
-    /* ── Custom Cursor ── */
+    /* ── Custom Cursor — simple glowing dot ── */
     #cursor {
       position: fixed;
-      width: 14px;
-      height: 14px;
-      background: var(--primary);
+      width: 12px;
+      height: 12px;
+      background: #a78bfa;
       border-radius: 50%;
       pointer-events: none;
       z-index: 9999;
       transform: translate(-50%, -50%);
-      transition: width .15s, height .15s, background .15s, opacity .15s;
-      mix-blend-mode: screen;
+      transition: transform .08s, background .2s, width .15s, height .15s;
+      box-shadow: 0 0 8px 3px rgba(167, 139, 250, .7), 0 0 20px 6px rgba(167, 139, 250, .3);
+      animation: cursorPulse 2s ease-in-out infinite;
     }
 
-    #cursor-ring {
-      position: fixed;
-      width: 40px;
-      height: 40px;
-      border: 2px solid rgba(108, 99, 255, 0.5);
-      border-radius: 50%;
-      pointer-events: none;
-      z-index: 9998;
-      transform: translate(-50%, -50%);
-      transition: width .3s, height .3s, border-color .3s;
+    @keyframes cursorPulse {
+
+      0%,
+      100% {
+        box-shadow: 0 0 8px 3px rgba(167, 139, 250, .7), 0 0 20px 6px rgba(167, 139, 250, .3);
+      }
+
+      50% {
+        box-shadow: 0 0 12px 5px rgba(167, 139, 250, .9), 0 0 30px 10px rgba(167, 139, 250, .4);
+      }
     }
 
-    body:has(a:hover) #cursor {
-      width: 22px;
-      height: 22px;
-      background: var(--accent);
-    }
-
-    body:has(a:hover) #cursor-ring {
-      width: 56px;
-      height: 56px;
-      border-color: var(--accent);
+    body:has(a:hover) #cursor,
+    body:has(button:hover) #cursor {
+      width: 18px;
+      height: 18px;
+      background: #f9a8d4;
+      box-shadow: 0 0 14px 5px rgba(249, 168, 212, .8), 0 0 32px 10px rgba(249, 168, 212, .35);
     }
 
     /* ── Canvas stars ── */
@@ -469,19 +466,12 @@
   </div>
 
   <script>
-    // ── Custom cursor ──
+    // ── Glowing cursor ──
     const cursor = document.getElementById('cursor');
-    const ring = document.getElementById('cursor-ring');
-    let mx = 0, my = 0, rx = 0, ry = 0;
-    document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
-    function animCursor() {
-      cursor.style.left = mx + 'px'; cursor.style.top = my + 'px';
-      rx += (mx - rx) * 0.12;
-      ry += (my - ry) * 0.12;
-      ring.style.left = rx + 'px'; ring.style.top = ry + 'px';
-      requestAnimationFrame(animCursor);
-    }
-    animCursor();
+    document.addEventListener('mousemove', e => {
+      cursor.style.left = e.clientX + 'px';
+      cursor.style.top = e.clientY + 'px';
+    });
 
     // ── Star particle canvas ──
     const canvas = document.getElementById('stars-canvas');

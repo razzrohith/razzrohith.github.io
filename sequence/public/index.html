@@ -82,20 +82,28 @@
     <div class="game-header" id="statusBar">
       <div id="winCount" class="scoreboard"></div>
 
-      <div id="turnContainer" style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+      <div id="turnContainer" style="display:flex;flex-direction:column;align-items:center;gap:6px;">
         <span id="currentPlayer" class="turn-indicator"></span>
         <div id="recentCardContainer"
-          style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
+          style="display:flex;flex-direction:column;align-items:center;justify-content:center;">
           <span
-            style="font-size: 0.8rem; color: var(--text-secondary); text-transform: uppercase; font-weight: bold;">Last
+            style="font-size:0.7rem;color:rgba(255,255,255,.6);text-transform:uppercase;font-weight:bold;letter-spacing:.06em;">Last
             Played</span>
-          <div id="lastPlayedCard" style="transform: scale(0.6); margin-top: -10px; opacity: 0.5;">
-            <!-- Render recent card here via client.js -->
-          </div>
+          <div id="lastPlayedCard"
+            style="display:flex;align-items:center;justify-content:center;margin-top:2px;min-height:40px;">
+            <!--filled by JS--></div>
         </div>
       </div>
 
-      <button id="leaveGameBtn" class="sm">Leave Game</button>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
+        <div id="gameCodeBadge" style="font-size:.72rem;color:rgba(255,255,255,.55);letter-spacing:.06em;">Room: <strong
+            id="gameCodeDisplay" style="color:#f5c518;"></strong></div>
+        <button id="leaveGameBtn" class="sm">Leave Game</button>
+      </div>
+    </div>
+
+    <!-- In-game players list -->
+    <div id="gamePlayersList" style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:8px;">
     </div>
 
     <div class="board-container">

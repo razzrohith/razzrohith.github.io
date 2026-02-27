@@ -111,6 +111,11 @@ function renderBoard(room) {
 
       if (isCorner(r, c)) {
         cell.classList.add('wild');
+        const starImg = document.createElement('img');
+        starImg.src = 'wild_star.png';
+        starImg.alt = 'WILD';
+        starImg.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:2px;';
+        cell.appendChild(starImg);
       } else {
         const picture = room.cardPositions[r][c];  // e.g. "K♥"
         if (picture) {
@@ -158,19 +163,18 @@ function renderBoard(room) {
       const selCard = (isMyTurn && selectedCardIdx !== null) ? myPlayer?.cards[selectedCardIdx] : null;
 
       if (chip) {
-        const chipImg = document.createElement('img');
-        // Pick chip image by team colour
-        const teamColor = chip.color;
-        chipImg.src = CHIP_IMAGES[teamColor] || 'chip_blue.png';
-        chipImg.style.width = '24px'; chipImg.style.height = '24px';
-        chipImg.className = 'chip';
-        if (chip.locked) chipImg.classList.add('locked');
-
-        // Recent chip glow — uses server-side lastPlacedPos, visible to ALL players
+        const chipEl = document.createElement('div');
+        chipEl.style.cssText = `width:24px;height:24px;border-radius:50%;position:absolute;z-index:5;pointer-events:none;
+          background:radial-gradient(circle at 35% 30%, color-mix(in srgb, ${chip.color} 40%, white), ${chip.color} 55%, color-mix(in srgb, ${chip.color} 70%, black));
+          box-shadow:0 2px 6px rgba(0,0,0,.5), inset 0 1px 2px rgba(255,255,255,.35);
+          border:2px solid rgba(255,255,255,.25);
+          animation:chipDrop .35s cubic-bezier(.22,1,.36,1) both;`;
+        chipEl.className = 'chip';
+        if (chip.locked) chipEl.classList.add('locked');
         if (room.lastPlacedPos && room.lastPlacedPos.r === r && room.lastPlacedPos.c === c) {
-          chipImg.classList.add('recent');
+          chipEl.classList.add('recent');
         }
-        cell.appendChild(chipImg);
+        cell.appendChild(chipEl);
 
         // One-eyed Jack can remove unprotected enemy chips
         if (selCard && isOneEyedJack(selCard) && chip.color !== myPlayer.team && !chip.locked) {
@@ -195,26 +199,38 @@ function renderBoard(room) {
 
 function renderHand(room) {
   el.hand.innerHTML = '';
+  if (!myPlayer || !myPlayer.cards) return;
   myPlayer.cards.forEach((card, idx) => {
     const cardEl = document.createElement('div');
     cardEl.className = 'card';
-    if (card.suit === '♥' || card.suit === '♦') cardEl.classList.add('red');
+    const isRed = card.suit === '♥' || card.suit === '♦';
+    if (isRed) cardEl.classList.add('red');
     if (idx === selectedCardIdx) cardEl.classList.add('selected');
 
     if (isTwoEyedJack(card)) {
-      // Show image for two-eyed Jack
       cardEl.innerHTML = `
         <img src="jack_two_eye.png" alt="Two-Eye Jack" style="width:100%;height:80%;object-fit:cover;border-radius:4px;">
         <div class="rank" style="font-size:0.55rem;text-align:center;margin-top:2px;color:#b91c1c;font-weight:900;">WILD JACK</div>
       `;
-      cardEl.title = 'Two-Eyed Jack: Place your chip ANYWHERE on the board';
+      cardEl.title = 'Two-Eyed Jack: Place chip ANYWHERE on board';
     } else if (isOneEyedJack(card)) {
-      // Show image for one-eyed Jack
       cardEl.innerHTML = `
         <img src="jack_one_eye.png" alt="One-Eye Jack" style="width:100%;height:80%;object-fit:cover;border-radius:4px;">
         <div class="rank" style="font-size:0.55rem;text-align:center;margin-top:2px;color:#1e3a5f;font-weight:900;">REMOVE</div>
       `;
-      cardEl.title = 'One-Eyed Jack: Remove an opponent\'s chip from the board';
+      cardEl.title = "One-Eyed Jack: Remove opponent's chip";
+    } else if (card.rank === 'K') {
+      cardEl.innerHTML = `
+        <span class="rank-tl${isRed ? ' red' : ''}" style="position:absolute;top:3px;left:4px;font-size:.75rem;">K${card.suit}</span>
+        <img src="king_face.png" alt="King" style="width:90%;height:65%;object-fit:cover;border-radius:3px;margin-top:4px;">
+        <span class="rank-br${isRed ? ' red' : ''}" style="position:absolute;bottom:3px;right:4px;font-size:.75rem;">K${card.suit}</span>
+      `;
+    } else if (card.rank === 'Q') {
+      cardEl.innerHTML = `
+        <span class="rank-tl${isRed ? ' red' : ''}" style="position:absolute;top:3px;left:4px;font-size:.75rem;">Q${card.suit}</span>
+        <img src="queen_face.png" alt="Queen" style="width:90%;height:65%;object-fit:cover;border-radius:3px;margin-top:4px;">
+        <span class="rank-br${isRed ? ' red' : ''}" style="position:absolute;bottom:3px;right:4px;font-size:.75rem;">Q${card.suit}</span>
+      `;
     } else {
       cardEl.innerHTML = `
         <div class="suit">${card.suit || ''}</div>
@@ -235,6 +251,7 @@ function updateTurn(room) {
   const current = room.players[room.turnIndex];
   const currentPlayerSpan = document.getElementById('currentPlayer');
   const handContainer = document.querySelector('.hand-container');
+  const lastPlayedCardDiv = document.getElementById('lastPlayedCard');
 
   if (current) {
     currentPlayerSpan.textContent = `🃏 Turn: ${current.name}`;
@@ -242,21 +259,54 @@ function updateTurn(room) {
     currentPlayerSpan.textContent = 'Waiting for players...';
   }
 
+  // Fill lastPlayedCard with mini card from top of discard pile
+  if (lastPlayedCardDiv) {
+    if (room.discardPile && room.discardPile.length > 0) {
+      const top = room.discardPile[room.discardPile.length - 1];
+      const isRed = top.suit === '♥' || top.suit === '♦';
+      let label = top.rank + top.suit;
+      if (top.rank === 'J' && isRed) label = '👁️👁️ J';
+      else if (top.rank === 'J') label = '👁️ J';
+      lastPlayedCardDiv.innerHTML = `
+        <div style="width:46px;height:64px;background:#F4EDD6;border:1px solid #c9b58a;border-radius:5px;
+          display:flex;flex-direction:column;align-items:center;justify-content:center;
+          box-shadow:0 3px 8px rgba(0,0,0,.5);font-family:Georgia,serif;">
+          <span style="font-size:.8rem;font-weight:900;color:${isRed ? '#b91c1c' : '#1a1208'}">${top.rank}</span>
+          <span style="font-size:1.2rem;color:${isRed ? '#b91c1c' : '#1a1208'}">${top.suit}</span>
+        </div>`;
+    } else {
+      lastPlayedCardDiv.innerHTML = `<span style="font-size:.7rem;opacity:.4;">none yet</span>`;
+    }
+  }
+
   const isMyTurn = myPlayer && current && current.id === socket.id;
-
-  // Hand container: rainbow / animated glow when MY turn
-  if (handContainer) {
-    handContainer.classList.toggle('my-turn', isMyTurn);
-  }
-
-  // Dramatic toast notification when MY turn switches
-  if (isMyTurn) {
-    showYourTurnToast();
-  }
+  if (handContainer) handContainer.classList.toggle('my-turn', isMyTurn);
+  if (isMyTurn) showYourTurnToast();
 
   if (typeof anime !== 'undefined') {
     anime({ targets: '#currentPlayer', scale: [0.85, 1], opacity: [0.4, 1], duration: 500, easing: 'easeOutElastic(1,.8)' });
   }
+}
+
+function renderPlayers(room) {
+  const list = document.getElementById('gamePlayersList');
+  if (!list) return;
+  list.innerHTML = '';
+  room.players.forEach(p => {
+    const isMe = p.id === socket.id;
+    const isHost = p.id === room.hostId;
+    const pill = document.createElement('div');
+    pill.style.cssText = `display:flex;align-items:center;gap:6px;background:rgba(0,0,0,.35);
+      border:1px solid rgba(255,255,255,.12);border-radius:20px;padding:4px 12px;
+      font-size:.82rem;font-family:Georgia,serif;`;
+    pill.innerHTML = `
+      <span style="width:10px;height:10px;border-radius:50%;background:${p.team};border:1px solid rgba(255,255,255,.4);flex-shrink:0;"></span>
+      <span style="color:${isMe ? '#f5c518' : '#e2e8f0'};font-weight:${isMe ? '900' : '600'};">${p.name}</span>
+      ${isHost ? '<span style="font-size:.65rem;padding:1px 5px;background:#c29535;color:#000;border-radius:6px;font-weight:800;">HOST</span>' : ''}
+      ${isMe ? '<span style="font-size:.65rem;padding:1px 5px;background:#3b82f6;color:#fff;border-radius:6px;font-weight:800;">ME</span>' : ''}
+    `;
+    list.appendChild(pill);
+  });
 }
 
 function showYourTurnToast() {
@@ -320,6 +370,11 @@ function renderGame(room) {
   renderHand(room);
   updateTurn(room);
   updateWinCount(room);
+  renderPlayers(room);
+
+  // Show room code in header
+  const codeEl = document.getElementById('gameCodeDisplay');
+  if (codeEl && room.id) codeEl.textContent = room.id;
 
   // Fire confetti when a new sequence is detected
   const seqCount = (room.sequences || []).length;

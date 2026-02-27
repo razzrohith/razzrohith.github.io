@@ -34,50 +34,87 @@ body {
   color: var(--text);
   line-height: 1.5;
   overflow-x: hidden;
-  position: relative;
-  /* needed for pseudo-element stars */
+  background-attachment: fixed;
 }
 
-/* ── Galaxy Stars Animation ── */
-body::before {
-  content: "";
+/* ── Galaxy Parallax Stars ── */
+#stars,
+#stars2,
+#stars3 {
   position: fixed;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   z-index: -1;
-  background:
-    radial-gradient(1px 1px at 20px 30px, #ffffff, rgba(0, 0, 0, 0)),
-    radial-gradient(1px 1px at 40px 70px, rgba(255, 255, 255, 0.8), rgba(0, 0, 0, 0)),
-    radial-gradient(2px 2px at 90px 40px, #ffffff, rgba(0, 0, 0, 0)),
-    radial-gradient(1px 1px at 160px 120px, rgba(255, 255, 255, 0.6), rgba(0, 0, 0, 0)),
-    radial-gradient(2px 2px at 250px 90px, #ffffff, rgba(0, 0, 0, 0)),
-    radial-gradient(1px 1px at 300px 30px, rgba(255, 255, 255, 0.9), rgba(0, 0, 0, 0)),
-    radial-gradient(2.5px 2.5px at 150px 180px, #ffffff, rgba(0, 0, 0, 0)),
-    radial-gradient(1px 1px at 380px 200px, rgba(255, 255, 255, 0.7), rgba(0, 0, 0, 0)),
-    radial-gradient(1px 1px at 70px 220px, #ffffff, rgba(0, 0, 0, 0));
-  background-size: 400px 400px;
-  animation: stardrift 60s linear infinite, star_twinkle 4s ease-in-out infinite alternate;
+  pointer-events: none;
 }
 
-@keyframes stardrift {
-  0% {
-    transform: translateY(0);
-  }
-
-  100% {
-    transform: translateY(400px);
-  }
+#stars {
+  width: 1px;
+  height: 1px;
+  background: transparent;
+  box-shadow: 1740px 1290px #FFF, 890px 421px #FFF, 1205px 174px #FFF, 1420px 450px #FFF, 230px 1200px #FFF, 120px 300px #FFF, 80px 1000px #FFF, 1500px 920px #FFF, 400px 200px #FFF, 750px 800px #FFF, 1100px 1100px #FFF, 1800px 50px #FFF, 1920px 1000px #FFF, 420px 900px #FFF, 1050px 300px #FFF, 1250px 750px #FFF, 1600px 150px #FFF, 600px 600px #FFF, 1350px 1250px #FFF, 500px 1100px #FFF, 950px 950px #FFF, 100px 700px #FFF, 1750px 650px #FFF, 1650px 1150px #FFF, 250px 500px #FFF, 550px 150px #FFF, 300px 1300px #FFF, 1450px 850px #FFF, 700px 1200px #FFF, 850px 50px #FFF, 1150px 550px #FFF, 1850px 400px #FFF, 1300px 1050px #FFF, 50px 150px #FFF, 900px 700px #FFF;
+  animation: animStar 150s linear infinite;
 }
 
-@keyframes star_twinkle {
-  0% {
-    opacity: 0.6;
+#stars:after {
+  content: " ";
+  position: absolute;
+  top: 2000px;
+  width: 1px;
+  height: 1px;
+  background: transparent;
+  box-shadow: 1740px 1290px #FFF, 890px 421px #FFF, 1205px 174px #FFF, 1420px 450px #FFF, 230px 1200px #FFF, 120px 300px #FFF, 80px 1000px #FFF, 1500px 920px #FFF, 400px 200px #FFF, 750px 800px #FFF, 1100px 1100px #FFF, 1800px 50px #FFF, 1920px 1000px #FFF, 420px 900px #FFF, 1050px 300px #FFF, 1250px 750px #FFF, 1600px 150px #FFF, 600px 600px #FFF, 1350px 1250px #FFF, 500px 1100px #FFF, 950px 950px #FFF, 100px 700px #FFF, 1750px 650px #FFF, 1650px 1150px #FFF, 250px 500px #FFF, 550px 150px #FFF, 300px 1300px #FFF, 1450px 850px #FFF, 700px 1200px #FFF, 850px 50px #FFF, 1150px 550px #FFF, 1850px 400px #FFF, 1300px 1050px #FFF, 50px 150px #FFF, 900px 700px #FFF;
+}
+
+#stars2 {
+  width: 2px;
+  height: 2px;
+  background: transparent;
+  box-shadow: 1540px 290px #FFF, 190px 121px #FFF, 205px 1174px #FFF, 1820px 850px #FFF, 1230px 200px #FFF, 520px 800px #FFF, 180px 1200px #FFF, 500px 420px #FFF, 1400px 1200px #FFF, 950px 100px #FFF, 150px 800px #FFF, 800px 150px #FFF, 1320px 1000px #FFF, 1120px 600px #FFF, 1850px 1100px #FFF, 750px 950px #FFF, 300px 150px #FFF, 80px 500px #FFF, 1950px 300px #FFF, 600px 1250px #FFF;
+  animation: animStar 100s linear infinite;
+}
+
+#stars2:after {
+  content: " ";
+  position: absolute;
+  top: 2000px;
+  width: 2px;
+  height: 2px;
+  background: transparent;
+  box-shadow: 1540px 290px #FFF, 190px 121px #FFF, 205px 1174px #FFF, 1820px 850px #FFF, 1230px 200px #FFF, 520px 800px #FFF, 180px 1200px #FFF, 500px 420px #FFF, 1400px 1200px #FFF, 950px 100px #FFF, 150px 800px #FFF, 800px 150px #FFF, 1320px 1000px #FFF, 1120px 600px #FFF, 1850px 1100px #FFF, 750px 950px #FFF, 300px 150px #FFF, 80px 500px #FFF, 1950px 300px #FFF, 600px 1250px #FFF;
+}
+
+#stars3 {
+  width: 3px;
+  height: 3px;
+  background: transparent;
+  box-shadow: 840px 1290px #FFF, 1890px 221px #FFF, 205px 774px #FFF, 420px 150px #FFF, 1230px 800px #FFF, 120px 1300px #FFF, 1180px 100px #FFF, 1500px 620px #FFF, 600px 200px #FFF, 1750px 1000px #FFF;
+  animation: animStar 50s linear infinite;
+  border-radius: 50%;
+  filter: blur(1px);
+}
+
+#stars3:after {
+  content: " ";
+  position: absolute;
+  top: 2000px;
+  width: 3px;
+  height: 3px;
+  background: transparent;
+  box-shadow: 840px 1290px #FFF, 1890px 221px #FFF, 205px 774px #FFF, 420px 150px #FFF, 1230px 800px #FFF, 120px 1300px #FFF, 1180px 100px #FFF, 1500px 620px #FFF, 600px 200px #FFF, 1750px 1000px #FFF;
+  border-radius: 50%;
+  filter: blur(1px);
+}
+
+@keyframes animStar {
+  from {
+    transform: translateY(0px);
   }
 
-  100% {
-    opacity: 1;
+  to {
+    transform: translateY(-2000px);
   }
 }
 

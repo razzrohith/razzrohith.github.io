@@ -42,39 +42,26 @@
       cursor: none;
     }
 
-    /* ── Custom Cursor — simple glowing dot ── */
+    /* ── Custom Cursor — minimal calm dot ── */
     #cursor {
       position: fixed;
-      width: 12px;
-      height: 12px;
-      background: #a78bfa;
+      width: 7px;
+      height: 7px;
+      background: rgba(255, 255, 255, .88);
       border-radius: 50%;
       pointer-events: none;
       z-index: 9999;
       transform: translate(-50%, -50%);
-      transition: transform .08s, background .2s, width .15s, height .15s;
-      box-shadow: 0 0 8px 3px rgba(167, 139, 250, .7), 0 0 20px 6px rgba(167, 139, 250, .3);
-      animation: cursorPulse 2s ease-in-out infinite;
-    }
-
-    @keyframes cursorPulse {
-
-      0%,
-      100% {
-        box-shadow: 0 0 8px 3px rgba(167, 139, 250, .7), 0 0 20px 6px rgba(167, 139, 250, .3);
-      }
-
-      50% {
-        box-shadow: 0 0 12px 5px rgba(167, 139, 250, .9), 0 0 30px 10px rgba(167, 139, 250, .4);
-      }
+      transition: width .12s, height .12s, background .18s, box-shadow .18s;
+      box-shadow: 0 0 6px 2px rgba(255, 255, 255, .3);
     }
 
     body:has(a:hover) #cursor,
     body:has(button:hover) #cursor {
-      width: 18px;
-      height: 18px;
-      background: #f9a8d4;
-      box-shadow: 0 0 14px 5px rgba(249, 168, 212, .8), 0 0 32px 10px rgba(249, 168, 212, .35);
+      width: 11px;
+      height: 11px;
+      background: #f5c518;
+      box-shadow: 0 0 10px 4px rgba(245, 197, 24, .45);
     }
 
     /* ── Canvas stars ── */

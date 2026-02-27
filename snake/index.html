@@ -387,13 +387,11 @@
         y: snake[0].y + direction.y
       };
 
-      // Check wall collision
+      // WALL WRAPPING — no death at walls, come out the other side
       const cols = Math.floor(canvas.width / gridSize);
       const rows = Math.floor(canvas.height / gridSize);
-      if (head.x < 0 || head.x >= cols || head.y < 0 || head.y >= rows) {
-        gameOver();
-        return;
-      }
+      head.x = ((head.x % cols) + cols) % cols;
+      head.y = ((head.y % rows) + rows) % rows;
 
       // Check self collision
       if (snake.some(segment => segment.x === head.x && segment.y === head.y)) {
@@ -424,72 +422,169 @@
     function draw() {
       const cols = Math.floor(canvas.width / gridSize);
       const rows = Math.floor(canvas.height / gridSize);
+      const G = gridSize;
 
-      // Clear
-      ctx.fillStyle = '#0f172a';
+      // ── Background: dark green felt ──
+      ctx.fillStyle = '#0d1f0e';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // Draw grid (subtle)
-      ctx.strokeStyle = 'rgba(51, 65, 85, 0.3)';
-      ctx.lineWidth = 0.5;
-      for (let x = 0; x <= cols; x++) {
-        ctx.beginPath();
-        ctx.moveTo(x * gridSize, 0);
-        ctx.lineTo(x * gridSize, canvas.height);
-        ctx.stroke();
-      }
-      for (let y = 0; y <= rows; y++) {
-        ctx.beginPath();
-        ctx.moveTo(0, y * gridSize);
-        ctx.lineTo(canvas.width, y * gridSize);
-        ctx.stroke();
+      // ── 3D tile grid ──
+      for (let tx = 0; tx < cols; tx++) {
+        for (let ty = 0; ty < rows; ty++) {
+          const even = (tx + ty) % 2 === 0;
+          ctx.fillStyle = even ? '#122614' : '#0f2011';
+          ctx.fillRect(tx * G, ty * G, G, G);
+          // subtle top-face highlight
+          if (even) {
+            ctx.fillStyle = 'rgba(255,255,255,.018)';
+            ctx.fillRect(tx * G, ty * G, G, G / 3);
+          }
+        }
       }
 
-      // Draw snake
-      snake.forEach((segment, index) => {
-        const brightness = 100 + (index * 2) % 56;
-        ctx.fillStyle = index === 0
-          ? '#7c3aed'
-          : `hsl(${260 + (index * 1.5) % 60}, 70%, ${brightness}%)`;
-        ctx.fillRect(segment.x * gridSize, segment.y * gridSize, gridSize - 2, gridSize - 2);
+      // ── Draw snake segments (3D cylinders) ──
+      snake.forEach((seg, idx) => {
+        const cx = seg.x * G + G / 2;
+        const cy = seg.y * G + G / 2;
+        const r = G / 2 - 1.5;
 
-        // Eyes on head
-        if (index === 0) {
-          ctx.fillStyle = '#fff';
-          const eyeSize = 4;
-          const offset = 5;
-          // Left eye
-          ctx.fillRect(
-            segment.x * gridSize + offset,
-            segment.y * gridSize + offset,
-            eyeSize, eyeSize
-          );
-          // Right eye
-          ctx.fillRect(
-            segment.x * gridSize + gridSize - offset - eyeSize,
-            segment.y * gridSize + offset,
-            eyeSize, eyeSize
-          );
+        // Drop shadow
+        ctx.save();
+        ctx.shadowColor = 'rgba(0,0,0,.7)';
+        ctx.shadowBlur = 6;
+        ctx.shadowOffsetY = 3;
+
+        // Sphere-like gradient: lighter top-left highlight
+        const t = idx / Math.max(snake.length - 1, 1);
+        const hue = 128 - t * 30;  // head is brighter green
+        const grad = ctx.createRadialGradient(cx - r * .35, cy - r * .35, r * .05, cx, cy, r);
+        grad.addColorStop(0, `hsl(${hue}, 85%, 72%)`);
+        grad.addColorStop(0.4, `hsl(${hue}, 80%, 42%)`);
+        grad.addColorStop(1, `hsl(${hue}, 70%, 18%)`);
+
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, 0, Math.PI * 2);
+        ctx.fillStyle = grad;
+        ctx.fill();
+
+        // Scale pattern on body (not head)
+        if (idx > 0 && idx % 2 === 0) {
+          ctx.strokeStyle = `hsla(${hue}, 60%, 22%, 0.4)`;
+          ctx.lineWidth = 1.2;
+          ctx.beginPath();
+          ctx.arc(cx, cy, r * 0.72, 0.3, Math.PI - 0.3);
+          ctx.stroke();
+        }
+
+        // Specular highlight
+        const specGrad = ctx.createRadialGradient(cx - r * .4, cy - r * .45, 0, cx - r * .3, cy - r * .3, r * .55);
+        specGrad.addColorStop(0, 'rgba(255,255,255,.55)');
+        specGrad.addColorStop(1, 'rgba(255,255,255,0)');
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, 0, Math.PI * 2);
+        ctx.fillStyle = specGrad;
+        ctx.fill();
+        ctx.restore();
+
+        // ── HEAD extras: eyes + tongue ──
+        if (idx === 0) {
+          const d = direction;
+          // Position eyes perpendicular to movement direction
+          const eyeAngle = d.x !== 0 ? Math.PI / 2 : 0;
+          const eyeR = r * 0.2;
+          const eyeDist = r * 0.45;
+          const forwardX = d.x * r * 0.3;
+          const forwardY = d.y * r * 0.3;
+          [-1, 1].forEach(side => {
+            const eyeX = cx + forwardX + side * d.y * eyeDist - side * d.x * (d.y === 0 ? 0 : 0);
+            const eyeY = cy + forwardY - side * d.x * eyeDist;
+            // white sclera
+            ctx.beginPath();
+            ctx.arc(eyeX, eyeY, eyeR + 1.5, 0, Math.PI * 2);
+            ctx.fillStyle = '#fff';
+            ctx.fill();
+            // gold iris
+            ctx.beginPath();
+            ctx.arc(eyeX, eyeY, eyeR, 0, Math.PI * 2);
+            ctx.fillStyle = '#f5c518';
+            ctx.fill();
+            // black pupil
+            ctx.beginPath();
+            ctx.arc(eyeX + d.x * 1, eyeY + d.y * 1, eyeR * 0.45, 0, Math.PI * 2);
+            ctx.fillStyle = '#111';
+            ctx.fill();
+            // pupil glint
+            ctx.beginPath();
+            ctx.arc(eyeX + d.x * .5 - 1, eyeY + d.y * .5 - 1, eyeR * .18, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(255,255,255,.8)';
+            ctx.fill();
+          });
+
+          // Tongue (forked red tongue from snout)
+          const tongueBase = { x: cx + d.x * r * 0.95, y: cy + d.y * r * 0.95 };
+          const tongueLen = G * 0.45;
+          ctx.strokeStyle = '#ff3355';
+          ctx.lineWidth = 1.5;
+          ctx.lineCap = 'round';
+          // stem
+          ctx.beginPath();
+          ctx.moveTo(tongueBase.x, tongueBase.y);
+          ctx.lineTo(tongueBase.x + d.x * tongueLen * 0.55, tongueBase.y + d.y * tongueLen * 0.55);
+          ctx.stroke();
+          // left fork
+          ctx.beginPath();
+          ctx.moveTo(tongueBase.x + d.x * tongueLen * 0.55, tongueBase.y + d.y * tongueLen * 0.55);
+          ctx.lineTo(tongueBase.x + d.x * tongueLen + d.y * tongueLen * 0.3,
+            tongueBase.y + d.y * tongueLen - d.x * tongueLen * 0.3);
+          ctx.stroke();
+          // right fork
+          ctx.beginPath();
+          ctx.moveTo(tongueBase.x + d.x * tongueLen * 0.55, tongueBase.y + d.y * tongueLen * 0.55);
+          ctx.lineTo(tongueBase.x + d.x * tongueLen - d.y * tongueLen * 0.3,
+            tongueBase.y + d.y * tongueLen + d.x * tongueLen * 0.3);
+          ctx.stroke();
         }
       });
 
-      // Draw food
-      ctx.fillStyle = '#ef4444';
+      // ── Draw food: glowing 3D apple ──
+      const fx = food.x * G + G / 2;
+      const fy = food.y * G + G / 2;
+      const fr = G / 2 - 2;
+
+      // Glow aura
+      ctx.save();
+      ctx.shadowColor = '#ff6b35';
+      ctx.shadowBlur = 16;
+
+      // 3D sphere gradient
+      const foodGrad = ctx.createRadialGradient(fx - fr * .3, fy - fr * .35, fr * .05, fx, fy, fr);
+      foodGrad.addColorStop(0, '#ff9a5c');
+      foodGrad.addColorStop(0.4, '#ef4444');
+      foodGrad.addColorStop(1, '#7f1d1d');
       ctx.beginPath();
-      ctx.arc(
-        food.x * gridSize + gridSize / 2,
-        food.y * gridSize + gridSize / 2,
-        gridSize / 2 - 2,
-        0,
-        Math.PI * 2
-      );
+      ctx.arc(fx, fy, fr, 0, Math.PI * 2);
+      ctx.fillStyle = foodGrad;
       ctx.fill();
 
-      // Food glow
-      ctx.shadowColor = '#ef4444';
-      ctx.shadowBlur = 10;
+      // Specular shimmer
+      const fSpec = ctx.createRadialGradient(fx - fr * .4, fy - fr * .45, 0, fx - fr * .25, fy - fr * .3, fr * .5);
+      fSpec.addColorStop(0, 'rgba(255,255,255,.65)');
+      fSpec.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.beginPath();
+      ctx.arc(fx, fy, fr, 0, Math.PI * 2);
+      ctx.fillStyle = fSpec;
       ctx.fill();
-      ctx.shadowBlur = 0;
+
+      // Stem
+      ctx.strokeStyle = '#4d7c0f';
+      ctx.lineWidth = 2;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(fx, fy - fr);
+      ctx.quadraticCurveTo(fx + 6, fy - fr - 8, fx + 4, fy - fr - 10);
+      ctx.stroke();
+
+      ctx.restore();
     }
 
     function gameOver() {

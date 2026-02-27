@@ -146,9 +146,9 @@ function renderBoard(room) {
           // Face card image for K, Q, J
           if (rank === 'K' || rank === 'Q' || rank === 'J') {
             const faceImg = document.createElement('img');
-            faceImg.src = rank === 'K' ? 'assets/king_anglo.png' :
-              rank === 'Q' ? 'assets/queen_anglo.png' :
-                'assets/jack_anglo.png';
+            faceImg.src = rank === 'K' ? 'assets/king_face.png' :
+              rank === 'Q' ? 'assets/queen_face.png' :
+                'assets/jack_face.png';
             faceImg.alt = rank; faceImg.className = 'face-img';
             cell.appendChild(faceImg);
           } else {
@@ -157,18 +157,18 @@ function renderBoard(room) {
             grid.className = 'pip-grid';
 
             // Define how many pips go into which columns (Left, Center, Right)
-            // e.g. a '10' has 4 left, 2 middle, 4 right
+            // Reduced symbols per user request (max 3)
             const pipLayouts = {
               'A': { L: 0, C: 1, R: 0, bigC: true },
               '2': { L: 0, C: 2, R: 0 },
               '3': { L: 0, C: 3, R: 0 },
-              '4': { L: 2, C: 0, R: 2 },
-              '5': { L: 2, C: 1, R: 2 },
-              '6': { L: 3, C: 0, R: 3 },
-              '7': { L: 3, C: 1, R: 3 }, // center pip goes top-mid
-              '8': { L: 3, C: 2, R: 3 },
-              '9': { L: 4, C: 1, R: 4 }, // center pip goes exact middle
-              '10': { L: 4, C: 2, R: 4 }
+              '4': { L: 1, C: 0, R: 1 }, // 2 pips
+              '5': { L: 1, C: 1, R: 1 }, // 3 pips
+              '6': { L: 1, C: 1, R: 1 }, // 3 pips
+              '7': { L: 1, C: 1, R: 1 }, // 3 pips
+              '8': { L: 1, C: 1, R: 1 }, // 3 pips
+              '9': { L: 1, C: 1, R: 1 }, // 3 pips
+              '10': { L: 1, C: 1, R: 1 }  // 3 pips
             };
 
             const layout = pipLayouts[rank];
@@ -215,12 +215,6 @@ function renderBoard(room) {
         chipImg.src = 'assets/' + CHIP_IMAGES[c];
         chipImg.style.cssText = 'width:100%; height:100%; object-fit:contain; border-radius:50%; box-shadow: 0 4px 6px rgba(0,0,0,0.5); pointer-events:none;';
         chipEl.appendChild(chipImg);
-
-        chipEl.style.cssText = `
-          width:26px; height:26px; border-radius:50%;
-          position:absolute; z-index:5; pointer-events:none;
-          animation: chipDrop .35s cubic-bezier(.22,1,.36,1) both;
-        `;
         if (chip.locked) chipEl.classList.add('locked');
         if (room.lastPlacedPos && room.lastPlacedPos.r === r && room.lastPlacedPos.c === c) {
           chipEl.classList.add('recent');

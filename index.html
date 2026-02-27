@@ -42,18 +42,33 @@
       cursor: none;
     }
 
-    /* ── Custom Cursor — minimal calm dot ── */
+    /* ── Custom Cursor — animated calm dot ── */
     #cursor {
       position: fixed;
       width: 7px;
       height: 7px;
-      background: rgba(255, 255, 255, .88);
+      background: rgba(255, 255, 255, .9);
       border-radius: 50%;
       pointer-events: none;
       z-index: 9999;
       transform: translate(-50%, -50%);
-      transition: width .12s, height .12s, background .18s, box-shadow .18s;
-      box-shadow: 0 0 6px 2px rgba(255, 255, 255, .3);
+      transition: width .15s, height .15s, background .2s, box-shadow .2s;
+      box-shadow: 0 0 6px 2px rgba(255, 255, 255, .35);
+      animation: cursorBreath 2.4s ease-in-out infinite;
+    }
+
+    @keyframes cursorBreath {
+
+      0%,
+      100% {
+        box-shadow: 0 0 5px 2px rgba(255, 255, 255, .3);
+        transform: translate(-50%, -50%) scale(1);
+      }
+
+      50% {
+        box-shadow: 0 0 12px 4px rgba(255, 255, 255, .55);
+        transform: translate(-50%, -50%) scale(1.35);
+      }
     }
 
     body:has(a:hover) #cursor,
@@ -61,7 +76,8 @@
       width: 11px;
       height: 11px;
       background: #f5c518;
-      box-shadow: 0 0 10px 4px rgba(245, 197, 24, .45);
+      box-shadow: 0 0 12px 4px rgba(245, 197, 24, .5);
+      animation: none;
     }
 
     /* ── Canvas stars ── */
@@ -447,8 +463,7 @@
     </main>
 
     <footer>
-      <p>Made with ❤️ by Razzrohith &nbsp;|&nbsp; <a href="https://github.com/razzrohith"
-          style="color:var(--primary);text-decoration:none">GitHub</a></p>
+      <p style="opacity:.45;font-size:.8rem;">Made with ❤️ &nbsp;&mdash;&nbsp; Game Hub</p>
     </footer>
   </div>
 

@@ -118,16 +118,7 @@ body {
   }
 }
 
-/* ── In-Game Felt Override ── */
-body.in-game {
-  background: radial-gradient(circle at 50% 50%, #114220 0%, #082811 100%);
-}
-
-body.in-game #stars,
-body.in-game #stars2,
-body.in-game #stars3 {
-  display: none;
-}
+/* ── In-Game Felt Override (Removed for Galaxy Theme) ── */
 
 /* ── Screens ─────────────────────────────────────────────────── */
 .screen {
@@ -468,7 +459,7 @@ input[type="text"]:focus {
   position: absolute;
   top: 2px;
   left: 3px;
-  font-size: 1.15rem;
+  font-size: 1.4rem;
   font-weight: 900;
   line-height: 1;
   color: var(--text-dark);
@@ -481,7 +472,7 @@ input[type="text"]:focus {
   position: absolute;
   bottom: 2px;
   right: 3px;
-  font-size: 1.15rem;
+  font-size: 1.4rem;
   font-weight: 900;
   line-height: 1;
   color: var(--text-dark);
@@ -528,7 +519,7 @@ input[type="text"]:focus {
   flex-direction: column;
   justify-content: space-between;
   align-items: center;
-  font-size: 0.95rem;
+  font-size: 0.85rem;
   color: var(--text-dark);
   line-height: 1;
 }

@@ -102,11 +102,11 @@
 
             0%,
             100% {
-                opacity: .6
+                opacity: .6;
             }
 
             50% {
-                opacity: 1
+                opacity: 1;
             }
         }
 
@@ -209,7 +209,6 @@
         frame.addEventListener('load', () => {
             overlay.classList.add('hidden');
             dot.classList.remove('loading');
-            // Remove overlay from DOM after fade
             setTimeout(() => overlay.remove(), 600);
         });
 
@@ -219,6 +218,7 @@
             dot.classList.remove('loading');
         }, 30000);
     </script>
+
 </body>
 
 </html>

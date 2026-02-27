@@ -383,46 +383,6 @@
         font-size: 2.5rem;
       }
     }
-
-    /* ── Game Overlay (URL Masking) ── */
-    #gameOverlay {
-      position: fixed;
-      inset: 0;
-      z-index: 10000;
-      background: var(--bg);
-      display: none;
-      flex-direction: column;
-    }
-
-    #gameOverlay.active {
-      display: flex;
-    }
-
-    #closeOverlay {
-      height: 46px;
-      background: linear-gradient(90deg, #0f0c29, #302b63, #24243e);
-      border-bottom: 1px solid rgba(245, 197, 24, .25);
-      color: #fff;
-      display: flex;
-      align-items: center;
-      padding: 0 16px;
-      font-family: inherit;
-      font-size: .9rem;
-      font-weight: 700;
-      cursor: pointer;
-      justify-content: space-between;
-    }
-
-    #closeOverlay:hover {
-      background: #302b63;
-    }
-
-    #overlayFrame {
-      flex: 1;
-      width: 100%;
-      border: none;
-      background: #000;
-    }
   </style>
 </head>
 
@@ -447,7 +407,7 @@
 
     <!-- Game Cards -->
     <main class="games">
-      <a href="./sequence-play.html" class="card sequence" id="sequenceCard">
+      <a href="./sequence-play.html" target="_blank" class="card sequence" id="sequenceCard">
         <span class="card-icon">🃏</span>
         <h2>Sequence</h2>
         <p>Form rows of five chips on the board while blocking your opponents. Use Jacks as wild cards.</p>
@@ -459,7 +419,7 @@
         <button class="btn">Play Sequence →</button>
       </a>
 
-      <a href="./snake/" class="card" id="snakeCard">
+      <a href="./snake/" target="_blank" class="card" id="snakeCard">
         <span class="card-icon">🐍</span>
         <h2>Snake</h2>
         <p>Classic arcade snake. Eat the food, grow longer, avoid the walls and your own tail.</p>
@@ -477,44 +437,7 @@
     </footer>
   </div>
 
-  <!-- Game Overlay -->
-  <div id="gameOverlay">
-    <div id="closeOverlay">
-      <span>← Back to Lobby</span>
-      <span id="overlayTitle" style="color:var(--gold);letter-spacing:.1em;"></span>
-    </div>
-    <iframe id="overlayFrame" allow="fullscreen"></iframe>
-  </div>
-
   <script>
-    // ── Game Overlay Logic (URL Masking) ──
-    const overlay = document.getElementById('gameOverlay');
-    const frame = document.getElementById('overlayFrame');
-    const closeBtn = document.getElementById('closeOverlay');
-    const titleEl = document.getElementById('overlayTitle');
-
-    function openGame(e, path, id, title) {
-      e.preventDefault();
-      frame.src = path;
-      titleEl.textContent = title;
-      overlay.classList.add('active');
-      // Clean URL update -- commented out to keep URL completely static
-      // window.history.replaceState({ game: id }, title, '/?game=' + id);
-      document.body.style.overflow = 'hidden'; // stop page scroll
-    }
-
-    closeBtn.addEventListener('click', () => {
-      overlay.classList.remove('active');
-      frame.src = ''; // stop game
-      // window.history.replaceState({}, document.title, window.location.pathname);
-      document.body.style.overflow = '';
-    });
-
-    document.getElementById('sequenceCard').addEventListener('click', e => openGame(e, './sequence-play.html', 'sequence', 'SEQUENCE'));
-    document.getElementById('snakeCard').addEventListener('click', e => openGame(e, './snake/', 'snake', 'SNAKE'));
-
-    // (URL parsing removed since we no longer alter the URL)
-
     // ── Glowing cursor ──
     const cursor = document.getElementById('cursor');
     document.addEventListener('mousemove', e => {

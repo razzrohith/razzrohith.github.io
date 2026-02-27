@@ -459,6 +459,18 @@
         <button class="btn">Play Sequence →</button>
       </a>
 
+      <a href="./ludo/" class="card" id="ludoCard">
+        <span class="card-icon">🎲</span>
+        <h2>Ludo 3D</h2>
+        <p>A premium 3D multiplayer experience. Race your 4 tokens to the center of the galaxy!</p>
+        <div class="tags">
+          <span class="tag">Multiplayer</span>
+          <span class="tag">Strategy</span>
+          <span class="tag">3D</span>
+        </div>
+        <button class="btn">Play Ludo →</button>
+      </a>
+
       <a href="./snake/" class="card" id="snakeCard">
         <span class="card-icon">🐍</span>
         <h2>Snake</h2>
@@ -510,8 +522,8 @@
     });
 
     document.getElementById('sequenceCard').addEventListener('click', e => openGame(e, './sequence-play.html', 'sequence', 'SEQUENCE'));
+    document.getElementById('ludoCard').addEventListener('click', e => openGame(e, './ludo-play.html', 'ludo', 'LUDO 3D'));
     document.getElementById('snakeCard').addEventListener('click', e => openGame(e, './snake/', 'snake', 'SNAKE'));
-
     // ── Glowing cursor ──
     const cursor = document.getElementById('cursor');
     document.addEventListener('mousemove', e => {

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ludo Multiplayer</title>
+    <link rel="stylesheet" href="public/style.css">
+</head>
+
+<body>
+    <!-- Galaxy Background -->
+    <div id="stars"></div>
+    <div id="stars2"></div>
+    <div id="stars3"></div>
+
+    <!-- Home / Lobby Selection -->
+    <div id="home" class="screen active">
+        <h1>Ludo 3D</h1>
+        <img src="public/assets/ludo_board.png" alt="Ludo Board Preview" class="board-preview">
+        <div id="homeError" class="error"></div>
+        <div class="lobby-inputs">
+            <input type="text" id="nameInput" placeholder="Enter your name">
+            <button id="createBtn" class="btn">Create Room</button>
+            <div class="join">
+                <input type="text" id="roomInput" placeholder="Room code" maxlength="4">
+                <button id="joinBtn" class="btn">Join</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Game Screen -->
+    <div id="game" class="screen">
+        <div id="statusBar">
+            <button id="leaveBtn" class="btn-small">Leave</button>
+            <h2 id="roomDisplay">Room: ----</h2>
+        </div>
+
+        <div id="playersPanel">
+            <div class="player-slot" id="slot-green">
+                <div class="slot-token token-piece token-green"></div>
+                <span class="player-name">Waiting...</span>
+            </div>
+            <div class="player-slot" id="slot-blue">
+                <div class="slot-token token-piece token-blue"></div>
+                <span class="player-name">Waiting...</span>
+            </div>
+            <div class="player-slot" id="slot-red">
+                <div class="slot-token token-piece token-red"></div>
+                <span class="player-name">Waiting...</span>
+            </div>
+            <div class="player-slot" id="slot-yellow">
+                <div class="slot-token token-piece token-yellow"></div>
+                <span class="player-name">Waiting...</span>
+            </div>
+        </div>
+
+        <!-- The 3D Board Area -->
+        <div id="boardContainer">
+            <img src="public/assets/ludo_board.png" id="boardImage" alt="Ludo Board">
+
+            <!-- Tokens will be dynamically injected here by JS, but let's pre-define them for simplicity -->
+            <div id="tokensLayer"></div>
+        </div>
+
+        <!-- Controls Area -->
+        <div id="controlsArea">
+            <div id="turnIndicator">Waiting for players...</div>
+
+            <!-- 3D Dice -->
+            <div class="dice-scene">
+                <div class="cube" id="diceCube">
+                    <div class="cube__face cube__face--1">1</div>
+                    <div class="cube__face cube__face--2">2</div>
+                    <div class="cube__face cube__face--3">3</div>
+                    <div class="cube__face cube__face--4">4</div>
+                    <div class="cube__face cube__face--5">5</div>
+                    <div class="cube__face cube__face--6">6</div>
+                </div>
+            </div>
+
+            <button id="rollBtn" class="btn" disabled>Roll Dice</button>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="public/board_map.js"></script>
+    <script src="public/game.js"></script>
+</body>
+
+</html>

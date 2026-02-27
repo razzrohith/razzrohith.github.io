@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Sequence – Razzrohith's Games</title>
+    <meta name="description"
+        content="Play Sequence multiplayer online – form rows of five chips while blocking opponents.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --gold: #f5c518;
+            --bg: #0a0a18;
+            --bar-h: 46px;
+        }
+
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: 'Outfit', sans-serif;
+            background: var(--bg);
+        }
+
+        /* ── Top bar ── */
+        #topBar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: var(--bar-h);
+            background: linear-gradient(90deg, #0f0c29, #302b63, #24243e);
+            border-bottom: 1px solid rgba(245, 197, 24, .25);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 0 14px;
+            z-index: 100;
+            box-shadow: 0 2px 16px rgba(0, 0, 0, .6);
+        }
+
+        #backBtn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255, 255, 255, .06);
+            border: 1px solid rgba(255, 255, 255, .15);
+            border-radius: 20px;
+            color: #e2e8f0;
+            font-family: 'Outfit', sans-serif;
+            font-size: .82rem;
+            font-weight: 700;
+            padding: 5px 14px;
+            cursor: pointer;
+            text-decoration: none;
+            transition: background .2s;
+        }
+
+        #backBtn:hover {
+            background: rgba(255, 255, 255, .12);
+        }
+
+        #gameTitle {
+            flex: 1;
+            text-align: center;
+            font-size: .95rem;
+            font-weight: 900;
+            color: var(--gold);
+            letter-spacing: .12em;
+            text-transform: uppercase;
+            pointer-events: none;
+        }
+
+        #statusDot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #22c55e;
+            flex-shrink: 0;
+            box-shadow: 0 0 6px rgba(34, 197, 94, .8);
+            transition: background .4s;
+        }
+
+        #statusDot.loading {
+            background: #f59e0b;
+            box-shadow: 0 0 6px rgba(245, 158, 11, .8);
+            animation: pulse 1.2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: .6;
+            }
+
+            50% {
+                opacity: 1;
+            }
+        }
+
+        /* ── Loading overlay ── */
+        #loadOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(ellipse at 50% 40%, #1a1a3e 0%, var(--bg) 70%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 22px;
+            z-index: 50;
+            transition: opacity .5s;
+        }
+
+        #loadOverlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .loader-ring {
+            width: 72px;
+            height: 72px;
+            border: 4px solid rgba(245, 197, 24, .15);
+            border-top-color: var(--gold);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        #loadText {
+            color: #e2e8f0;
+            font-size: 1rem;
+            font-weight: 600;
+            text-align: center;
+            line-height: 1.5;
+            max-width: 280px;
+            opacity: .85;
+        }
+
+        #loadText small {
+            display: block;
+            font-size: .78rem;
+            color: rgba(245, 197, 24, .65);
+            margin-top: 6px;
+        }
+
+        /* ── Iframe ── */
+        #gameFrame {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+            display: block;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Loading overlay (shown while Render server wakes up) -->
+    <div id="loadOverlay">
+        <div class="loader-ring"></div>
+        <div id="loadText">
+            Connecting to game server…
+            <small>First load may take ~15 seconds while the server wakes up.</small>
+        </div>
+    </div>
+
+    <!-- The actual game in a seamless iframe -->
+    <!-- ACTION REQUIRED: Once you deploy Ludo to Render, paste your ONRENDER.COM link below: -->
+    <iframe id="gameFrame" src="https://ludo-multiplayer-YOUR-APP-ID.onrender.com/" title="Ludo Multiplayer Game"
+        allow="fullscreen" loading="eager"></iframe>
+
+    <script>
+        const frame = document.getElementById('gameFrame');
+        const overlay = document.getElementById('loadOverlay');
+
+        frame.addEventListener('load', () => {
+            overlay.classList.add('hidden');
+            setTimeout(() => overlay.remove(), 600);
+        });
+
+        // Fallback: if iframe load fires very late, hide after max 30s
+        setTimeout(() => {
+            overlay.classList.add('hidden');
+        }, 30000);
+    </script>
+
+</body>
+
+</html>

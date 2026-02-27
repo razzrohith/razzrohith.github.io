@@ -1,0 +1,405 @@
+/* ── Root Tokens ─────────────────────────────────────────────── */
+:root {
+    --bg: #090a0f;
+    --surface: rgba(255, 255, 255, 0.05);
+    --border: rgba(255, 255, 255, 0.15);
+    --text: #ffffff;
+    --gold: #f5c518;
+    --red: #ef4444;
+    --green: #22c55e;
+    --blue: #3b82f6;
+    --yellow: #eab308;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html,
+body {
+    height: 100%;
+}
+
+body {
+    font-family: 'Georgia', 'Times New Roman', serif;
+    background: radial-gradient(ellipse at bottom, #1b2735 0%, #090a0f 100%);
+    color: var(--text);
+    line-height: 1.5;
+    overflow-x: hidden;
+    position: relative;
+    background-attachment: fixed;
+}
+
+/* ── Galaxy Parallax Stars ── */
+#stars,
+#stars2,
+#stars3 {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: -1;
+    pointer-events: none;
+}
+
+#stars {
+    width: 1px;
+    height: 1px;
+    background: transparent;
+    box-shadow: 1740px 1290px #FFF, 890px 421px #FFF, 1205px 174px #FFF, 1420px 450px #FFF, 230px 1200px #FFF, 120px 300px #FFF, 80px 1000px #FFF, 1500px 920px #FFF, 400px 200px #FFF, 750px 800px #FFF, 1100px 1100px #FFF, 1800px 50px #FFF, 1920px 1000px #FFF, 420px 900px #FFF, 1050px 300px #FFF;
+    animation: animStar 150s linear infinite;
+}
+
+#stars:after {
+    content: " ";
+    position: absolute;
+    top: 2000px;
+    width: 1px;
+    height: 1px;
+    background: transparent;
+    box-shadow: 1740px 1290px #FFF, 890px 421px #FFF, 1205px 174px #FFF, 1420px 450px #FFF, 230px 1200px #FFF, 120px 300px #FFF, 80px 1000px #FFF, 1500px 920px #FFF, 400px 200px #FFF, 750px 800px #FFF, 1100px 1100px #FFF, 1800px 50px #FFF, 1920px 1000px #FFF, 420px 900px #FFF, 1050px 300px #FFF;
+}
+
+#stars2 {
+    width: 2px;
+    height: 2px;
+    background: transparent;
+    box-shadow: 1540px 290px #FFF, 190px 121px #FFF, 205px 1174px #FFF, 1820px 850px #FFF, 1230px 200px #FFF, 520px 800px #FFF, 180px 1200px #FFF, 500px 420px #FFF, 1400px 1200px #FFF, 950px 100px #FFF;
+    animation: animStar 100s linear infinite;
+}
+
+#stars2:after {
+    content: " ";
+    position: absolute;
+    top: 2000px;
+    width: 2px;
+    height: 2px;
+    background: transparent;
+    box-shadow: 1540px 290px #FFF, 190px 121px #FFF, 205px 1174px #FFF, 1820px 850px #FFF, 1230px 200px #FFF, 520px 800px #FFF, 180px 1200px #FFF, 500px 420px #FFF, 1400px 1200px #FFF, 950px 100px #FFF;
+}
+
+#stars3 {
+    width: 3px;
+    height: 3px;
+    background: transparent;
+    box-shadow: 840px 1290px #FFF, 1890px 221px #FFF, 205px 774px #FFF, 420px 150px #FFF, 1230px 800px #FFF, 120px 1300px #FFF, 1180px 100px #FFF, 1500px 620px #FFF, 600px 200px #FFF, 1750px 1000px #FFF;
+    animation: animStar 50s linear infinite;
+    border-radius: 50%;
+    filter: blur(1px);
+}
+
+#stars3:after {
+    content: " ";
+    position: absolute;
+    top: 2000px;
+    width: 3px;
+    height: 3px;
+    background: transparent;
+    box-shadow: 840px 1290px #FFF, 1890px 221px #FFF, 205px 774px #FFF, 420px 150px #FFF, 1230px 800px #FFF, 120px 1300px #FFF, 1180px 100px #FFF, 1500px 620px #FFF, 600px 200px #FFF, 1750px 1000px #FFF;
+    border-radius: 50%;
+    filter: blur(1px);
+}
+
+@keyframes animStar {
+    from {
+        transform: translateY(0px);
+    }
+
+    to {
+        transform: translateY(-2000px);
+    }
+}
+
+/* ── Screens ─────────────────────────────────────────────────── */
+.screen {
+    display: none;
+    padding: 24px;
+    max-width: 1200px;
+    margin: 0 auto;
+    min-height: 100%;
+}
+
+.screen.active {
+    display: block;
+}
+
+h1 {
+    font-size: 3rem;
+    text-align: center;
+    margin-bottom: 20px;
+    background: linear-gradient(135deg, var(--gold) 0%, #fff 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* ── Lobby UI ────────────────────────────────────────────────── */
+.board-preview {
+    width: 100%;
+    max-width: 360px;
+    border-radius: 16px;
+    margin: 0 auto 20px;
+    display: block;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, .8);
+    border: 1px solid var(--border);
+}
+
+.lobby-inputs {
+    max-width: 360px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+input[type="text"] {
+    width: 100%;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: #fff;
+    font-size: 1rem;
+}
+
+.btn {
+    background: linear-gradient(135deg, var(--gold) 0%, #b48a12 100%);
+    color: #000;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(245, 197, 24, 0.4);
+}
+
+.join {
+    display: flex;
+    gap: 10px;
+}
+
+/* ── Game Area ────────────────────────────────────────────────── */
+#game {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+}
+
+#game.active {
+    display: flex;
+}
+
+#statusBar {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.btn-small {
+    background: var(--surface);
+    color: #fff;
+    border: 1px solid var(--border);
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+/* Player Slots */
+#playersPanel {
+    display: flex;
+    justify-content: space-around;
+    width: 100%;
+    max-width: 800px;
+    margin-bottom: 20px;
+}
+
+.player-slot {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.slot-token {
+    width: 40px;
+    height: 40px;
+    object-fit: contain;
+    filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.5));
+}
+
+.player-name {
+    font-size: 0.9rem;
+    color: #ccc;
+}
+
+/* The Board Container */
+#boardContainer {
+    position: relative;
+    width: 100%;
+    max-width: 600px;
+    aspect-ratio: 1 / 1;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+}
+
+#boardImage {
+    width: 100%;
+    height: 100%;
+    border-radius: 12px;
+    object-fit: cover;
+}
+
+/* Tokens Layer */
+#tokensLayer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+}
+
+.token {
+    position: absolute;
+    width: 5%;
+    /* size relative to board */
+    height: 5%;
+    transform: translate(-50%, -50%);
+    /* Center coordinate */
+    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    /* Bouncy movement */
+    pointer-events: auto;
+    cursor: pointer;
+}
+
+/* Procedural 3D CSS Tokens (Glass Marble effect) */
+.token-piece {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    box-shadow:
+        inset 0 4px 6px rgba(255, 255, 255, 0.4),
+        inset 0 -4px 6px rgba(0, 0, 0, 0.5),
+        0 4px 10px rgba(0, 0, 0, 0.8);
+    border: 4px solid rgba(255, 255, 255, 0.2);
+}
+
+.token-red .token-piece,
+.player-slot#slot-red .slot-token .token-piece {
+    background: radial-gradient(circle at 30% 30%, #ff6b6b, #c92a2a);
+}
+
+.token-green .token-piece,
+.player-slot#slot-green .slot-token .token-piece {
+    background: radial-gradient(circle at 30% 30%, #51cf66, #2b8a3e);
+}
+
+.token-blue .token-piece,
+.player-slot#slot-blue .slot-token .token-piece {
+    background: radial-gradient(circle at 30% 30%, #339af0, #1864ab);
+}
+
+.token-yellow .token-piece,
+.player-slot#slot-yellow .slot-token .token-piece {
+    background: radial-gradient(circle at 30% 30%, #fcc419, #e67700);
+}
+
+.token:hover {
+    transform: translate(-50%, -50%) scale(1.1);
+}
+
+/* Controls */
+#controlsArea {
+    margin-top: 30px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+}
+
+#turnIndicator {
+    font-size: 1.2rem;
+    color: var(--gold);
+}
+
+/* ── 3D Dice ────────────────────────────────────────────────── */
+.dice-scene {
+    width: 60px;
+    height: 60px;
+    perspective: 400px;
+}
+
+.cube {
+    width: 60px;
+    height: 60px;
+    position: relative;
+    transform-style: preserve-3d;
+    transform: translateZ(-30px);
+    transition: transform 1s ease-out;
+}
+
+.cube.rolling {
+    animation: rollCube 0.5s linear infinite;
+}
+
+.cube__face {
+    position: absolute;
+    width: 60px;
+    height: 60px;
+    background: white;
+    border: 2px solid #ccc;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    font-weight: bold;
+    color: black;
+    box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.2);
+}
+
+.cube__face--1 {
+    transform: rotateY(0deg) translateZ(30px);
+}
+
+.cube__face--2 {
+    transform: rotateY(180deg) translateZ(30px);
+}
+
+.cube__face--3 {
+    transform: rotateY(90deg) translateZ(30px);
+}
+
+.cube__face--4 {
+    transform: rotateY(-90deg) translateZ(30px);
+}
+
+.cube__face--5 {
+    transform: rotateX(90deg) translateZ(30px);
+}
+
+.cube__face--6 {
+    transform: rotateX(-90deg) translateZ(30px);
+}
+
+@keyframes rollCube {
+    0% {
+        transform: translateZ(-30px) rotateX(0deg) rotateY(0deg) rotateZ(0deg);
+    }
+
+    100% {
+        transform: translateZ(-30px) rotateX(360deg) rotateY(360deg) rotateZ(360deg);
+    }
+}

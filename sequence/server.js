@@ -378,7 +378,7 @@ io.on('connection', (socket) => {
   // ─── Rejoin a game in progress ───────────────────────────
   socket.on('rejoinRoom', async ({ roomId, name }) => {
     try {
-      const room = await Room.findOne({ id: roomId });
+      const room = await Room.findOne({ id: roomId.toUpperCase() });
       if (!room) {
         socket.emit('error', { message: 'Room not found' });
         return;

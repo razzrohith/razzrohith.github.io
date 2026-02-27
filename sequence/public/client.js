@@ -146,17 +146,18 @@ function renderBoard(room) {
 
             // Define how many pips go into which columns (Left, Center, Right)
             // Reduced symbols per user request (max 3)
+            // Only 1 center symbol so it never overlaps the corner text
             const pipLayouts = {
               'A': { L: 0, C: 1, R: 0, bigC: true },
-              '2': { L: 0, C: 2, R: 0 },
-              '3': { L: 0, C: 3, R: 0 },
-              '4': { L: 1, C: 0, R: 1 }, // 2 pips
-              '5': { L: 1, C: 1, R: 1 }, // 3 pips
-              '6': { L: 1, C: 1, R: 1 }, // 3 pips
-              '7': { L: 1, C: 1, R: 1 }, // 3 pips
-              '8': { L: 1, C: 1, R: 1 }, // 3 pips
-              '9': { L: 1, C: 1, R: 1 }, // 3 pips
-              '10': { L: 1, C: 1, R: 1 }  // 3 pips
+              '2': { L: 0, C: 1, R: 0 },
+              '3': { L: 0, C: 1, R: 0 },
+              '4': { L: 0, C: 1, R: 0 },
+              '5': { L: 0, C: 1, R: 0 },
+              '6': { L: 0, C: 1, R: 0 },
+              '7': { L: 0, C: 1, R: 0 },
+              '8': { L: 0, C: 1, R: 0 },
+              '9': { L: 0, C: 1, R: 0 },
+              '10': { L: 0, C: 1, R: 0 }
             };
 
             const layout = pipLayouts[rank];
@@ -311,11 +312,11 @@ function updateTurn(room) {
       if (top.rank === 'J' && isRed) label = '👁️👁️ J';
       else if (top.rank === 'J') label = '👁️ J';
       lastPlayedCardDiv.innerHTML = `
-        <div style="width:46px;height:64px;background:#F4EDD6;border:1px solid #c9b58a;border-radius:5px;
+        <div style="width:40px;height:56px;background:#F4EDD6;border:1px solid #c9b58a;border-radius:4px;
           display:flex;flex-direction:column;align-items:center;justify-content:center;
-          box-shadow:0 3px 8px rgba(0,0,0,.5);font-family:Georgia,serif;">
-          <span style="font-size:.8rem;font-weight:900;color:${isRed ? '#b91c1c' : '#1a1208'}">${top.rank}</span>
-          <span style="font-size:1.2rem;color:${isRed ? '#b91c1c' : '#1a1208'}">${top.suit}</span>
+          box-shadow:0 3px 6px rgba(0,0,0,.3);font-family:Georgia,serif;margin:auto;">
+          <span style="font-size:.8rem;font-weight:900;line-height:1;margin-bottom:2px;color:${isRed ? '#b91c1c' : '#1a1208'}">${top.rank}</span>
+          <span style="font-size:1.4rem;line-height:1;color:${isRed ? '#b91c1c' : '#1a1208'}">${top.suit}</span>
         </div>`;
     } else {
       lastPlayedCardDiv.innerHTML = `<span style="font-size:.7rem;opacity:.4;">none yet</span>`;

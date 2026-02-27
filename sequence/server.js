@@ -160,7 +160,8 @@ function serializeRoom(room) {
     winner: room.winner,
     gameStarted: room.gameStarted,
     cardPositions: room.cardPositions,
-    paused: room.paused || false
+    paused: room.paused || false,
+    lastPlacedPos: room.lastPlacedPos || null
   };
 }
 
@@ -469,7 +470,9 @@ io.on('connection', (socket) => {
     }
 
     // Helper to draw a card & advance turn
-    async function finishTurn() {
+    async function finishTurn(placedPos) {
+      room.lastPlacedPos = placedPos;  // broadcast to ALL players so they all see the glow
+      room.markModified('lastPlacedPos');
       if (room.deck.length === 0) {
         room.deck = [...room.discardPile];
         room.discardPile = [];
@@ -509,7 +512,7 @@ io.on('connection', (socket) => {
         await Room.deleteOne({ id: room.id });
         return;
       }
-      await finishTurn();
+      await finishTurn(boardPos);
       return;
     }
 
@@ -531,7 +534,7 @@ io.on('connection', (socket) => {
       room.board[boardPos.r][boardPos.c] = null;
       player.cards.splice(cardIndex, 1);
       room.discardPile.push(card);
-      await finishTurn();
+      await finishTurn(boardPos);
       return;
     }
 
@@ -553,38 +556,8 @@ io.on('connection', (socket) => {
       socket.emit('error', { message: 'Cell already occupied' });
       return;
     }
-
-    // Normal card placement
-
-    room.board[boardPos.r][boardPos.c] = { color: player.team, locked: false };
-    player.cards.splice(cardIndex, 1);
-    room.discardPile.push(card);
-    updateSequencesAndLocks(room);
-    if (room.winner) {
-      const winnerPlayer = room.players.find(p => p.team === room.winner);
-      await broadcastToRoom(roomId, 'gameOver', { winner: winnerPlayer ? winnerPlayer.name : 'Unknown' });
-      // Delete room data entirely upon game match completion
-      await Room.deleteOne({ id: room.id });
-      return;
-    }
-    if (room.deck.length === 0) {
-      room.deck = room.discardPile;
-      room.discardPile = [];
-      shuffle(room.deck);
-    }
-    player.cards.push(room.deck.pop());
-    nextTurn(room);
-
-    updateSequencesAndLocks(room);
-
-    room.markModified('board');
-    room.markModified('players');
-    room.markModified('deck');
-    room.markModified('discardPile');
-    room.markModified('sequences');
-
-    await room.save();
-    await broadcastToRoom(roomId, 'roomUpdate', serializeRoom(room));
+    // Normal card placement — use finishTurn to keep DRY and ensure lastPlacedPos is set
+    await finishTurn(boardPos);
   });
 
   socket.on('leaveRoom', async () => {

@@ -166,8 +166,8 @@ function renderBoard(room) {
         chipImg.className = 'chip';
         if (chip.locked) chipImg.classList.add('locked');
 
-        // Recent chip glow
-        if (lastPlacedPos && lastPlacedPos.r === r && lastPlacedPos.c === c) {
+        // Recent chip glow — uses server-side lastPlacedPos, visible to ALL players
+        if (room.lastPlacedPos && room.lastPlacedPos.r === r && room.lastPlacedPos.c === c) {
           chipImg.classList.add('recent');
         }
         cell.appendChild(chipImg);
@@ -237,21 +237,66 @@ function updateTurn(room) {
   const handContainer = document.querySelector('.hand-container');
 
   if (current) {
-    currentPlayerSpan.textContent = `Turn: ${current.name}`;
+    currentPlayerSpan.textContent = `🃏 Turn: ${current.name}`;
   } else {
     currentPlayerSpan.textContent = 'Waiting for players...';
   }
 
-  // Glow hand container only when it is MY turn
   const isMyTurn = myPlayer && current && current.id === socket.id;
+
+  // Hand container: rainbow / animated glow when MY turn
   if (handContainer) {
     handContainer.classList.toggle('my-turn', isMyTurn);
   }
 
-  // Animate turn indicator with Anime.js if available
+  // Dramatic toast notification when MY turn switches
+  if (isMyTurn) {
+    showYourTurnToast();
+  }
+
   if (typeof anime !== 'undefined') {
     anime({ targets: '#currentPlayer', scale: [0.85, 1], opacity: [0.4, 1], duration: 500, easing: 'easeOutElastic(1,.8)' });
   }
+}
+
+function showYourTurnToast() {
+  // Only show if not already visible
+  if (document.getElementById('yourTurnToast')) return;
+  const toast = document.createElement('div');
+  toast.id = 'yourTurnToast';
+  toast.innerHTML = `
+    <div style="
+      position:fixed; top:20px; left:50%; transform:translateX(-50%) translateY(-120px);
+      background:linear-gradient(135deg,#f5c518,#ff6b00,#f5c518);
+      background-size:200% 200%;
+      color:#1a1208; font-family:Georgia,serif; font-size:2rem; font-weight:900;
+      padding:18px 44px; border-radius:50px;
+      box-shadow:0 8px 40px rgba(245,197,24,.8), 0 0 0 4px #fff2;
+      z-index:9998; letter-spacing:.05em; pointer-events:none;
+      border:3px solid rgba(255,255,255,.5);
+      animation: toastSlide 4s cubic-bezier(.22,1,.36,1) forwards, rainbowShift 2s linear infinite;
+    ">
+      🃏 &nbsp; YOUR TURN! &nbsp; 🃏
+    </div>
+  `;
+  const styleEl = document.createElement('style');
+  styleEl.textContent = `
+    @keyframes toastSlide {
+      0%   { opacity:0; transform:translateX(-50%) translateY(-120px) scale(.8); }
+      12%  { opacity:1; transform:translateX(-50%) translateY(0)       scale(1.05); }
+      20%  { transform:translateX(-50%) translateY(0) scale(1); }
+      75%  { opacity:1; transform:translateX(-50%) translateY(0) scale(1); }
+      100% { opacity:0; transform:translateX(-50%) translateY(-120px) scale(.9); }
+    }
+    @keyframes rainbowShift {
+      0%  {background-position:0% 50%;}
+      50% {background-position:100% 50%;}
+      100%{background-position:0% 50%;}
+    }
+  `;
+  document.head.appendChild(styleEl);
+  document.body.appendChild(toast);
+  setTimeout(() => { toast.remove(); styleEl.remove(); }, 4100);
 }
 
 function updateWinCount(room) {

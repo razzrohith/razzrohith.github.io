@@ -466,20 +466,21 @@ input[type="text"]:focus {
   }
 }
 
-/* Recent-chip glow */
+/* Recent-chip glow — persistent until next chip placed */
 .chip.recent {
-  animation: chipDrop .35s cubic-bezier(.22, 1, .36, 1) both, recentGlow 1.6s 0.35s ease-in-out 3;
+  animation: chipDrop .35s cubic-bezier(.22, 1, .36, 1) both, recentGlow 1.2s 0.35s ease-in-out infinite;
+  z-index: 6;
 }
 
 @keyframes recentGlow {
 
   0%,
   100% {
-    box-shadow: 0 0 0 2px rgba(255, 255, 255, .5);
+    box-shadow: 0 0 0 3px #fff, 0 0 10px 3px rgba(255, 230, 0, .6);
   }
 
   50% {
-    box-shadow: 0 0 0 6px rgba(255, 255, 50, 1), 0 0 20px 6px rgba(255, 220, 20, .8);
+    box-shadow: 0 0 0 5px #ffe040, 0 0 28px 8px rgba(255, 220, 20, 1);
   }
 }
 
@@ -515,21 +516,41 @@ input[type="text"]:focus {
 /* MY TURN glow on hand container */
 .hand-container.my-turn {
   border-color: var(--gold-bright) !important;
-  box-shadow: 0 0 0 3px var(--gold-bright),
-    0 0 30px 6px rgba(245, 197, 24, .35),
+  box-shadow: 0 0 30px 6px rgba(245, 197, 24, .35),
     inset 0 0 20px rgba(245, 197, 24, .08) !important;
-  animation: handPulse 2s ease-in-out infinite;
+  animation: handRainbow 3s linear infinite;
+  border: 3px solid transparent !important;
+  background: linear-gradient(rgba(0, 0, 0, .3), rgba(0, 0, 0, .3)) padding-box,
+    linear-gradient(90deg, #ff0080, #ff6b00, #f5c518, #00ff88, #00cfff, #9b5de5, #ff0080) border-box;
 }
 
-@keyframes handPulse {
+@keyframes handRainbow {
+  0% {
+    box-shadow: 0 0 20px 8px rgba(255, 0, 128, .5);
+  }
 
-  0%,
-  100% {
-    box-shadow: 0 0 0 3px var(--gold-bright), 0 0 24px 4px rgba(245, 197, 24, .3);
+  16% {
+    box-shadow: 0 0 20px 8px rgba(255, 107, 0, .5);
+  }
+
+  33% {
+    box-shadow: 0 0 20px 8px rgba(245, 197, 24, .6);
   }
 
   50% {
-    box-shadow: 0 0 0 4px var(--gold-bright), 0 0 40px 12px rgba(245, 197, 24, .5);
+    box-shadow: 0 0 20px 8px rgba(0, 255, 136, .5);
+  }
+
+  66% {
+    box-shadow: 0 0 20px 8px rgba(0, 207, 255, .5);
+  }
+
+  83% {
+    box-shadow: 0 0 20px 8px rgba(155, 93, 229, .5);
+  }
+
+  100% {
+    box-shadow: 0 0 20px 8px rgba(255, 0, 128, .5);
   }
 }
 

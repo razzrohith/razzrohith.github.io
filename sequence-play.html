@@ -113,7 +113,7 @@
         /* ── Loading overlay ── */
         #loadOverlay {
             position: fixed;
-            top: var(--bar-h);
+            top: 0;
             left: 0;
             right: 0;
             bottom: 0;
@@ -167,12 +167,12 @@
         /* ── Iframe ── */
         #gameFrame {
             position: fixed;
-            top: var(--bar-h);
+            top: 0;
             left: 0;
             right: 0;
             bottom: 0;
             width: 100%;
-            height: calc(100% - var(--bar-h));
+            height: 100%;
             border: none;
             display: block;
         }
@@ -180,13 +180,6 @@
 </head>
 
 <body>
-
-    <!-- Top navigation bar -->
-    <div id="topBar">
-        <a href="/" id="backBtn">← Home</a>
-        <div id="gameTitle">🃏 &nbsp; S E Q U E N C E</div>
-        <div id="statusDot" class="loading" title="Connecting…"></div>
-    </div>
 
     <!-- Loading overlay (shown while Render server wakes up) -->
     <div id="loadOverlay">
@@ -204,18 +197,15 @@
     <script>
         const frame = document.getElementById('gameFrame');
         const overlay = document.getElementById('loadOverlay');
-        const dot = document.getElementById('statusDot');
 
         frame.addEventListener('load', () => {
             overlay.classList.add('hidden');
-            dot.classList.remove('loading');
             setTimeout(() => overlay.remove(), 600);
         });
 
         // Fallback: if iframe load fires very late, hide after max 30s
         setTimeout(() => {
             overlay.classList.add('hidden');
-            dot.classList.remove('loading');
         }, 30000);
     </script>
 

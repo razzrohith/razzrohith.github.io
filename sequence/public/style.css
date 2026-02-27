@@ -459,7 +459,7 @@ input[type="text"]:focus {
   position: absolute;
   top: 2px;
   left: 3px;
-  font-size: 1rem;
+  font-size: 0.8rem;
   font-weight: 900;
   line-height: 1;
   color: var(--text-dark);
@@ -472,7 +472,7 @@ input[type="text"]:focus {
   position: absolute;
   bottom: 2px;
   right: 3px;
-  font-size: 1rem;
+  font-size: 0.8rem;
   font-weight: 900;
   line-height: 1;
   color: var(--text-dark);

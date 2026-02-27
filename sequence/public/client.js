@@ -231,9 +231,11 @@ function renderHand(room) {
         <span class="rank-br${isRed ? ' red' : ''}" style="position:absolute;bottom:3px;right:4px;font-size:.75rem;">Q${card.suit}</span>
       `;
     } else {
+      // Number / Ace cards — same corner-label style as the board
+      const col = isRed ? '#b91c1c' : '#1a1208';
       cardEl.innerHTML = `
-        <div class="suit">${card.suit || ''}</div>
-        <div class="rank">${card.rank || ''}</div>
+        <span style="position:absolute;top:3px;left:4px;font-size:.65rem;font-weight:900;font-family:Georgia,serif;line-height:1;color:${col}">${card.rank}${card.suit}</span>
+        <span style="position:absolute;bottom:3px;right:4px;font-size:.65rem;font-weight:900;font-family:Georgia,serif;line-height:1;color:${col}">${card.rank}${card.suit}</span>
       `;
     }
 

@@ -42,40 +42,24 @@
       cursor: none;
     }
 
-    /* ── Custom Cursor — animated calm dot ── */
+    /* ── Cursor: plain dot, zero animation, zero bubble ── */
     #cursor {
       position: fixed;
       width: 7px;
       height: 7px;
-      background: rgba(255, 255, 255, .9);
+      background: #fff;
       border-radius: 50%;
       pointer-events: none;
       z-index: 9999;
-      transform: translate(-50%, -50%);
-      transition: width .15s, height .15s, background .2s, box-shadow .2s;
-      box-shadow: 0 0 6px 2px rgba(255, 255, 255, .35);
-      animation: cursorBreath 2.4s ease-in-out infinite;
-    }
-
-    @keyframes cursorBreath {
-
-      0%,
-      100% {
-        box-shadow: 0 0 4px 2px rgba(255, 255, 255, .25);
-      }
-
-      50% {
-        box-shadow: 0 0 9px 3px rgba(255, 255, 255, .5);
-      }
+      top: 0;
+      left: 0;
     }
 
     body:has(a:hover) #cursor,
     body:has(button:hover) #cursor {
-      width: 11px;
-      height: 11px;
       background: #f5c518;
-      box-shadow: 0 0 12px 4px rgba(245, 197, 24, .5);
-      animation: none;
+      width: 9px;
+      height: 9px;
     }
 
     /* ── Canvas stars ── */
@@ -399,6 +383,46 @@
         font-size: 2.5rem;
       }
     }
+
+    /* ── Game Overlay (URL Masking) ── */
+    #gameOverlay {
+      position: fixed;
+      inset: 0;
+      z-index: 10000;
+      background: var(--bg);
+      display: none;
+      flex-direction: column;
+    }
+
+    #gameOverlay.active {
+      display: flex;
+    }
+
+    #closeOverlay {
+      height: 46px;
+      background: linear-gradient(90deg, #0f0c29, #302b63, #24243e);
+      border-bottom: 1px solid rgba(245, 197, 24, .25);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      font-family: inherit;
+      font-size: .9rem;
+      font-weight: 700;
+      cursor: pointer;
+      justify-content: space-between;
+    }
+
+    #closeOverlay:hover {
+      background: #302b63;
+    }
+
+    #overlayFrame {
+      flex: 1;
+      width: 100%;
+      border: none;
+      background: #000;
+    }
   </style>
 </head>
 
@@ -453,7 +477,50 @@
     </footer>
   </div>
 
+  <!-- Game Overlay -->
+  <div id="gameOverlay">
+    <div id="closeOverlay">
+      <span>← Back to Lobby</span>
+      <span id="overlayTitle" style="color:var(--gold);letter-spacing:.1em;"></span>
+    </div>
+    <iframe id="overlayFrame" allow="fullscreen"></iframe>
+  </div>
+
   <script>
+    // ── Game Overlay Logic (URL Masking) ──
+    const overlay = document.getElementById('gameOverlay');
+    const frame = document.getElementById('overlayFrame');
+    const closeBtn = document.getElementById('closeOverlay');
+    const titleEl = document.getElementById('overlayTitle');
+
+    function openGame(e, path, id, title) {
+      e.preventDefault();
+      frame.src = path;
+      titleEl.textContent = title;
+      overlay.classList.add('active');
+      // Clean URL update
+      window.history.replaceState({ game: id }, title, '/?game=' + id);
+      document.body.style.overflow = 'hidden'; // stop page scroll
+    }
+
+    closeBtn.addEventListener('click', () => {
+      overlay.classList.remove('active');
+      frame.src = ''; // stop game
+      window.history.replaceState({}, document.title, window.location.pathname);
+      document.body.style.overflow = '';
+    });
+
+    document.getElementById('sequenceCard').addEventListener('click', e => openGame(e, './sequence-play.html', 'sequence', 'SEQUENCE'));
+    document.getElementById('snakeCard').addEventListener('click', e => openGame(e, './snake/', 'snake', 'SNAKE'));
+
+    // If loaded with ?game= query, open automatically
+    window.addEventListener('DOMContentLoaded', () => {
+      const params = new URLSearchParams(window.location.search);
+      const game = params.get('game');
+      if (game === 'sequence') document.getElementById('sequenceCard').click();
+      if (game === 'snake') document.getElementById('snakeCard').click();
+    });
+
     // ── Glowing cursor ──
     const cursor = document.getElementById('cursor');
     document.addEventListener('mousemove', e => {

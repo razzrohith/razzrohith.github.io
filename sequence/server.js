@@ -31,30 +31,19 @@ const CORNERS = [
 const SUITS = ['♠', '♥', '♦', '♣'];
 const RANKS = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
 
-// Board card layout (from Wikipedia/official Sequence)
-// 10x10 grid showing which card picture sits in each cell (corners are free/wild => null)
 const BOARD_LAYOUT = [
-  // Row 0
-  [ null, '5♣', null, '7♣', '8♣', '9♣', '10♣', 'J♣', 'Q♣', null ],
-  // Row 1
-  [ '4♦', null, '6♦', null, '8♦', null, '10♦', null, 'Q♦', 'A♦' ],
-  // Row 2
-  [ null, '5♦', null, '7♦', null, '9♦', null, 'J♦', null, 'K♦' ],
-  // Row 3
-  [ '4♥', null, '6♥', null, '8♥', null, '10♥', null, 'Q♥', 'A♥' ],
-  // Row 4
-  [ '5♥', null, '7♥', null, '9♥', null, 'J♥', null, 'K♥', '2♥' ],
-  // Row 5
-  [ '6♥', null, '8♥', null, '10♥', null, 'Q♥', null, 'A♥', '3♥' ],
-  // Row 6
-  [ '7♥', null, '9♥', null, 'J♥', null, 'K♥', null, '2♥', '4♥' ],
-  // Row 7
-  [ '8♥', null, '10♥', null, 'Q♥', null, 'A♥', null, '3♥', '5♥' ],
-  // Row 8
-  [ '9♥', null, 'J♥', null, 'K♥', null, '2♥', null, '4♥', '6♥' ],
-  // Row 9
-  [ null, '10♠', 'J♠', 'Q♠', 'K♠', 'A♠', '2♠', '3♠', '4♠', null ]
+  [null, "6♣", "A♥", "K♠", "K♣", "9♥", "K♠", "6♣", "2♣", null],
+  ["2♠", "A♦", "2♣", "8♣", "8♦", "10♠", "7♥", "8♥", "5♥", "10♣"],
+  ["8♠", "7♠", "8♥", "Q♠", "6♦", "A♣", "2♥", "3♣", "9♣", "5♦"],
+  ["Q♦", "9♣", "8♠", "7♠", "4♠", "Q♥", "5♠", "3♥", "10♦", "3♦"],
+  ["5♦", "4♥", "3♦", "9♥", "6♠", "4♦", "7♦", "2♥", "3♣", "Q♥"],
+  ["2♠", "4♠", "7♦", "6♥", "2♦", "6♦", "Q♠", "7♣", "4♥", "9♦"],
+  ["4♣", "9♠", "4♦", "9♠", "10♣", "7♥", "A♠", "K♣", "9♦", "3♥"],
+  ["8♦", "2♦", "A♣", "K♦", "4♣", "A♥", "3♠", "5♠", "Q♣", "10♠"],
+  ["8♣", "3♠", "Q♦", "A♦", "10♥", "Q♣", "7♣", "5♣", "6♠", "K♦"],
+  [null, "6♥", "K♥", "K♥", "5♥", "10♥", "5♣", "A♠", "10♦", null]
 ];
+
 
 // Validate BOARD_LAYOUT shape
 for (let r = 0; r < BOARD_SIZE; r++) {
@@ -88,10 +77,6 @@ function createDeck() {
       }
     }
   }
-  // Add 4 jokers (eye of the tiger? but we just mark as JOKER)
-  for (let i = 0; i < 4; i++) {
-    deck.push({ rank: 'JOKER', suit: '', display: 'JOKER' });
-  }
   shuffle(deck);
   return deck;
 }
@@ -115,20 +100,22 @@ function getCardsForPlayerCount(n) {
   return CARD_DISTRIBUTION[n];
 }
 
-// Room management
-const rooms = new Map();
+// DB connection
+const connectDB = require('./db');
+const Room = require('./models');
+connectDB();
 
 function generateRoomCode() {
   return Math.random().toString(36).substring(2, 6).toUpperCase();
 }
 
-function createRoom(hostId, hostName) {
+async function createRoom(hostId, hostName) {
   const roomId = generateRoomCode();
-  const room = {
+  const room = new Room({
     id: roomId,
     hostId,
     board: Array(BOARD_SIZE).fill(null).map(() => Array(BOARD_SIZE).fill(null)),
-    cardPositions: BOARD_LAYOUT, // fixed picture per cell (null for free spaces?)
+    cardPositions: BOARD_LAYOUT,
     players: [],
     deck: [],
     discardPile: [],
@@ -136,9 +123,9 @@ function createRoom(hostId, hostName) {
     winner: null,
     turnIndex: 0,
     gameStarted: false,
-    createdAt: Date.now()
-  };
-  rooms.set(roomId, room);
+    availableColors: ['#e63946', '#4cc9f0', '#06d6a0', '#ffd166', '#7209b7', '#f72585', '#3a0ca3']
+  });
+  await room.save();
   return room;
 }
 
@@ -146,8 +133,8 @@ function getPlayerSocketIds(room) {
   return room.players.flatMap(p => p.socketIds || []);
 }
 
-function broadcastToRoom(roomId, event, data, excludeSocketId = null) {
-  const room = rooms.get(roomId);
+async function broadcastToRoom(roomId, event, data, excludeSocketId = null) {
+  const room = await Room.findOne({ id: roomId });
   if (!room) return;
   const targets = getPlayerSocketIds(room).filter(id => id !== excludeSocketId);
   io.to(targets).emit(event, data);
@@ -167,6 +154,7 @@ function serializeRoom(room) {
     })),
     board: room.board.map(row => row.map(cell => cell ? { color: cell.color, locked: cell.locked } : null)),
     turnIndex: room.turnIndex,
+    teamWinCounts: room.teamWinCounts || {},
     sequences: room.sequences,
     winner: room.winner,
     gameStarted: room.gameStarted,
@@ -209,201 +197,195 @@ function nextTurn(room) {
   room.turnIndex = (room.turnIndex + 1) % room.players.length;
 }
 
-function checkForSequence(room, r, c, color) {
-  // Check 4 directions: horizontal, vertical, diagonal /, diagonal \
-  const directions = [
-    [0, 1], [1, 0], [1, 1], [1, -1]
-  ];
-  for (const [dr, dc] of directions) {
-    let count = 1;
-    // forward
-    let rr = r + dr, cc = c + dc;
-    while (rr >= 0 && rr < BOARD_SIZE && cc >= 0 && cc < BOARD_SIZE && room.board[rr][cc] && room.board[rr][cc].color === color) {
-      count++;
-      rr += dr; cc += dc;
-    }
-    // backward
-    rr = r - dr; cc = c - dc;
-    while (rr >= 0 && rr < BOARD_SIZE && cc >= 0 && cc < BOARD_SIZE && room.board[rr][cc] && room.board[rr][cc].color === color) {
-      count++;
-      rr -= dr; cc -= dc;
-    }
-    if (count >= 5) {
-      // record sequence as sorted cells
-      const cells = [];
-      for (let i = 0; i < count; i++) {
-        cells.push({ r: r + (i - Math.floor(count/2)) * dr, c: c + (i - Math.floor(count/2)) * dc });
-        // Actually we need to collect from both ends; easier: iterate from start to end.
-      }
-      // Better: collect from start to end properly
-      // Let's compute start point:
-      let startR = r, startC = c;
-      while (true) {
-        const nr = startR - dr, nc = startC - dc;
-        if (nr < 0 || nr >= BOARD_SIZE || nc < 0 || nc >= BOARD_SIZE || !room.board[nr][nc] || room.board[nr][nc].color !== color) break;
-        startR = nr; startC = nc;
-      }
-      const lineCells = [];
-      let cr = startR, cc = startC;
-      while (cr >= 0 && cr < BOARD_SIZE && cc >= 0 && cc < BOARD_SIZE && room.board[cr][cc] && room.board[cr][cc].color === color) {
-        lineCells.push({ r: cr, c: cc });
-        cr += dr; cc += dc;
-      }
-      // Record sequence
-      const seqKey = lineCells.map(c => `${c.r},${c.c}`).sort().join('|');
-      if (!room.sequences.includes(seqKey)) {
-        room.sequences.push(seqKey);
-        // award point to team (or player?) Track by team color. team stored in player.team (color or player id)
-        // Determine which team this color belongs to: if color is player.team (could be player.id for non-team mode). We'll just count by color.
-        // We could keep score elsewhere. For now, we'll check if a team got two sequences to win.
-        // Winning: a team has two sequences (officially). Or if they have 9 in one row counts as 2.
-        // We'll compute sequences per team:
-        // map teamId -> count of distinct sequence keys
-      }
+function updateSequencesAndLocks(room) {
+  // clear all locks
+  for (let r = 0; r < BOARD_SIZE; r++) {
+    for (let c = 0; c < BOARD_SIZE; c++) {
+      if (room.board[r][c]) room.board[r][c].locked = false;
     }
   }
-}
 
-// Actually compute sequences after each move: easier to recompute all sequences for both teams?
-// We'll store sequences as set of cells (per key). When a chip placed, check for new sequences that include that chip, add them if not already present.
-function addSequenceIfNew(room, cells) {
-  // cells: array of {r,c} forming a straight line of same color
-  const sorted = cells.map(c => `${c.r},${c.c}`).sort().join('|');
-  if (!room.sequences.includes(sorted)) {
-    room.sequences.push(sorted);
-    return true;
-  }
-  return false;
-}
+  const teams = [...new Set(room.players.map(p => p.team).filter(Boolean))];
+  const teamWinCounts = {};
 
-// Instead of complex direction scanning each time, we can check 4 directions from the placed chip for its color and count length including placed cell. Then if 5+ in line, record the exact set. Let's implement that.
-function detectSequencesForChip(room, r, c) {
-  const cell = room.board[r][c];
-  if (!cell) return []; // no chip
-  const color = cell.color;
-  const dirs = [[0,1],[1,0],[1,1],[1,-1]];
-  const newSeqs = [];
-  for (const [dr, dc] of dirs) {
-    // get contiguous line along this direction that includes (r,c)
-    let line = [{r,c}];
-    // forward
-    let nr = r + dr, nc = c + dc;
-    while (nr >= 0 && nr < BOARD_SIZE && nc >= 0 && nc < BOARD_SIZE && room.board[nr][nc] && room.board[nr][nc].color === color) {
-      line.push({r: nr, c: nc});
-      nr += dr; nc += dc;
-    }
-    // backward
-    nr = r - dr; nc = c - dc;
-    while (nr >= 0 && nr < BOARD_SIZE && nc >= 0 && nc < BOARD_SIZE && room.board[nr][nc] && room.board[nr][nc].color === color) {
-      line.push({r: nr, c: nc});
-      nr -= dr; nc -= dc;
-    }
-    if (line.length >= 5) {
-      // This line is a potential sequence. Need to see if it's already counted. Since overlapping lines could be counted multiple times. To avoid duplicates, we'll store normalized representation: sort by coords.
-      line.sort((a,b) => a.r - b.r || a.c - b.c);
-      const key = line.map(p => `${p.r},${p.c}`).join('|');
-      if (!room.sequences.includes(key)) {
-        room.sequences.push(key);
-        // Lock all cells in this sequence
-        line.forEach(p => {
-          if (room.board[p.r][p.c]) room.board[p.r][p.c].locked = true;
+  teams.forEach(team => {
+    let sequences = 0;
+
+    const processLine = (cells) => {
+      let currentBlock = [];
+      for (const cell of cells) {
+        const { r, c } = cell;
+        const isTeamChip = room.board[r][c] && room.board[r][c].color === team;
+        if (isTeamChip || isCorner(r, c)) {
+          currentBlock.push(cell);
+        } else {
+          if (currentBlock.length >= 5) {
+            sequences += Math.floor((currentBlock.length - 1) / 4);
+            currentBlock.forEach(bc => {
+              if (room.board[bc.r][bc.c]) room.board[bc.r][bc.c].locked = true;
+            });
+          }
+          currentBlock = [];
+        }
+      }
+      if (currentBlock.length >= 5) {
+        sequences += Math.floor((currentBlock.length - 1) / 4);
+        currentBlock.forEach(bc => {
+          if (room.board[bc.r][bc.c]) room.board[bc.r][bc.c].locked = true;
         });
-        newSeqs.push(key);
       }
-    }
-  }
-  return newSeqs;
-}
+    };
 
-// After a sequence is added, check if the team (color) now has 2 sequences, or one sequence of length >=9 (counts as 2)
-function checkWinner(room) {
-  // Count sequences per color
-  const counts = {};
-  for (const seqKey of room.sequences) {
-    const cells = seqKey.split('|').map(s => ({ r: parseInt(s.split(',')[0]), c: parseInt(s.split(',')[1]) }));
-    // Determine color by looking at any cell (all same)
-    const { r, c } = cells[0];
-    const color = room.board[r][c].color;
-    counts[color] = (counts[color] || 0) + 1;
-    if (cells.length >= 9) {
-      // Extra point? Actually official: 9 in a row counts as 2 sequences. So we add an extra.
-      counts[color] += 1;
+    // Rows
+    for (let r = 0; r < BOARD_SIZE; r++) {
+      const line = [];
+      for (let c = 0; c < BOARD_SIZE; c++) line.push({ r, c });
+      processLine(line);
     }
-    if (counts[color] >= 2) {
-      // Find which player/team this color belongs to
-      // For simplicity, if color is player.id (when no team) or team value (could be string like 'red'?). We'll just set winner to color.
-      room.winner = color;
-      return color;
+    // Cols
+    for (let c = 0; c < BOARD_SIZE; c++) {
+      const line = [];
+      for (let r = 0; r < BOARD_SIZE; r++) line.push({ r, c });
+      processLine(line);
     }
+    // Diagonals (top-left to bottom-right)
+    for (let startR = 0; startR < BOARD_SIZE; startR++) {
+      let r = startR, c = 0;
+      const line = [];
+      while (r < BOARD_SIZE && c < BOARD_SIZE) { line.push({ r, c }); r++; c++; }
+      if (line.length >= 5) processLine(line);
+    }
+    for (let startC = 1; startC < BOARD_SIZE; startC++) {
+      let r = 0, c = startC;
+      const line = [];
+      while (r < BOARD_SIZE && c < BOARD_SIZE) { line.push({ r, c }); r++; c++; }
+      if (line.length >= 5) processLine(line);
+    }
+    // Diagonals (top-right to bottom-left)
+    for (let startR = 0; startR < BOARD_SIZE; startR++) {
+      let r = startR, c = BOARD_SIZE - 1;
+      const line = [];
+      while (r < BOARD_SIZE && c >= 0) { line.push({ r, c }); r++; c--; }
+      if (line.length >= 5) processLine(line);
+    }
+    for (let startC = BOARD_SIZE - 2; startC >= 0; startC--) {
+      let r = 0, c = startC;
+      const line = [];
+      while (r < BOARD_SIZE && c >= 0) { line.push({ r, c }); r++; c--; }
+      if (line.length >= 5) processLine(line);
+    }
+
+    teamWinCounts[team] = sequences;
+  });
+
+  room.teamWinCounts = teamWinCounts;
+  room.markModified('teamWinCounts');
+
+  // Check win condition
+  const uniqueTeamsCount = teams.length;
+  // Official sequence rules: 2 teams need 2 sequences. 3 teams need 1 sequence.
+  const sequencesNeededToWin = uniqueTeamsCount >= 3 ? 1 : 2;
+
+  const winningTeam = Object.keys(teamWinCounts).find(t => teamWinCounts[t] >= sequencesNeededToWin);
+  if (winningTeam && !room.winner) {
+    room.winner = winningTeam;
   }
-  return null;
 }
 
 // Socket.io connection handling
 io.on('connection', (socket) => {
   console.log('Client connected:', socket.id);
 
-  socket.on('createRoom', ({ name }) => {
-    const room = createRoom(socket.id, name || 'Host');
-    room.players.push({
-      id: socket.id,
-      name: name || 'Host',
-      team: socket.id, // default team = player ID (color)
-      ready: false,
-      cards: [],
-      socketIds: [socket.id]
-    });
-    socket.join(room.id);
-    socket.emit('roomCreated', { roomId: room.id, room: serializeRoom(room) });
+  socket.on('createRoom', async ({ name }) => {
+    try {
+      const room = await createRoom(socket.id, name || 'Host');
+      if (!room.availableColors || room.availableColors.length === 0) {
+        room.availableColors = ['#e63946', '#4cc9f0', '#06d6a0', '#ffd166', '#7209b7', '#f72585', '#3a0ca3'];
+      }
+      const myColor = room.availableColors.shift();
+
+      room.players.push({
+        id: socket.id,
+        name: name || 'Host',
+        team: myColor,
+        ready: false,
+        cards: [],
+        socketIds: [socket.id]
+      });
+      room.markModified('availableColors');
+      await room.save();
+      socket.join(room.id);
+      socket.emit('roomCreated', { roomId: room.id, room: serializeRoom(room) });
+    } catch (error) {
+      console.error(error);
+      socket.emit('error', { message: 'Failed to create room' });
+    }
   });
 
-  socket.on('joinRoom', ({ roomId, name }) => {
-    const room = rooms.get(roomId.toUpperCase());
-    if (!room) {
-      socket.emit('error', { message: 'Room not found' });
-      return;
+  socket.on('joinRoom', async ({ roomId, name }) => {
+    try {
+      const room = await Room.findOne({ id: roomId.toUpperCase() });
+      if (!room) {
+        socket.emit('error', { message: 'Room not found' });
+        return;
+      }
+      if (room.gameStarted) {
+        // Allow reconnecting to existing players
+        const existing = room.players.find(p => p.id === socket.id || p.name === name);
+        if (existing) {
+          if (existing.socketIds) existing.socketIds.push(socket.id);
+          else existing.socketIds = [socket.id];
+          await room.save();
+          socket.join(room.id);
+          socket.emit('joinedRoom', { roomId: room.id, room: serializeRoom(room) });
+          return;
+        }
+        socket.emit('error', { message: 'Game already in progress' });
+        return;
+      }
+      const existing = room.players.find(p => p.id === socket.id);
+      if (existing) {
+        socket.emit('error', { message: 'Already in room' });
+        return;
+      }
+      if (!room.availableColors || room.availableColors.length === 0) {
+        room.availableColors = ['#e63946', '#4cc9f0', '#06d6a0', '#ffd166', '#7209b7', '#f72585', '#3a0ca3'];
+      }
+      const myColor = room.availableColors.shift();
+
+      const player = {
+        id: socket.id,
+        name: name || `Player_${socket.id.substr(0, 4)}`,
+        team: myColor,
+        ready: false,
+        cards: [],
+        socketIds: [socket.id]
+      };
+      room.players.push(player);
+      room.markModified('availableColors');
+      await room.save();
+      socket.join(room.id);
+      socket.emit('joinedRoom', { roomId: room.id, room: serializeRoom(room) });
+      await broadcastToRoom(room.id, 'roomUpdate', serializeRoom(room), socket.id);
+    } catch (err) {
+      console.error(err);
+      socket.emit('error', { message: 'Failed to join room' });
     }
-    if (room.gameStarted) {
-      socket.emit('error', { message: 'Game already in progress' });
-      return;
-    }
-    const existing = room.players.find(p => p.id === socket.id);
-    if (existing) {
-      socket.emit('error', { message: 'Already in room' });
-      return;
-    }
-    const player = {
-      id: socket.id,
-      name: name || `Player_${socket.id.substr(0,4)}`,
-      team: socket.id,
-      ready: false,
-      cards: [],
-      socketIds: [socket.id]
-    };
-    room.players.push(player);
-    socket.join(room.id);
-    socket.emit('joinedRoom', { roomId: room.id, room: serializeRoom(room) });
-    broadcastToRoom(room.id, 'roomUpdate', serializeRoom(room), socket.id);
   });
 
-  socket.on('setTeam', ({ roomId, team }) => {
-    const room = rooms.get(roomId);
-    const player = room?.players.find(p => p.id === socket.id);
-    if (!player) return;
-    player.team = team; // team can be color string or player ID
-    broadcastToRoom(roomId, 'roomUpdate', serializeRoom(room));
-  });
 
-  socket.on('toggleReady', ({ roomId }) => {
-    const room = rooms.get(roomId);
-    const player = room?.players.find(p => p.id === socket.id);
+  socket.on('toggleReady', async ({ roomId }) => {
+    const room = await Room.findOne({ id: roomId });
+    if (!room) return;
+    const player = room.players.find(p => p.id === socket.id);
     if (!player) return;
     player.ready = !player.ready;
-    broadcastToRoom(roomId, 'roomUpdate', serializeRoom(room));
+    await room.save();
+    await broadcastToRoom(roomId, 'roomUpdate', serializeRoom(room));
   });
 
-  socket.on('startGame', ({ roomId }) => {
-    const room = rooms.get(roomId);
+  socket.on('startGame', async ({ roomId }) => {
+    const room = await Room.findOne({ id: roomId });
     if (!room) {
       socket.emit('error', { message: 'Room not found' });
       return;
@@ -421,11 +403,13 @@ io.on('connection', (socket) => {
       return;
     }
     initializeGame(room);
+    await room.save();
     socket.emit('gameStarted', { roomId });
+    await broadcastToRoom(roomId, 'roomUpdate', serializeRoom(room)); // sync state instantly
   });
 
-  socket.on('placeCard', ({ roomId, card, boardPos }) => {
-    const room = rooms.get(roomId);
+  socket.on('placeCard', async ({ roomId, card, boardPos }) => {
+    const room = await Room.findOne({ id: roomId });
     if (!room || !room.gameStarted) {
       socket.emit('error', { message: 'Game not in progress' });
       return;
@@ -473,22 +457,17 @@ io.on('connection', (socket) => {
     }
     // Two-eyed Jack (wild) placement: allowed anywhere (including corners)
     if (isTwoEyedJack(card)) {
-      // place it; color = player's team
       room.board[boardPos.r][boardPos.c] = { color: player.team, locked: false };
       player.cards.splice(cardIndex, 1);
       room.discardPile.push(card);
-      // Check for sequences created by this chip
-      const newSeqs = detectSequencesForChip(room, boardPos.r, boardPos.c);
-      if (newSeqs.length > 0) {
-        const maybeWinner = checkWinner(room);
-        if (maybeWinner) {
-          room.winner = maybeWinner;
-          // Find winning player name
-          const winnerPlayer = room.players.find(p => p.team === maybeWinner);
-          broadcastToRoom(roomId, 'gameOver', { winner: winnerPlayer ? winnerPlayer.name : 'Unknown' });
-        }
+      updateSequencesAndLocks(room);
+      if (room.winner) {
+        const winnerPlayer = room.players.find(p => p.team === room.winner);
+        await broadcastToRoom(roomId, 'gameOver', { winner: winnerPlayer ? winnerPlayer.name : 'Unknown' });
+        // Delete room data entirely upon game match completion
+        await Room.deleteOne({ id: room.id });
+        return;
       }
-      // Draw replacement card
       if (room.deck.length === 0) {
         room.deck = room.discardPile;
         room.discardPile = [];
@@ -496,16 +475,22 @@ io.on('connection', (socket) => {
       }
       player.cards.push(room.deck.pop());
       nextTurn(room);
-      broadcastToRoom(roomId, 'roomUpdate', serializeRoom(room));
+
+      updateSequencesAndLocks(room);
+
+      room.markModified('board');
+      room.markModified('players');
+      room.markModified('deck');
+      room.markModified('discardPile');
+      room.markModified('sequences');
+
+      await room.save();
+      await broadcastToRoom(roomId, 'roomUpdate', serializeRoom(room));
       return;
     }
     // One-eyed Jack: remove opponent's chip
     if (isOneEyedJack(card)) {
-      if (!boardPos) {
-        socket.emit('error', { message: 'Select a chip to remove' });
-        return;
-      }
-      if (boardPos.r < 0 || boardPos.r >= BOARD_SIZE || boardPos.c < 0 || boardPos.c >= BOARD_SIZE) {
+      if (!boardPos || boardPos.r < 0 || boardPos.r >= BOARD_SIZE || boardPos.c < 0 || boardPos.c >= BOARD_SIZE) {
         socket.emit('error', { message: 'Invalid cell' });
         return;
       }
@@ -518,17 +503,13 @@ io.on('connection', (socket) => {
         socket.emit('error', { message: 'No chip at that position' });
         return;
       }
-      // Cannot remove if chip is locked (by sequence?) Officially, one-eyed jack can remove any opponent chip that is not part of a completed sequence. We ignore lock for now.
-      // Opponent check: target.color must not equal player's team (or same player if free-for-all). We'll assume teams are separate.
       if (target.color === player.team) {
         socket.emit('error', { message: 'Cannot remove your own chip' });
         return;
       }
-      // Remove it
       room.board[boardPos.r][boardPos.c] = null;
       player.cards.splice(cardIndex, 1);
       room.discardPile.push(card);
-      // Draw replacement
       if (room.deck.length === 0) {
         room.deck = room.discardPile;
         room.discardPile = [];
@@ -536,25 +517,28 @@ io.on('connection', (socket) => {
       }
       player.cards.push(room.deck.pop());
       nextTurn(room);
-      broadcastToRoom(roomId, 'roomUpdate', serializeRoom(room));
+
+      room.markModified('board');
+      room.markModified('players');
+      room.markModified('deck');
+      room.markModified('discardPile');
+
+      await room.save();
+      await broadcastToRoom(roomId, 'roomUpdate', serializeRoom(room));
       return;
     }
-    // Normal card placement: must match board picture and cell empty (already checked)
+    // Normal card placement
     room.board[boardPos.r][boardPos.c] = { color: player.team, locked: false };
-    // Remove card from hand, add to discard
     player.cards.splice(cardIndex, 1);
     room.discardPile.push(card);
-    // Check for sequences
-    const newSeqs = detectSequencesForChip(room, boardPos.r, boardPos.c);
-    if (newSeqs.length > 0) {
-      const maybeWinner = checkWinner(room);
-      if (maybeWinner) {
-        room.winner = maybeWinner;
-        const winnerPlayer = room.players.find(p => p.team === maybeWinner);
-        broadcastToRoom(roomId, 'gameOver', { winner: winnerPlayer ? winnerPlayer.name : 'Unknown' });
-      }
+    updateSequencesAndLocks(room);
+    if (room.winner) {
+      const winnerPlayer = room.players.find(p => p.team === room.winner);
+      await broadcastToRoom(roomId, 'gameOver', { winner: winnerPlayer ? winnerPlayer.name : 'Unknown' });
+      // Delete room data entirely upon game match completion
+      await Room.deleteOne({ id: room.id });
+      return;
     }
-    // Draw replacement
     if (room.deck.length === 0) {
       room.deck = room.discardPile;
       room.discardPile = [];
@@ -562,26 +546,71 @@ io.on('connection', (socket) => {
     }
     player.cards.push(room.deck.pop());
     nextTurn(room);
-    broadcastToRoom(roomId, 'roomUpdate', serializeRoom(room));
+
+    updateSequencesAndLocks(room);
+
+    room.markModified('board');
+    room.markModified('players');
+    room.markModified('deck');
+    room.markModified('discardPile');
+    room.markModified('sequences');
+
+    await room.save();
+    await broadcastToRoom(roomId, 'roomUpdate', serializeRoom(room));
   });
 
-  socket.on('disconnect', () => {
-    // Remove player from all rooms
-    for (const [roomId, room] of rooms.entries()) {
+  socket.on('leaveRoom', async () => {
+    const rooms = await Room.find({ "players.socketIds": socket.id });
+    for (const room of rooms) {
+      if (!room.gameStarted) {
+        await Room.deleteOne({ id: room.id });
+      } else {
+        const activePlayers = room.players.filter(p => p.socketIds && p.socketIds.length > 0 && p.id !== socket.id);
+        if (activePlayers.length === 0) {
+          await Room.deleteOne({ id: room.id });
+        }
+      }
+    }
+  });
+
+  socket.on('disconnect', async () => {
+    // Find all rooms this socket is part of
+    const rooms = await Room.find({ "players.socketIds": socket.id });
+    for (const room of rooms) {
       const idx = room.players.findIndex(p => p.id === socket.id);
       if (idx !== -1) {
-        room.players.splice(idx, 1);
-        // If room empty, delete
-        if (room.players.length === 0) {
-          rooms.delete(roomId);
-        } else {
-          // If host left, assign new host
-          if (room.hostId === socket.id) {
+
+        if (!room.gameStarted) {
+          // Completely strip player and retrieve color
+          const removedPlayer = room.players.splice(idx, 1)[0];
+
+          if (removedPlayer.team) {
+            room.availableColors.push(removedPlayer.team);
+            room.markModified('availableColors');
+          }
+
+          if (room.players.length === 0) {
+            await Room.deleteOne({ id: room.id });
+            continue; // Room dead, skip updates
+          } else if (room.hostId === removedPlayer.id) {
+            // Reassign host
             room.hostId = room.players[0].id;
           }
-          broadcastToRoom(roomId, 'roomUpdate', serializeRoom(room));
+        } else {
+          // If game started, just remove the socket connection
+          const player = room.players[idx];
+          player.socketIds = player.socketIds.filter(id => id !== socket.id);
+          // If no active sockets left across ALL players in a started game, nuke it
+          const anyActive = room.players.some(p => p.socketIds && p.socketIds.length > 0);
+          if (!anyActive) {
+            await Room.deleteOne({ id: room.id });
+            continue;
+          }
         }
-        break;
+
+        room.markModified('players');
+        await room.save();
+        await broadcastToRoom(room.id, 'roomUpdate', serializeRoom(room));
       }
     }
   });

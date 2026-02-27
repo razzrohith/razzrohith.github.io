@@ -19,7 +19,6 @@ const el = {
   copyBtn: document.getElementById('copyBtn'),
   copyMsg: document.getElementById('copyMsg'),
   playerList: document.getElementById('playerList'),
-  teamSelect: document.getElementById('teamSelect'),
   readyBtn: document.getElementById('readyBtn'),
   startBtn: document.getElementById('startBtn'),
   lobbyError: document.getElementById('lobbyError'),
@@ -37,11 +36,11 @@ const el = {
 
 const COLORS = ['red', 'blue', 'green', 'yellow', 'purple', 'orange', 'black', 'pink', 'cyan', 'lime'];
 const CORNERS = [
-  {r:0,c:0}, {r:0,c:9}, {r:9,c:0}, {r:9,c:9}
+  { r: 0, c: 0 }, { r: 0, c: 9 }, { r: 9, c: 0 }, { r: 9, c: 9 }
 ];
-const isCorner = (r,c) => CORNERS.some(k=>k.r===r && k.c===c);
-const isTwoEyedJack = c => c.rank==='J' && (c.suit==='♥' || c.suit==='♦');
-const isOneEyedJack = c => c.rank==='J' && (c.suit==='♠' || c.suit==='♣');
+const isCorner = (r, c) => CORNERS.some(k => k.r === r && k.c === c);
+const isTwoEyedJack = c => c.rank === 'J' && (c.suit === '♥' || c.suit === '♦');
+const isOneEyedJack = c => c.rank === 'J' && (c.suit === '♠' || c.suit === '♣');
 
 function showScreen(name) {
   Object.values(screens).forEach(s => s.classList.remove('active'));
@@ -59,27 +58,24 @@ function renderLobby(room) {
   el.playerList.innerHTML = '';
   room.players.forEach(p => {
     const div = document.createElement('div');
-    div.className = 'player';
+    div.className = 'player-card';
     div.innerHTML = `
-      <span>
-        ${p.isHost ? '<span class="badge">HOST</span>' : ''}
-        ${p.name}
-        ${p.ready ? ' ✓' : ''}
-      </span>
-      <span>
-        ${p.team ? `<span class="team" style="background:${p.team==='default'?'#94a3b8':p.team}"></span>` : ''}
-      </span>
+      <div class="player-info">
+        <span class="player-name">${p.name}</span>
+        ${p.isHost ? '<span class="player-badge">HOST</span>' : ''}
+      </div>
+      <div class="player-info">
+        <span class="player-status">${p.ready ? 'Ready ✓' : 'Waiting'}</span>
+        ${p.team ? `<div class="team-dot" style="background:${p.team === 'default' ? 'transparent' : p.team}"></div>` : ''}
+      </div>
     `;
     el.playerList.appendChild(div);
   });
   // My data
   myPlayer = room.players.find(p => p.id === socket.id);
   if (!myPlayer) return;
-  // Team select
-  el.teamSelect.value = myPlayer.team || 'default';
   // Ready button
   el.readyBtn.textContent = myPlayer.ready ? 'Unready' : 'Ready';
-  el.readyBtn.disabled = myPlayer.isHost; // host is always ready? Actually host can also ready. We'll allow.
   // Start button: host only, hide when not host
   const isHostNow = myPlayer.isHost;
   el.startBtn.classList.toggle('hidden', !isHostNow);
@@ -93,46 +89,52 @@ function renderLobby(room) {
 function renderBoard(room) {
   el.board.innerHTML = '';
   for (let r = 0; r < 10; r++) {
-    const row = document.createElement('div');
-    row.className = 'row';
     for (let c = 0; c < 10; c++) {
       const cell = document.createElement('div');
       cell.className = 'cell';
-      if (isCorner(r,c)) cell.classList.add('wild');
-      const picture = room.cardPositions[r][c];
-      if (picture && !isCorner(r,c)) {
-        const mini = document.createElement('span');
-        mini.className = 'cardMini';
-        mini.textContent = picture;
-        cell.appendChild(mini);
+      if (isCorner(r, c)) {
+        cell.classList.add('wild');
+      } else {
+        const picture = room.cardPositions[r][c];
+        if (picture) {
+          const mini = document.createElement('span');
+          mini.className = 'cardMini';
+          mini.textContent = picture;
+
+          if (picture.includes('♥') || picture.includes('♦')) {
+            mini.classList.add('red-suit');
+            mini.style.color = '#dc2626';
+          } else {
+            mini.style.color = '#1f2937';
+          }
+
+          cell.appendChild(mini);
+        }
       }
+
       const chip = room.board[r][c];
       if (chip) {
         const chipEl = document.createElement('div');
-        chipEl.className = `chip ${chip.color}`;
-        if (chip.color === 'default') chipEl.style.backgroundColor = '#94a3b8';
+        chipEl.style.backgroundColor = chip.color; // The server currently sends HEX color codes directly!
+        chipEl.className = 'chip';
+        // Add a class string fallback incase we use the old team strings
+        if (chip.color && !chip.color.startsWith('#')) {
+          chipEl.classList.add(chip.color);
+        }
         cell.appendChild(chipEl);
       } else {
-        // Clickable only if it's my turn and I have a selected card
         const current = room.players[room.turnIndex];
         if (current && current.id === socket.id && selectedCardIdx !== null) {
           const card = myPlayer.cards[selectedCardIdx];
           if (card) {
-            if (isOneEyedJack(card)) {
-              // For one-eyed jack, we also allow clicking a chip to remove
-              // But chip presence indicates could be target; signal via data attribute
-              cell.style.cursor = 'pointer';
-            } else {
-              cell.style.cursor = 'pointer';
-            }
+            cell.style.cursor = 'pointer';
           }
         }
       }
       cell.dataset.r = r;
       cell.dataset.c = c;
-      row.appendChild(cell);
+      el.board.appendChild(cell);
     }
-    el.board.appendChild(row);
   }
 }
 
@@ -141,13 +143,28 @@ function renderHand(room) {
   myPlayer.cards.forEach((card, idx) => {
     const cardEl = document.createElement('div');
     cardEl.className = 'card';
+    if (card.suit === '♥' || card.suit === '♦') cardEl.classList.add('red');
     if (idx === selectedCardIdx) cardEl.classList.add('selected');
+
+    let suitHtml = card.suit || '';
+    let rankHtml = card.rank || '';
+
+    // Check Jack rules
+    if (isTwoEyedJack(card)) {
+      suitHtml = '👁️👁️';
+      rankHtml = '<span style="font-size: 0.6rem; letter-spacing: 0;">WILD</span>';
+    } else if (isOneEyedJack(card)) {
+      suitHtml = '👁️';
+      rankHtml = '<span style="font-size: 0.6rem; letter-spacing: 0;">REMOVE</span>';
+    }
+
     cardEl.innerHTML = `
-      <span class="suit">${card.suit || (card.rank==='JOKER'?'🃏':'')}</span>
-      <span class="rank">${card.rank}</span>
+      <div class="suit">${suitHtml}</div>
+      <div class="rank">${rankHtml}</div>
     `;
     cardEl.onclick = () => {
       selectedCardIdx = idx;
+      renderBoard(room);
       renderHand(room);
     };
     el.hand.appendChild(cardEl);
@@ -156,27 +173,53 @@ function renderHand(room) {
 
 function updateTurn(room) {
   const current = room.players[room.turnIndex];
-  el.currentPlayer.textContent = current ? `Turn: ${current.name}` : '';
-  // My turn indicator: if my turn, highlight?
+
+  const currentPlayerSpan = document.getElementById('currentPlayer');
+  const recentCardContainer = document.getElementById('recentCardContainer');
+  const lastPlayedCardDiv = document.getElementById('lastPlayedCard');
+
+  if (current) {
+    currentPlayerSpan.textContent = `Turn: ${current.name}`;
+  } else {
+    currentPlayerSpan.textContent = 'Waiting for players...';
+  }
+
+  if (room.discardPile && room.discardPile.length > 0) {
+    const topCard = room.discardPile[room.discardPile.length - 1];
+
+    let suitHtml = topCard.suit || '';
+    let rankHtml = topCard.rank || '';
+
+    if (isTwoEyedJack(topCard)) {
+      suitHtml = '👁️👁️';
+      rankHtml = '<span style="font-size: 0.6rem; letter-spacing: 0;">WILD</span>';
+    } else if (isOneEyedJack(topCard)) {
+      suitHtml = '👁️';
+      rankHtml = '<span style="font-size: 0.6rem; letter-spacing: 0;">REMOVE</span>';
+    }
+
+    const suitClass = (topCard.suit === '♥' || topCard.suit === '♦') ? 'red' : '';
+
+    lastPlayedCardDiv.innerHTML = `
+      <div class="card ${suitClass}" style="transform: scale(0.6); pointer-events: none; margin: 0; box-shadow: 0 4px 10px rgba(0,0,0,0.8);">
+        <div class="suit">${suitHtml}</div>
+        <div class="rank">${rankHtml}</div>
+      </div>
+    `;
+    lastPlayedCardDiv.style.opacity = '1';
+    recentCardContainer.querySelector('span').textContent = "Last Played";
+  } else {
+    lastPlayedCardDiv.innerHTML = '';
+    lastPlayedCardDiv.style.opacity = '0.5';
+    recentCardContainer.querySelector('span').textContent = "Discard Empty";
+  }
 }
 
 function updateWinCount(room) {
-  // Count sequences per team
-  const counts = {};
-  for (const seqKey of room.sequences) {
-    const cells = seqKey.split('|').map(s => {
-      const [r,c] = s.split(',').map(Number);
-      return {r,c};
-    });
-    const { r, c } = cells[0];
-    const color = room.board[r][c].color;
-    counts[color] = (counts[color] || 0) + 1;
-    if (cells.length >= 9) counts[color] += 1;
-  }
-  // Show counts for all teams present
+  if (!room.teamWinCounts) return;
   const parts = [];
   room.players.forEach(p => {
-    const count = counts[p.team] || 0;
+    const count = room.teamWinCounts[p.team] || 0;
     parts.push(`${p.name}: ${count}`);
   });
   el.winCount.textContent = parts.join(' | ');
@@ -191,14 +234,27 @@ function renderGame(room) {
 
 // --- Event Listeners ---
 el.createBtn.onclick = () => {
-  const name = el.nameInput.value.trim() || 'Host';
+  const name = el.nameInput.value.trim();
+  if (!name) {
+    el.homeError.textContent = "Please enter your name first!";
+    return;
+  }
   socket.emit('createRoom', { name });
 };
 
 el.joinBtn.onclick = () => {
   const roomIdInput = el.roomInput.value.trim().toUpperCase();
-  const name = el.nameInput.value.trim() || 'Player';
-  if (!roomIdInput) return;
+  const name = el.nameInput.value.trim();
+
+  if (!name) {
+    el.homeError.textContent = "Please enter your name first!";
+    return;
+  }
+  if (!roomIdInput) {
+    el.homeError.textContent = "Please enter a Room Code!";
+    return;
+  }
+
   socket.emit('joinRoom', { roomId: roomIdInput, name });
 };
 
@@ -210,11 +266,7 @@ el.copyBtn.onclick = () => {
   });
 };
 
-el.teamSelect.onchange = () => {
-  if (!roomId) return;
-  const team = el.teamSelect.value === 'default' ? null : el.teamSelect.value;
-  socket.emit('setTeam', { roomId, team });
-};
+
 
 el.readyBtn.onclick = () => {
   if (!roomId) return;
@@ -282,10 +334,15 @@ socket.on('joinedRoom', ({ roomId: id, room }) => {
 socket.on('roomUpdate', (room) => {
   // Refresh myPlayer reference
   myPlayer = room.players.find(p => p.id === socket.id);
-  if (!room.gameStarted) {
-    renderLobby(room);
-  } else {
+
+  // Enforce Synchronization
+  if (room.gameStarted) {
+    if (!screens.game.classList.contains('active')) {
+      showScreen('game');
+    }
     renderGame(room);
+  } else {
+    renderLobby(room);
   }
 });
 

@@ -459,7 +459,7 @@ input[type="text"]:focus {
   position: absolute;
   top: 2px;
   left: 3px;
-  font-size: 1.4rem;
+  font-size: 1rem;
   font-weight: 900;
   line-height: 1;
   color: var(--text-dark);
@@ -472,7 +472,7 @@ input[type="text"]:focus {
   position: absolute;
   bottom: 2px;
   right: 3px;
-  font-size: 1.4rem;
+  font-size: 1rem;
   font-weight: 900;
   line-height: 1;
   color: var(--text-dark);
@@ -519,7 +519,7 @@ input[type="text"]:focus {
   flex-direction: column;
   justify-content: space-between;
   align-items: center;
-  font-size: 0.85rem;
+  font-size: 1rem;
   color: var(--text-dark);
   line-height: 1;
 }
@@ -837,11 +837,11 @@ input[type="text"]:focus {
 
   .cell .rank-tl,
   .cell .rank-br {
-    font-size: .42rem;
+    font-size: .8rem;
   }
 
-  .cell .cardMini {
-    font-size: .52rem;
+  .cell .pip-col {
+    font-size: .55rem;
   }
 
   .chip {

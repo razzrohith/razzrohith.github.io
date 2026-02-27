@@ -401,17 +401,17 @@ input[type="text"]:focus {
   color: #b91c1c;
 }
 
-/* face card image — sits in middle zone, leaving room for corner labels */
+/* face card image — uses % offsets so it works on all cell sizes */
 .cell .face-img {
   position: absolute;
-  top: 16px;
-  left: 2px;
-  right: 2px;
-  bottom: 16px;
-  width: calc(100% - 4px);
-  height: calc(100% - 32px);
+  top: 22%;
+  left: 3%;
+  right: 3%;
+  bottom: 22%;
+  width: 94%;
+  height: 56%;
   object-fit: cover;
-  opacity: .92;
+  opacity: .88;
   border-radius: 2px;
   z-index: 1;
 }
@@ -513,44 +513,39 @@ input[type="text"]:focus {
   transition: box-shadow .4s, border-color .4s;
 }
 
-/* MY TURN glow on hand container */
+/* MY TURN — calm soothing animated glow, cross-browser (no padding-box trick) */
 .hand-container.my-turn {
-  border-color: var(--gold-bright) !important;
-  box-shadow: 0 0 30px 6px rgba(245, 197, 24, .35),
-    inset 0 0 20px rgba(245, 197, 24, .08) !important;
-  animation: handRainbow 3s linear infinite;
-  border: 3px solid transparent !important;
-  background: linear-gradient(rgba(0, 0, 0, .3), rgba(0, 0, 0, .3)) padding-box,
-    linear-gradient(90deg, #ff0080, #ff6b00, #f5c518, #00ff88, #00cfff, #9b5de5, #ff0080) border-box;
+  border: 2px solid #6bbfbf !important;
+  box-shadow:
+    0 0 0 4px rgba(107, 191, 191, .35),
+    0 0 28px 8px rgba(107, 191, 191, .25) !important;
+  animation: handCalmGlow 2.8s ease-in-out infinite;
 }
 
-@keyframes handRainbow {
+@keyframes handCalmGlow {
   0% {
-    box-shadow: 0 0 20px 8px rgba(255, 0, 128, .5);
+    border-color: #6bbfbf;
+    box-shadow: 0 0 0 4px rgba(107, 191, 191, .3), 0 0 20px 6px rgba(107, 191, 191, .2);
   }
 
-  16% {
-    box-shadow: 0 0 20px 8px rgba(255, 107, 0, .5);
-  }
-
-  33% {
-    box-shadow: 0 0 20px 8px rgba(245, 197, 24, .6);
+  25% {
+    border-color: #7b9ef0;
+    box-shadow: 0 0 0 4px rgba(123, 158, 240, .3), 0 0 24px 8px rgba(123, 158, 240, .25);
   }
 
   50% {
-    box-shadow: 0 0 20px 8px rgba(0, 255, 136, .5);
+    border-color: #a78bfa;
+    box-shadow: 0 0 0 4px rgba(167, 139, 250, .3), 0 0 28px 10px rgba(167, 139, 250, .3);
   }
 
-  66% {
-    box-shadow: 0 0 20px 8px rgba(0, 207, 255, .5);
-  }
-
-  83% {
-    box-shadow: 0 0 20px 8px rgba(155, 93, 229, .5);
+  75% {
+    border-color: #7b9ef0;
+    box-shadow: 0 0 0 4px rgba(123, 158, 240, .3), 0 0 24px 8px rgba(123, 158, 240, .25);
   }
 
   100% {
-    box-shadow: 0 0 20px 8px rgba(255, 0, 128, .5);
+    border-color: #6bbfbf;
+    box-shadow: 0 0 0 4px rgba(107, 191, 191, .3), 0 0 20px 6px rgba(107, 191, 191, .2);
   }
 }
 

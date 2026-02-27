@@ -467,6 +467,18 @@ socket.on('joinedRoom', ({ roomId: id, room }) => {
   }
 });
 
+// Rejoin: server sends this when a player rejoins a game already in progress
+socket.on('gameRejoined', ({ roomId: id, room }) => {
+  roomId = id;
+  myPlayer = room.players.find(p => p.id === socket.id);
+  if (myPlayer) localStorage.setItem('seqSession', JSON.stringify({ roomId: id, name: myPlayer.name }));
+  document.getElementById('rejoinSection') && (document.getElementById('rejoinSection').style.display = 'none');
+  const overlay = document.getElementById('pauseOverlay');
+  if (overlay) overlay.style.display = 'none';
+  showScreen('game');
+  renderGame(room);
+});
+
 socket.on('roomUpdate', (room) => {
   // Refresh myPlayer reference
   myPlayer = room.players.find(p => p.id === socket.id);

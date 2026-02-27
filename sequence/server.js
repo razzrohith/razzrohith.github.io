@@ -388,14 +388,17 @@ io.on('connection', (socket) => {
         socket.emit('error', { message: 'Player not found in room – try joining as a new player' });
         return;
       }
-      // Update socket
+      // Update socket ID
+      existing.socketIds = existing.socketIds.filter(id => id !== socket.id);
       existing.socketIds.push(socket.id);
+      existing.id = socket.id; // keep id in sync for turn checks
       // Unpause the game
       room.paused = false;
       room.markModified('players');
       await room.save();
       socket.join(room.id);
-      socket.emit('joinedRoom', { roomId: room.id, room: serializeRoom(room) });
+      // Use 'gameRejoined' so client goes to GAME screen, not lobby, with full hand
+      socket.emit('gameRejoined', { roomId: room.id, room: serializeRoom(room) });
       await broadcastToRoom(room.id, 'roomUpdate', serializeRoom(room));
     } catch (err) {
       console.error(err);
@@ -556,8 +559,22 @@ io.on('connection', (socket) => {
       socket.emit('error', { message: 'Cell already occupied' });
       return;
     }
-    // Normal card placement — use finishTurn to keep DRY and ensure lastPlacedPos is set
+    // ── Normal card placement ─────────────────────────────────────────────────
+    room.board[boardPos.r][boardPos.c] = { color: player.team, locked: false };
+    player.cards.splice(cardIndex, 1);
+    room.discardPile.push(card);
+    updateSequencesAndLocks(room);
+    if (room.winner) {
+      room.lastPlacedPos = boardPos;
+      room.markModified('lastPlacedPos');
+      await room.save();
+      const winnerPlayer = room.players.find(p => p.team === room.winner);
+      await broadcastToRoom(roomId, 'gameOver', { winner: winnerPlayer ? winnerPlayer.name : 'Unknown' });
+      await Room.deleteOne({ id: room.id });
+      return;
+    }
     await finishTurn(boardPos);
+
   });
 
   socket.on('leaveRoom', async () => {

@@ -31,7 +31,7 @@ const CORNERS = [
 const SUITS = ['♠', '♥', '♦', '♣'];
 const RANKS = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
 
-const BOARD_LAYOUT = [
+const CLASSIC_BOARD_LAYOUT = [
   [null, "6♣", "A♥", "K♠", "K♣", "9♥", "K♠", "6♣", "2♣", null],
   ["2♠", "A♦", "2♣", "8♣", "8♦", "10♠", "7♥", "8♥", "5♥", "10♣"],
   ["8♠", "7♠", "8♥", "Q♠", "6♦", "A♣", "2♥", "3♣", "9♣", "5♦"],
@@ -44,13 +44,16 @@ const BOARD_LAYOUT = [
   [null, "6♥", "K♥", "K♥", "5♥", "10♥", "5♣", "A♠", "10♦", null]
 ];
 
+// SEQUEL5_BOARD_LAYOUT removed to ensure proper game rules (no Jacks or WC on board)
 
 // Validate BOARD_LAYOUT shape
-for (let r = 0; r < BOARD_SIZE; r++) {
-  if (BOARD_LAYOUT[r].length !== BOARD_SIZE) {
-    throw new Error(`Row ${r} has ${BOARD_LAYOUT[r].length} columns, expected ${BOARD_SIZE}`);
+[CLASSIC_BOARD_LAYOUT].forEach((layout, index) => {
+  for (let r = 0; r < BOARD_SIZE; r++) {
+    if (layout[r].length !== BOARD_SIZE) {
+      throw new Error(`Layout ${index} Row ${r} has ${layout[r].length} columns, expected ${BOARD_SIZE}`);
+    }
   }
-}
+});
 
 // Card matching utilities
 const isCorner = (r, c) => CORNERS.some(corner => corner.r === r && corner.c === c);
@@ -109,13 +112,14 @@ function generateRoomCode() {
   return Math.random().toString(36).substring(2, 6).toUpperCase();
 }
 
-async function createRoom(hostId, hostName) {
+async function createRoom(hostId, hostName, boardStyle = 'Classic Board') {
   const roomId = generateRoomCode();
   const room = new Room({
     id: roomId,
     hostId,
     board: Array(BOARD_SIZE).fill(null).map(() => Array(BOARD_SIZE).fill(null)),
-    cardPositions: BOARD_LAYOUT,
+    cardPositions: CLASSIC_BOARD_LAYOUT, // Always use standard Sequence board layout
+    boardStyle: boardStyle,
     players: [],
     deck: [],
     discardPile: [],
@@ -160,6 +164,7 @@ function serializeRoom(room) {
     winner: room.winner,
     gameStarted: room.gameStarted,
     cardPositions: room.cardPositions,
+    boardStyle: room.boardStyle || 'Classic Board',
     paused: room.paused || false,
     lastPlacedPos: room.lastPlacedPos || null
   };
@@ -299,9 +304,9 @@ function updateSequencesAndLocks(room) {
 io.on('connection', (socket) => {
   console.log('Client connected:', socket.id);
 
-  socket.on('createRoom', async ({ name }) => {
+  socket.on('createRoom', async ({ name, boardType }) => {
     try {
-      const room = await createRoom(socket.id, name || 'Host');
+      const room = await createRoom(socket.id, name || 'Host', boardType);
       if (!room.availableColors || room.availableColors.length === 0) {
         room.availableColors = ['#e63946', '#4cc9f0', '#06d6a0', '#ffd166', '#7209b7', '#f72585', '#3a0ca3'];
       }
@@ -333,8 +338,15 @@ io.on('connection', (socket) => {
         return;
       }
       if (room.gameStarted) {
+        const activeSockets = await io.in(room.id).fetchSockets();
+        if (activeSockets.length === 0) {
+          await Room.deleteOne({ id: room.id });
+          socket.emit('error', { message: 'Game has expired. Please create a new room.' });
+          return;
+        }
+
         // Allow reconnecting to existing players
-        const existing = room.players.find(p => p.id === socket.id || p.name === name);
+        const existing = room.players.find(p => (p.socketIds && p.socketIds.includes(socket.id)) || p.name === name);
         if (existing) {
           if (existing.socketIds) existing.socketIds.push(socket.id);
           else existing.socketIds = [socket.id];
@@ -346,7 +358,7 @@ io.on('connection', (socket) => {
         socket.emit('error', { message: 'Game already in progress' });
         return;
       }
-      const existing = room.players.find(p => p.id === socket.id);
+      const existing = room.players.find(p => p.socketIds && p.socketIds.includes(socket.id));
       if (existing) {
         socket.emit('error', { message: 'Already in room' });
         return;
@@ -391,7 +403,6 @@ io.on('connection', (socket) => {
       // Update socket ID
       existing.socketIds = existing.socketIds.filter(id => id !== socket.id);
       existing.socketIds.push(socket.id);
-      existing.id = socket.id; // keep id in sync for turn checks
       // Unpause the game
       room.paused = false;
       room.markModified('players');
@@ -407,23 +418,28 @@ io.on('connection', (socket) => {
   });
 
 
-  socket.on('toggleReady', async ({ roomId }) => {
+  socket.on('toggleReady', async (roomIdOrObj) => {
+    const roomId = typeof roomIdOrObj === 'object' ? roomIdOrObj.roomId : roomIdOrObj;
+    if (!roomId) return;
     const room = await Room.findOne({ id: roomId });
     if (!room) return;
-    const player = room.players.find(p => p.id === socket.id);
+    const player = room.players.find(p => p.socketIds && p.socketIds.includes(socket.id));
     if (!player) return;
     player.ready = !player.ready;
     await room.save();
     await broadcastToRoom(roomId, 'roomUpdate', serializeRoom(room));
   });
 
-  socket.on('startGame', async ({ roomId }) => {
+  socket.on('startGame', async (roomIdOrObj) => {
+    const roomId = typeof roomIdOrObj === 'object' ? roomIdOrObj.roomId : roomIdOrObj;
+    if (!roomId) return;
     const room = await Room.findOne({ id: roomId });
     if (!room) {
       socket.emit('error', { message: 'Room not found' });
       return;
     }
-    if (room.hostId !== socket.id) {
+    const hostPlayer = room.players.find(p => p.id === room.hostId);
+    if (!hostPlayer || !(hostPlayer.socketIds && hostPlayer.socketIds.includes(socket.id))) {
       socket.emit('error', { message: 'Only the host can start the game' });
       return;
     }
@@ -451,12 +467,13 @@ io.on('connection', (socket) => {
       socket.emit('error', { message: 'Game is paused – waiting for a player to reconnect' });
       return;
     }
-    const player = room.players.find(p => p.id === socket.id);
+    const player = room.players.find(p => p.socketIds && p.socketIds.includes(socket.id));
     if (!player) {
       socket.emit('error', { message: 'Not in room' });
       return;
     }
-    if (room.turnIndex !== room.players.findIndex(p => p.id === socket.id)) {
+    const currentPlayerIndex = room.players.findIndex(p => p.socketIds && p.socketIds.includes(socket.id));
+    if (room.turnIndex !== currentPlayerIndex) {
       socket.emit('error', { message: 'Not your turn' });
       return;
     }
@@ -595,7 +612,7 @@ io.on('connection', (socket) => {
     // Find all rooms this socket is part of
     const rooms = await Room.find({ "players.socketIds": socket.id });
     for (const room of rooms) {
-      const idx = room.players.findIndex(p => p.id === socket.id);
+      const idx = room.players.findIndex(p => p.socketIds && p.socketIds.includes(socket.id));
       if (idx !== -1) {
 
         if (!room.gameStarted) {
@@ -629,15 +646,19 @@ io.on('connection', (socket) => {
           // Player has no remaining sockets — mark offline, game continues
           if (player.socketIds.length === 0) {
             // Do NOT pause — just notify others so they see "offline" status
-            room.markModified('players');
-            await room.save();
+            try {
+              room.markModified('players');
+              await room.save();
+            } catch (err) { console.error("Disconnect save error:", err.message); }
             await broadcastToRoom(room.id, 'roomUpdate', serializeRoom(room));
             continue;
           }
         }
 
-        room.markModified('players');
-        await room.save();
+        try {
+          room.markModified('players');
+          await room.save();
+        } catch (err) { console.error("Global disconnect save error:", err.message); }
         await broadcastToRoom(room.id, 'roomUpdate', serializeRoom(room));
       }
     }

@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+
+<body style="margin:0; background:#000;">
+    <canvas id="c"></canvas>
+    <script>
+        const img = new Image();
+        img.src = 'public/assets/reference.jpg';
+        img.onload = () => {
+            const c = document.getElementById('c');
+            const ctx = c.getContext('2d');
+            c.width = img.width; c.height = img.height;
+            ctx.drawImage(img, 0, 0);
+
+            ctx.strokeStyle = 'rgba(255, 0, 0, 0.8)';
+            ctx.lineWidth = 1;
+
+            // Draw grid based on my old calculations
+            const startX = 63;
+            const startY = 116;
+            const gapX = 51.5;
+            const gapY = 51.5;
+
+            for (let r = 0; r <= 10; r++) {
+                ctx.beginPath();
+                ctx.moveTo(startX, startY + r * gapY);
+                ctx.lineTo(startX + 10 * gapX, startY + r * gapY);
+                ctx.stroke();
+            }
+            for (let cCol = 0; cCol <= 10; cCol++) {
+                ctx.beginPath();
+                ctx.moveTo(startX + cCol * gapX, startY);
+                ctx.lineTo(startX + cCol * gapX, startY + 10 * gapY);
+                ctx.stroke();
+            }
+        }
+    </script>
+</body>
+
+</html>

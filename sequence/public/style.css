@@ -442,6 +442,85 @@ input[type="text"]:focus {
   box-shadow: 0 0 0 2px var(--gold-bright), inset 0 0 12px rgba(245, 197, 24, .2);
 }
 
+/* Exact 1:1 Image Replication Theme (Modified to visibly show distinct tiles) */
+.board-frame.sequel5-theme {
+  width: 100%;
+  max-width: 640px;
+  margin: 0 auto;
+  aspect-ratio: 1 / 1;
+  background: #114b2d;
+  box-shadow: 0 0 0 8px #114b2d, 0 0 0 10px #c59f44, 0 10px 30px rgba(0, 0, 0, 0.8);
+  border: 3px solid #e1bd5e;
+  padding: 12px;
+  border-radius: 4px;
+  position: relative;
+  align-self: center;
+}
+
+.board-frame.sequel5-theme::before,
+.board-frame.sequel5-theme::after {
+  content: '';
+  position: absolute;
+  width: 60px;
+  height: 60px;
+  pointer-events: none;
+  background-image: radial-gradient(circle at top left, transparent 20px, #e1bd5e 21px, #e1bd5e 24px, transparent 25px),
+    radial-gradient(circle at bottom right, transparent 20px, #e1bd5e 21px, #e1bd5e 24px, transparent 25px);
+  background-repeat: no-repeat;
+  background-size: 30px 30px;
+  background-position: 0 0, 100% 100%;
+  display: block;
+}
+
+.board-frame.sequel5-theme::before {
+  top: 4px;
+  left: 4px;
+  bottom: 4px;
+  right: 4px;
+  width: auto;
+  height: auto;
+}
+
+.board-frame.sequel5-theme #board {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: #114b2d;
+  border: none;
+  gap: 2px;
+  padding: 0;
+  aspect-ratio: 1/1;
+  display: grid !important;
+  grid-template-columns: repeat(10, 1fr) !important;
+  grid-template-rows: repeat(10, 1fr) !important;
+}
+
+.board-frame.sequel5-theme .cell {
+  border: 1px solid #7c6d53 !important;
+  background: transparent !important;
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.3) !important;
+  border-radius: 3px;
+  width: 100% !important;
+  height: 100% !important;
+  position: relative;
+  overflow: hidden;
+}
+
+.board-frame.sequel5-theme .cell.wild {
+  background: transparent !important;
+  border: 1px solid #e1bd5e !important;
+  box-shadow: none !important;
+}
+
+/* Hover effects to allow interaction visibility */
+.board-frame.sequel5-theme .cell:hover {
+  box-shadow: inset 0 0 20px rgba(255, 255, 255, 0.4) !important;
+}
+
+.board-frame.sequel5-theme .cell.placeable:hover {
+  box-shadow: inset 0 0 20px rgba(245, 197, 24, 0.6) !important;
+}
+
 /* Corner / Wild cells */
 .cell.wild {
   background-image: url('assets/wild_star_v2.png');
@@ -824,34 +903,117 @@ input[type="text"]:focus {
     font-size: 2rem;
   }
 
+  /* Make the game view use full viewport height, and completely hide body overflow */
+  body.in-game {
+    overflow: hidden;
+    position: fixed;
+    width: 100%;
+    height: 100%;
+  }
+
+  .screen#game {
+    padding: 0;
+    margin: 0;
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .game-header {
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+    margin-bottom: 0;
+    padding: 8px 12px;
+  }
+
+  .board-container {
+    margin: 0;
+    flex-grow: 1;
+    overflow-y: auto;
+    background: #000;
+  }
+
+  .board-frame {
+    width: 100%;
+    padding: 6px;
+    border-radius: 0;
+  }
+
   #board {
-    grid-template-columns: repeat(10, 34px);
-    grid-template-rows: repeat(10, 34px);
-    gap: 2px;
+    width: 100%;
+    grid-template-columns: repeat(10, 1fr);
+    grid-template-rows: repeat(10, 1fr);
+    aspect-ratio: 74/100;
+    gap: 3px;
   }
 
   .cell {
-    width: 34px;
-    height: 34px;
+    width: 100%;
+    height: 100%;
   }
 
-  .cell .rank-tl,
+  .cell .rank-tl {
+    top: 1px;
+    left: 2px;
+    font-size: .65rem;
+  }
+
   .cell .rank-br {
-    font-size: .8rem;
+    bottom: 1px;
+    right: 2px;
+    font-size: .65rem;
   }
 
   .cell .pip-col {
-    font-size: .55rem;
+    font-size: .45rem;
   }
 
   .chip {
-    width: 20px;
-    height: 20px;
+    width: 70%;
+    height: 70%;
+  }
+
+  /* Bottom Fixed Hand container */
+  .hand-container {
+    position: relative;
+    width: 100%;
+    margin-top: 0;
+    border-radius: 0;
+    background: #000;
+    padding: 10px;
+    padding-bottom: 24px;
+    border: none;
+    box-shadow: none;
+    flex-shrink: 0;
+  }
+
+  .hand-container.my-turn {
+    /* Modify my-turn for mobile so it doesn't break fixed bottom padding */
+    border-top: 2px solid #6bbfbf !important;
+  }
+
+  .hand-title {
+    display: none;
+  }
+
+  #hand {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    gap: 8px;
+    padding-bottom: 12px;
+    justify-content: flex-start;
+    scroll-snap-type: x mandatory;
   }
 
   .card {
-    width: 60px;
-    height: 84px;
+    flex: 0 0 auto;
+    width: 22vw;
+    height: 31vw;
+    scroll-snap-align: start;
+    transform: none !important;
   }
 
   .card .suit {
@@ -859,11 +1021,16 @@ input[type="text"]:focus {
   }
 
   .card .rank {
-    font-size: .8rem;
+    font-size: .75rem;
   }
 
-  .board-frame {
-    padding: 10px;
+  .card:hover {
+    transform: none !important;
+    box-shadow: inset 0 0 12px rgba(138, 107, 72, 0.15), 0 4px 8px rgba(0, 0, 0, .5) !important;
+  }
+
+  .card.selected {
+    transform: translateY(-8px) !important;
   }
 
   .board-title {

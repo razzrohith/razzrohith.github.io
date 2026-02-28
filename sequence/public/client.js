@@ -98,49 +98,101 @@ function renderLobby(room) {
 // (Legacy CHIP_IMAGES mapping removed)
 
 function renderBoard(room) {
+  const isSequel5 = room.boardStyle === 'Sequel5 Board (New)';
+  const sequel5Header = document.getElementById('sequel5Header');
+  const classicHeader = document.getElementById('classicHeader');
+  const boardFrame = document.getElementById('boardFrame');
+
+  if (isSequel5) {
+    if (sequel5Header) sequel5Header.style.display = 'flex';
+    if (classicHeader) classicHeader.style.display = 'none';
+    if (boardFrame) boardFrame.classList.add('sequel5-theme');
+  } else {
+    if (sequel5Header) sequel5Header.style.display = 'none';
+    if (classicHeader) classicHeader.style.display = 'block';
+    if (boardFrame) boardFrame.classList.remove('sequel5-theme');
+  }
+
   el.board.innerHTML = '';
   for (let r = 0; r < 10; r++) {
     for (let c = 0; c < 10; c++) {
       const cell = document.createElement('div');
       cell.className = 'cell';
+      const picture = room.cardPositions[r][c];
 
-      if (isCorner(r, c)) {
-        cell.classList.add('wild');
-        const starImg = document.createElement('img');
-        starImg.src = 'wild_star.png';
-        starImg.alt = 'WILD';
-        starImg.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:2px;';
-        cell.appendChild(starImg);
+      if (isSequel5) {
+        // Individual generated components
+        const tileImg = document.createElement('img');
+        tileImg.src = `assets/board_tiles/tile_${r}_${c}.jpg?v=final`;
+        tileImg.style.cssText = 'width:100%; height:100%; object-fit:cover; display:block; border-radius:2px; position:absolute; inset:0; z-index:0; pointer-events:none; border:none;';
+        cell.appendChild(tileImg);
       } else {
-        const picture = room.cardPositions[r][c];  // e.g. "K♥"
-        if (picture) {
-          const rank = picture.slice(0, -1);
-          const suit = picture.slice(-1);
-          const isRed = suit === '♥' || suit === '♦';
-          const colorClass = isRed ? ' red' : '';
-
-          // Rank label top-left
+        if (isCorner(r, c)) {
+          cell.classList.add('wild');
+          cell.innerHTML = `
+            <svg viewBox="0 0 100 100" style="width:82%;height:82%;filter:drop-shadow(0 4px 6px rgba(0,0,0,0.5));">
+              <defs>
+                <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#fff6cc" />
+                  <stop offset="50%" stop-color="#d4af37" />
+                  <stop offset="100%" stop-color="#996e08" />
+                </linearGradient>
+              </defs>
+              <polygon points="50,5 61,35 95,35 68,55 79,88 50,68 21,88 32,55 5,35 39,35" fill="url(#goldGrad)" stroke="#ffe066" stroke-width="1.5"/>
+              <text x="50" y="57" font-family="'Times New Roman', serif" font-size="18" font-weight="900" fill="#1a1208" text-anchor="middle" letter-spacing="1">WILD</text>
+            </svg>
+          `;
+        } else if (picture === "WC") {
           const tlEl = document.createElement('span');
-          tlEl.className = 'rank-tl' + colorClass;
-          tlEl.textContent = rank + suit;
+          tlEl.className = 'rank-tl';
+          tlEl.textContent = 'WC';
           cell.appendChild(tlEl);
 
-          // Rank label bottom-right (rotated)
           const brEl = document.createElement('span');
-          brEl.className = 'rank-br' + colorClass;
-          brEl.textContent = rank + suit;
+          brEl.className = 'rank-br';
+          brEl.textContent = 'WC';
           cell.appendChild(brEl);
 
-          // Face card image for K, Q, J
-          if (rank === 'K' || rank === 'Q' || rank === 'J') {
-            const faceImg = document.createElement('img');
-            faceImg.src = rank === 'K' ? 'assets/king_face.png' :
-              rank === 'Q' ? 'assets/queen_face.png' :
-                'assets/jack_face.png';
-            faceImg.alt = rank; faceImg.className = 'face-img';
-            cell.appendChild(faceImg);
+          // Center visual
+          const centerLogo = document.createElement('div');
+          centerLogo.style.cssText = "width:32px;height:32px;border-radius:50%;background:conic-gradient(#dc2626 0 180deg, #1e3a8a 180deg 360deg);border:3px solid #d4af37;box-shadow:0 3px 6px rgba(0,0,0,0.4);position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);";
+          cell.appendChild(centerLogo);
+        } else {
+          if (picture) {
+            const rank = picture.slice(0, -1);
+            const suit = picture.slice(-1);
+            const isRed = suit === '♥' || suit === '♦';
+            const colorClass = isRed ? ' red' : '';
+
+            // Rank label top-left
+            const tlEl = document.createElement('span');
+            tlEl.className = 'rank-tl' + colorClass;
+            tlEl.textContent = rank + suit;
+            cell.appendChild(tlEl);
+
+            // Rank label bottom-right
+            const brEl = document.createElement('span');
+            brEl.className = 'rank-br' + colorClass;
+            brEl.textContent = rank + suit;
+            cell.appendChild(brEl);
+
+            // For the classic look from the picture, place a larger symbol in middle if it's not a face card
+            if (rank === 'K' || rank === 'Q' || rank === 'J') {
+              const faceImg = document.createElement('img');
+              faceImg.src = rank === 'K' ? 'assets/king_face.png' :
+                rank === 'Q' ? 'assets/queen_face.png' :
+                  'assets/jack_face.png';
+              faceImg.alt = rank; faceImg.className = 'face-img';
+              cell.appendChild(faceImg);
+            } else {
+              // Draw central pip for pure number cards
+              const centerPip = document.createElement('div');
+              centerPip.style.cssText = "font-size:1.8rem;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);opacity:0.8;";
+              if (isRed) centerPip.style.color = "#a51c1c";
+              centerPip.textContent = suit;
+              cell.appendChild(centerPip);
+            }
           }
-          // Number / Ace cards: only the two corner labels already placed above are shown.
         }
       }
 
@@ -163,7 +215,7 @@ function renderBoard(room) {
         // Authentic Poker Chip Image
         const chipImg = document.createElement('img');
         chipImg.src = 'assets/' + chipFileName;
-        chipImg.style.cssText = 'width:100%; height:100%; object-fit:contain; border-radius:50%; box-shadow: 0 4px 6px rgba(0,0,0,0.5); pointer-events:none;';
+        chipImg.style.cssText = 'width:100%; height:100%; object-fit:contain; border-radius:50%; box-shadow: 0 4px 6px rgba(0,0,0,0.5); pointer-events:none; position:relative; z-index:5;';
         chipEl.appendChild(chipImg);
         if (chip.locked) chipEl.classList.add('locked');
         if (room.lastPlacedPos && room.lastPlacedPos.r === r && room.lastPlacedPos.c === c) {
@@ -397,11 +449,12 @@ function renderGame(room) {
 // --- Event Listeners ---
 el.createBtn.onclick = () => {
   const name = el.nameInput.value.trim();
+  const boardType = document.getElementById('boardTypeSelect').value;
   if (!name) {
     el.homeError.textContent = "Please enter your name first!";
     return;
   }
-  socket.emit('createRoom', { name });
+  socket.emit('createRoom', { name, boardType });
 };
 
 el.joinBtn.onclick = () => {
@@ -432,12 +485,12 @@ el.copyBtn.onclick = () => {
 
 el.readyBtn.onclick = () => {
   if (!roomId) return;
-  socket.emit('toggleReady', { roomId });
+  socket.emit('toggleReady', roomId);
 };
 
 el.startBtn.onclick = () => {
   if (!roomId) return;
-  socket.emit('startGame', { roomId });
+  socket.emit('startGame', roomId);
 };
 
 el.leaveLobbyBtn.onclick = () => {
@@ -452,7 +505,7 @@ el.leaveGameBtn.onclick = () => {
 
 el.playAgainBtn.onclick = () => {
   if (!roomId) return;
-  socket.emit('startGame', { roomId });
+  socket.emit('startGame', roomId);
   showScreen('game');
 };
 
@@ -546,6 +599,7 @@ socket.on('gameRejoined', ({ roomId: id, room }) => {
 socket.on('roomUpdate', (room) => {
   // Refresh myPlayer reference
   myPlayer = room.players.find(p => p.id === socket.id);
+  if (myPlayer) localStorage.setItem('seqSession', JSON.stringify({ roomId: room.id, name: myPlayer.name }));
 
   // Handle pause overlay
   const overlay = document.getElementById('pauseOverlay');

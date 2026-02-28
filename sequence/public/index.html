@@ -27,6 +27,11 @@
     <div class="lobby-inputs">
       <input type="text" id="nameInput" placeholder="Enter your name"
         style="margin-bottom: 10px; padding: 10px; width: 100%; box-sizing: border-box; font-size: 16px;">
+      <select id="boardTypeSelect"
+        style="margin-bottom: 10px; padding: 10px; width: 100%; box-sizing: border-box; font-size: 16px; border-radius: 4px; border: 1px solid var(--gold); background: var(--surface);">
+        <option value="sequel5">Sequel5 Board (New)</option>
+        <option value="classic">Classic Board</option>
+      </select>
       <button id="createBtn" style="width: 100%; margin-bottom: 15px;">Create Room</button>
       <div class="join" style="display: flex; gap: 10px;">
         <input type="text" id="roomInput" placeholder="Room code" maxlength="4"
@@ -113,8 +118,17 @@
     </div>
 
     <div class="board-container">
-      <div class="board-frame">
-        <div class="board-title">✦ &nbsp; S E Q U E N C E &nbsp; ✦</div>
+      <div class="board-frame" id="boardFrame">
+        <!-- New Sequel5 Header Area (Updated for Vintage Design) -->
+        <div class="board-header-sequel5" id="sequel5Header"
+          style="display:none; justify-content:center; align-items:center; margin-bottom:12px; padding: 0;">
+          <div
+            style="font-size:1.8rem; font-family:'Georgia', serif; font-weight:900; letter-spacing:0.15em; color:#e7c874; text-shadow:0 2px 4px rgba(0,0,0,0.8), 0 0 10px rgba(212,175,55,0.4);">
+            SEQUENCE.
+          </div>
+        </div>
+
+        <div class="board-title" id="classicHeader">✦ &nbsp; S E Q U E N C E &nbsp; ✦</div>
         <div id="board"></div>
       </div>
     </div>

@@ -16,9 +16,10 @@ const cellSchema = new mongoose.Schema({
 
 const roomSchema = new mongoose.Schema({
     id: { type: String, required: true, unique: true },
-    hostId: String,
+    hostId: { type: String, required: true },
     board: [[cellSchema]],
     cardPositions: [[String]],
+    boardStyle: { type: String, default: 'Classic Board' },
     availableColors: [String],
     players: [playerSchema],
     deck: [mongoose.Schema.Types.Mixed],

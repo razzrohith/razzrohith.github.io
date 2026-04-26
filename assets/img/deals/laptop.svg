@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 420" role="img" aria-label="Premium laptop illustration">
+  <defs>
+    <linearGradient id="bg" x1="70" x2="560" y1="40" y2="390" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#e8fbff"/>
+      <stop offset=".52" stop-color="#e9edff"/>
+      <stop offset="1" stop-color="#fff2d8"/>
+    </linearGradient>
+    <linearGradient id="screen" x1="150" x2="494" y1="92" y2="280" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#071827"/>
+      <stop offset="1" stop-color="#25385b"/>
+    </linearGradient>
+  </defs>
+  <rect width="640" height="420" rx="42" fill="url(#bg)"/>
+  <circle cx="520" cy="78" r="88" fill="#7adbc8" opacity=".32"/>
+  <circle cx="92" cy="340" r="104" fill="#f3c75d" opacity=".28"/>
+  <rect x="142" y="80" width="356" height="222" rx="22" fill="#26344d"/>
+  <rect x="160" y="100" width="320" height="178" rx="14" fill="url(#screen)"/>
+  <path d="M110 306h420l42 52c7 9 1 22-10 22H78c-11 0-17-13-10-22l42-52Z" fill="#d9e2eb"/>
+  <path d="M235 328h170l18 23H217l18-23Z" fill="#b9c5d2"/>
+  <path d="M203 134h214" stroke="#72ead7" stroke-width="11" stroke-linecap="round" opacity=".9"/>
+  <path d="M203 172h142" stroke="#9ebcff" stroke-width="11" stroke-linecap="round" opacity=".9"/>
+  <path d="M203 210h190" stroke="#ffd978" stroke-width="11" stroke-linecap="round" opacity=".9"/>
+</svg>

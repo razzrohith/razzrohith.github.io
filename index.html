@@ -4,173 +4,275 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="A premium temporary game lounge while Razz Rohith's portfolio is under maintenance.">
-  <title>Razz Rohith | Game Lounge</title>
+  <meta name="description" content="DealNest is an original premium deals-discovery community prototype with curated offers, coupons, filters, and community previews.">
+  <title>DealNest | Premium Deals Community</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./assets/css/game-shell.css">
+  <link rel="stylesheet" href="./assets/css/deals.css">
 </head>
 
-<body class="hub-body">
-  <div class="site-progress" aria-hidden="true"></div>
-  <a class="skip-link" href="#games">Skip to games</a>
+<body>
+  <div class="page-glow" aria-hidden="true"></div>
+  <a class="skip-link" href="#hot-deals">Skip to deals</a>
 
-  <header class="site-header glass-nav" data-reveal>
-    <a class="brand" href="./" aria-label="Razz Rohith game lounge home">
-      <span class="brand-mark">RR</span>
+  <header class="market-header" id="top">
+    <a class="brand" href="./" aria-label="DealNest home">
+      <span class="brand-orb" aria-hidden="true">DN</span>
       <span>
-        <strong>Razz Rohith</strong>
-        <small>Interactive maintenance lounge</small>
+        <strong>DealNest</strong>
+        <small>Smart finds, community rated</small>
       </span>
     </a>
-    <nav class="header-nav" aria-label="Primary">
-      <a href="#experience">Experience</a>
-      <a href="#games">Games</a>
-      <a href="#status">Status</a>
+
+    <button class="menu-toggle" id="menuToggle" type="button" aria-expanded="false" aria-controls="primaryNav" aria-label="Open menu">
+      Menu
+    </button>
+
+    <nav class="primary-nav" id="primaryNav" aria-label="Primary navigation">
+      <a href="#trending">Trending</a>
+      <a href="#hot-deals">Hot Deals</a>
+      <a href="#coupons">Coupons</a>
+      <a href="#community">Community</a>
+      <a href="#games">Games archive</a>
     </nav>
+
+    <div class="header-actions">
+      <button class="ghost-button" type="button" data-placeholder="Account access will arrive in the member dashboard phase.">Log in</button>
+      <button class="post-button" type="button" data-placeholder="Deal posting opens in Phase 2 with validation and preview.">Post a Deal</button>
+    </div>
   </header>
 
   <main>
-    <section class="hero-section cinematic-section" aria-labelledby="hero-title">
-      <div class="hero-copy" data-reveal>
-        <p class="eyebrow">Temporary site active</p>
-        <h1 id="hero-title">A polished game lounge while the main site gets rebuilt.</h1>
+    <section class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow">Original deals community prototype</p>
+        <h1><span>Discover</span> <span>sharper</span> <span>prices</span> <span>before they</span> <span>disappear.</span></h1>
         <p class="hero-text">
-          The portfolio is being upgraded behind the curtain. In the meantime, this page becomes a compact
-          interactive arcade with multiplayer tables, a refined local game, and smooth motion throughout.
+          Browse community-ranked deals, coupon drops, store highlights, and curated picks in a polished marketplace built for fast comparison.
         </p>
-        <div class="hero-actions">
-          <a class="button primary magnetic" href="#games">Explore games</a>
-          <a class="button secondary magnetic" href="./snake/">Start Snake</a>
+
+        <form class="search-panel" role="search" id="searchForm">
+          <label class="sr-only" for="dealSearch">Search deals, stores, categories, or keywords</label>
+          <span class="search-mark" aria-hidden="true"></span>
+          <input id="dealSearch" type="search" placeholder="Search laptops, gaming, travel, coupons..." autocomplete="off">
+          <button type="submit">Search</button>
+        </form>
+
+        <div class="hero-pills" aria-label="Popular deal shortcuts">
+          <button type="button" data-filter-shortcut="Electronics">Electronics</button>
+          <button type="button" data-filter-shortcut="Free Shipping">Free shipping</button>
+          <button type="button" data-filter-shortcut="Gaming">Gaming</button>
+          <button type="button" data-filter-shortcut="Expiring Soon">Ending soon</button>
         </div>
       </div>
 
-      <div class="hero-visual" data-reveal data-tilt>
-        <div class="orbital-card hero-card-one">
-          <span>Sequence</span>
-          <strong>5 in a row</strong>
+      <aside class="hero-card" aria-label="Marketplace snapshot">
+        <div class="hero-card-top">
+          <span>Today's pulse</span>
+          <strong>1,284 heat</strong>
         </div>
-        <div class="orbital-card hero-card-two">
-          <span>Ludo</span>
-          <strong>Room ready</strong>
+        <div class="pulse-stack">
+          <div><span>Hot laptop drop</span><b>+38%</b></div>
+          <div><span>Audio coupon run</span><b>+50%</b></div>
+          <div><span>Travel set alert</span><b>Ends soon</b></div>
         </div>
-        <div class="device-frame">
-          <img src="./assets/img/lounge-orbit.svg" alt="Abstract game lounge interface preview">
+        <div class="mini-chart" aria-hidden="true">
+          <span style="height:42%"></span>
+          <span style="height:66%"></span>
+          <span style="height:52%"></span>
+          <span style="height:82%"></span>
+          <span style="height:70%"></span>
+          <span style="height:92%"></span>
         </div>
-      </div>
+      </aside>
     </section>
 
-    <section class="story-section" id="experience" aria-labelledby="experience-title">
-      <div class="section-heading narrow" data-reveal>
-        <p class="eyebrow">Experience layer</p>
-        <h2 id="experience-title">Built to feel alive without becoming noisy.</h2>
-      </div>
-      <div class="story-grid">
-        <article class="story-card" data-reveal>
-          <span class="story-number">01</span>
-          <h3>Responsive stage</h3>
-          <p>Large screens get cinematic spacing and depth. Smaller screens collapse into quick, scannable game access.</p>
-        </article>
-        <article class="story-card" data-reveal>
-          <span class="story-number">02</span>
-          <h3>Motion with purpose</h3>
-          <p>Cards reveal on scroll, previews respond to pointer movement, and controls stay fast and readable.</p>
-        </article>
-        <article class="story-card" data-reveal>
-          <span class="story-number">03</span>
-          <h3>Playable first</h3>
-          <p>The visual polish supports the real job: launch a multiplayer room or jump into a local arcade game quickly.</p>
-        </article>
-      </div>
+    <section class="trust-strip" aria-label="DealNest quality signals">
+      <article>
+        <span>8</span>
+        <strong>curated sample deals</strong>
+        <p>Structured like a real feed without using copied marketplace content.</p>
+      </article>
+      <article>
+        <span>4</span>
+        <strong>interactive controls</strong>
+        <p>Search, filters, sorting, and local save/heat feedback are live.</p>
+      </article>
+      <article>
+        <span>0</span>
+        <strong>borrowed listings</strong>
+        <p>All stores, users, coupons, and product visuals are original mock data.</p>
+      </article>
     </section>
 
-    <section class="games-section" id="games" aria-labelledby="games-title">
-      <div class="section-heading" data-reveal>
+    <section class="category-strip" aria-label="Deal categories">
+      <button type="button" data-filter-shortcut="Electronics">Electronics</button>
+      <button type="button" data-filter-shortcut="Home">Home</button>
+      <button type="button" data-filter-shortcut="Fashion">Fashion</button>
+      <button type="button" data-filter-shortcut="Gaming">Gaming</button>
+      <button type="button" data-filter-shortcut="Travel">Travel</button>
+      <button type="button" data-filter-shortcut="Kitchen">Kitchen</button>
+      <button type="button" data-filter-shortcut="Audio">Audio</button>
+    </section>
+
+    <section class="section-block" id="trending">
+      <div class="section-heading">
         <div>
-          <p class="eyebrow">Game library</p>
-          <h2 id="games-title">Three ways to stay entertained.</h2>
+          <p class="eyebrow">Momentum picks</p>
+          <h2>Trending deals</h2>
         </div>
-        <p class="section-note">Each game keeps its own rhythm, with a unified shell around the experience.</p>
+        <p>Deals gaining heat quickly across the community.</p>
+      </div>
+      <div class="deal-grid compact-grid" id="trendingDeals"></div>
+    </section>
+
+    <section class="feed-layout" id="hot-deals">
+      <aside class="filter-panel" aria-label="Deal filters">
+        <div class="panel-title">
+          <span>Refine</span>
+          <button type="button" id="clearFilters">Clear</button>
+        </div>
+
+        <div class="filter-group">
+          <strong>Sort</strong>
+          <div class="segmented" id="sortControls">
+            <button type="button" class="active" data-sort="trending">Trending</button>
+            <button type="button" data-sort="new">New</button>
+            <button type="button" data-sort="popular">Popular</button>
+            <button type="button" data-sort="expiring">Expiring Soon</button>
+          </div>
+        </div>
+
+        <div class="filter-group">
+          <strong>Quick filters</strong>
+          <div class="chip-list" id="quickFilters">
+            <button type="button" data-filter="Free Shipping">Free Shipping</button>
+            <button type="button" data-filter="Electronics">Electronics</button>
+            <button type="button" data-filter="Home">Home</button>
+            <button type="button" data-filter="Fashion">Fashion</button>
+            <button type="button" data-filter="Gaming">Gaming</button>
+            <button type="button" data-filter="Travel">Travel</button>
+          </div>
+        </div>
+
+        <label class="field">
+          Store
+          <select id="storeFilter">
+            <option value="">All stores</option>
+          </select>
+        </label>
+
+        <label class="field">
+          Max price
+          <input id="priceFilter" type="range" min="25" max="800" value="800" step="25">
+          <span id="priceValue">$800 and under</span>
+        </label>
+      </aside>
+
+      <section class="feed-panel">
+        <div class="feed-toolbar">
+          <div>
+            <p class="eyebrow">Community ranked</p>
+            <h2>Hot deals feed</h2>
+          </div>
+          <span id="resultCount">0 deals</span>
+        </div>
+        <div class="deal-grid" id="dealFeed"></div>
+        <div class="empty-state hidden" id="emptyState">
+          <strong>No matching deals yet</strong>
+          <p>Try clearing filters or searching for a broader category.</p>
+        </div>
+      </section>
+    </section>
+
+    <section class="split-section">
+      <div class="section-block editor-picks">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Curated</p>
+            <h2>Editor's picks</h2>
+          </div>
+        </div>
+        <div class="editor-list" id="editorsPicks"></div>
       </div>
 
-      <div class="game-grid premium-grid">
-        <article class="game-card feature-card" data-reveal data-tilt>
-          <div class="game-media image-media">
-            <img src="./sequence/public/board_preview.png" alt="Sequence board preview">
-            <span class="media-badge">Strategy</span>
+      <div class="section-block" id="coupons">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Codes worth trying</p>
+            <h2>Coupon highlights</h2>
           </div>
-          <div class="game-content">
-            <p class="game-kicker">Multiplayer table</p>
-            <h3>Sequence</h3>
-            <p>Build rows of five chips, block opponents, and use Jacks as tactical pivots.</p>
-            <ul class="feature-list">
-              <li>Room codes and rejoin flow</li>
-              <li>Turn state and sequence scoring</li>
-              <li>Hosted multiplayer launcher</li>
-            </ul>
-            <a class="button primary magnetic" href="./sequence-play.html">Launch Sequence</a>
-          </div>
-        </article>
-
-        <article class="game-card" data-reveal data-tilt>
-          <div class="game-media image-media">
-            <img src="./ludo/public/assets/ludo_board.png" alt="Ludo board preview">
-            <span class="media-badge warm">Race</span>
-          </div>
-          <div class="game-content">
-            <p class="game-kicker">Multiplayer board race</p>
-            <h3>Ludo</h3>
-            <p>Roll, move, capture, and race tokens home in a shared room with server-side dice.</p>
-            <ul class="feature-list">
-              <li>Socket-powered rooms</li>
-              <li>Turn skipping for empty seats</li>
-              <li>Winner state handling</li>
-            </ul>
-            <a class="button primary magnetic" href="./ludo-play.html">Launch Ludo</a>
-          </div>
-        </article>
-
-        <article class="game-card" data-reveal data-tilt>
-          <div class="game-media snake-media">
-            <span class="snake-line"></span>
-            <span class="food-dot"></span>
-            <span class="media-badge cool">Arcade</span>
-          </div>
-          <div class="game-content">
-            <p class="game-kicker">Solo challenge</p>
-            <h3>Snake</h3>
-            <p>A polished local arcade loop with speed modes, wall rules, pause, and high scores.</p>
-            <ul class="feature-list">
-              <li>Keyboard, swipe, and D-pad</li>
-              <li>Classic and wrap modes</li>
-              <li>No server required</li>
-            </ul>
-            <a class="button primary magnetic" href="./snake/">Play Snake</a>
-          </div>
-        </article>
+        </div>
+        <div class="coupon-list" id="couponList"></div>
       </div>
     </section>
 
-    <section class="status-band" id="status" aria-label="Maintenance status">
-      <div class="status-copy" data-reveal>
-        <p class="eyebrow">Current status</p>
-        <h2>The rebuild continues. The games stay open.</h2>
+    <section class="section-block">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Fresh finds</p>
+          <h2>New deals</h2>
+        </div>
+        <a class="text-link" href="#hot-deals">View all</a>
       </div>
-      <div class="status-metrics" data-reveal>
-        <span><b>3</b> playable games</span>
-        <span><b>2</b> multiplayer launchers</span>
-        <span><b>1</b> local arcade rebuild</span>
+      <div class="deal-grid compact-grid" id="newDeals"></div>
+    </section>
+
+    <section class="store-section" id="stores">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Store watch</p>
+          <h2>Popular stores</h2>
+        </div>
+        <p>Follow stores later to power custom alerts.</p>
+      </div>
+      <div class="store-grid" id="storeGrid"></div>
+    </section>
+
+    <section class="community-section" id="community">
+      <div>
+        <p class="eyebrow">Community preview</p>
+        <h2>People comparing notes make deals better.</h2>
+        <p>Future phases can add threads, reputation, moderation, saved searches, and alert subscriptions.</p>
+        <div class="community-actions">
+          <button type="button" data-placeholder="Forum posting will be enabled when accounts and moderation are added.">Start a discussion</button>
+          <button type="button" data-placeholder="Deal alerts will be connected to saved searches in a later phase.">Create alert</button>
+        </div>
+      </div>
+      <div class="topic-list" id="topicList"></div>
+    </section>
+
+    <section class="games-archive" id="games">
+      <div>
+        <p class="eyebrow">Archive</p>
+        <h2>Games are still available.</h2>
+        <p>The site focus has moved to deals, but the previous maintenance games remain reachable here.</p>
+      </div>
+      <div class="archive-links">
+        <a href="./snake/">Snake</a>
+        <a href="./ludo/">Ludo Royale</a>
+        <a href="./sequence-play.html">Sequence</a>
       </div>
     </section>
   </main>
 
-  <footer class="site-footer" data-reveal>
-    <span>Razz Rohith</span>
-    <span>Premium temporary experience, built for quick play while the main site evolves.</span>
+  <footer class="site-footer">
+    <div>
+      <strong>DealNest</strong>
+      <p>An original static prototype for premium deal discovery, coupons, alerts, and community shopping intelligence.</p>
+    </div>
+    <nav aria-label="Footer">
+      <a href="#top">Back to top</a>
+      <a href="#stores">Stores</a>
+      <a href="#coupons">Coupons</a>
+      <a href="#community">Community</a>
+      <a href="#games">Games archive</a>
+    </nav>
   </footer>
 
-  <script src="./assets/js/site-motion.js"></script>
+  <script src="./assets/js/deals-data.js"></script>
+  <script src="./assets/js/deals-app.js"></script>
 </body>
 
 </html>

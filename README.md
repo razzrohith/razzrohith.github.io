@@ -1,16 +1,16 @@
-# Razz Rohith Temporary Game Lounge
+# DealNest Static Deals Prototype
 
-This repository currently serves a premium temporary maintenance page with playable games while the main portfolio is being rebuilt. The public pages share a motion system with glass UI, scroll reveals, responsive layouts, and interactive game previews.
+This repository now serves a Phase 1 static frontend prototype for an original premium deals-discovery community called DealNest. The homepage uses mock deal data, original SVG product art, client-side search/filtering, coupon interactions, and responsive marketplace UI.
 
 ## What Runs Where
 
-- `index.html` is the static game lounge.
-- `assets/css/game-shell.css` contains the shared premium UI system.
-- `assets/js/site-motion.js` powers scroll progress, reveal animations, magnetic buttons, and tilt effects.
-- `snake/` is a local, serverless Snake game.
-- `sequence-play.html` launches the hosted Sequence multiplayer server.
-- `ludo-play.html` launches the hosted Ludo multiplayer server.
-- `maintenance.html`, `game.html`, and `site/index.html` are polished compatibility redirects into the active experience.
+- `index.html` is the DealNest homepage prototype.
+- `assets/css/deals.css` contains the deals marketplace design system.
+- `assets/js/deals-data.js` contains realistic fake deal, coupon, store, and community data.
+- `assets/js/deals-app.js` renders deal cards and powers search, filters, sorting, save/vote actions, coupon copy feedback, and mobile navigation.
+- `assets/img/deals/` contains original SVG product illustrations.
+- `snake/`, `ludo/`, and `sequence-play.html` remain accessible as archived games.
+- `assets/css/game-shell.css` and `assets/js/site-motion.js` still support archived game/launcher pages.
 - `sequence/` and `ludo/` contain the Node/Socket.io multiplayer game implementations used by the hosted versions.
 
 ## Local Preview

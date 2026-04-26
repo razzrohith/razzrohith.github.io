@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 420" role="img" aria-label="Gaming console illustration">
+  <defs>
+    <linearGradient id="bg" x1="54" x2="574" y1="36" y2="388">
+      <stop stop-color="#eef4ff"/>
+      <stop offset=".55" stop-color="#f1fff9"/>
+      <stop offset="1" stop-color="#fff0e6"/>
+    </linearGradient>
+  </defs>
+  <rect width="640" height="420" rx="42" fill="url(#bg)"/>
+  <circle cx="516" cy="92" r="96" fill="#7ba7ff" opacity=".26"/>
+  <rect x="154" y="124" width="332" height="174" rx="60" fill="#17243a"/>
+  <circle cx="242" cy="212" r="42" fill="#263a59"/>
+  <path d="M242 188v48M218 212h48" stroke="#9bf5df" stroke-width="12" stroke-linecap="round"/>
+  <circle cx="390" cy="194" r="15" fill="#ff6b7b"/>
+  <circle cx="426" cy="230" r="15" fill="#f4c95d"/>
+  <circle cx="390" cy="230" r="15" fill="#7ba7ff"/>
+  <circle cx="426" cy="194" r="15" fill="#6ee7a8"/>
+  <path d="M288 266h64" stroke="#ffffff" stroke-width="12" stroke-linecap="round" opacity=".65"/>
+</svg>

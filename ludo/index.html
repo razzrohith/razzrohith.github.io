@@ -2,91 +2,112 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ludo Multiplayer</title>
-    <link rel="stylesheet" href="public/style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="A polished local Ludo game with animated dice, captures, safe squares, and pass-and-play turns.">
+  <title>Ludo Royale | Razz Rohith Games</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="public/style.css">
 </head>
 
 <body>
-    <!-- Galaxy Background -->
-    <div id="stars"></div>
-    <div id="stars2"></div>
-    <div id="stars3"></div>
-
-    <!-- Home / Lobby Selection -->
-    <div id="home" class="screen active">
-        <h1>Ludo 3D</h1>
-        <img src="public/assets/ludo_board.png" alt="Ludo Board Preview" class="board-preview">
-        <div id="homeError" class="error"></div>
-        <div class="lobby-inputs">
-            <input type="text" id="nameInput" placeholder="Enter your name">
-            <button id="createBtn" class="btn">Create Room</button>
-            <div class="join">
-                <input type="text" id="roomInput" placeholder="Room code" maxlength="4">
-                <button id="joinBtn" class="btn">Join</button>
-            </div>
+  <div class="aurora-bg" aria-hidden="true">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+  <main class="ludo-app">
+    <section class="hero-panel" id="setupScreen">
+      <div class="hero-copy">
+        <img class="royale-mark" src="public/assets/royale-mark.svg" alt="">
+        <p class="eyebrow">Aurora arcade edition</p>
+        <h1>Ludo Royale</h1>
+        <p>Fast local board play with glowing tokens, animated dice, captures, safe stars, and a polished pass-and-play table.</p>
+        <div class="feature-row" aria-label="Game highlights">
+          <span>2-4 players</span>
+          <span>Bonus rolls</span>
+          <span>Capture streaks</span>
         </div>
-    </div>
+      </div>
 
-    <!-- Game Screen -->
-    <div id="game" class="screen">
-        <div id="statusBar">
-            <button id="leaveBtn" class="btn-small">Leave</button>
-            <h2 id="roomDisplay">Room: ----</h2>
+      <form class="setup-card" id="setupForm">
+        <div class="card-orbit" aria-hidden="true"></div>
+        <p class="eyebrow">Create table</p>
+        <label>
+          Players
+          <select id="playerCount">
+            <option value="2">2 players</option>
+            <option value="3">3 players</option>
+            <option value="4" selected>4 players</option>
+          </select>
+        </label>
+        <label>
+          Player name
+          <input id="hostName" type="text" maxlength="18" value="Raj" autocomplete="off">
+        </label>
+        <button class="primary-btn" type="submit">Start Ludo</button>
+      </form>
+    </section>
+
+    <section class="game-shell hidden" id="gameScreen" aria-label="Ludo game">
+      <header class="topbar">
+        <a class="ghost-btn" href="../">Back to lounge</a>
+        <div>
+          <p class="eyebrow" id="roundLabel">Aurora table</p>
+          <h2 id="turnTitle">Green turn</h2>
+          <span class="turn-badge" id="turnBadge">Roll phase</span>
+        </div>
+        <button class="ghost-btn" id="newGameBtn" type="button">New game</button>
+      </header>
+
+      <section class="play-layout">
+        <aside class="side-panel command-panel">
+          <div class="dice-card">
+            <div class="dice" id="dice" aria-label="Dice result">?</div>
+            <button class="primary-btn" id="rollBtn" type="button">Roll dice</button>
+            <p id="hint">Roll to begin.</p>
+          </div>
+          <div class="rules-card">
+            <strong>Table rules</strong>
+            <span>Roll 6 to launch</span>
+            <span>Capture or roll 6 for bonus turn</span>
+            <span>Safe stars protect tokens</span>
+          </div>
+          <div class="players-card" id="playersCard"></div>
+        </aside>
+
+        <div class="board-stage">
+          <div class="board-wrap">
+            <div class="board" id="board" aria-label="Ludo board"></div>
+            <div class="token-layer" id="tokenLayer"></div>
+            <div class="board-shine" aria-hidden="true"></div>
+          </div>
         </div>
 
-        <div id="playersPanel">
-            <div class="player-slot" id="slot-green">
-                <div class="slot-token token-piece token-green"></div>
-                <span class="player-name">Waiting...</span>
-            </div>
-            <div class="player-slot" id="slot-blue">
-                <div class="slot-token token-piece token-blue"></div>
-                <span class="player-name">Waiting...</span>
-            </div>
-            <div class="player-slot" id="slot-red">
-                <div class="slot-token token-piece token-red"></div>
-                <span class="player-name">Waiting...</span>
-            </div>
-            <div class="player-slot" id="slot-yellow">
-                <div class="slot-token token-piece token-yellow"></div>
-                <span class="player-name">Waiting...</span>
-            </div>
-        </div>
+        <aside class="side-panel log-panel">
+          <div class="panel-heading">
+            <span>Live feed</span>
+            <strong>Match log</strong>
+          </div>
+          <ol id="logList"></ol>
+        </aside>
+      </section>
+    </section>
 
-        <!-- The 3D Board Area -->
-        <div id="boardContainer">
-            <img src="public/assets/ludo_board.png" id="boardImage" alt="Ludo Board">
+    <section class="winner-modal hidden" id="winnerModal" aria-live="polite">
+      <div>
+        <p class="eyebrow">Game complete</p>
+        <h2 id="winnerTitle">Green wins</h2>
+        <p id="winnerText">All four tokens reached home.</p>
+        <div class="reward-burst" aria-hidden="true"></div>
+        <button class="primary-btn" id="playAgainBtn" type="button">Play again</button>
+      </div>
+    </section>
+  </main>
 
-            <!-- Tokens will be dynamically injected here by JS, but let's pre-define them for simplicity -->
-            <div id="tokensLayer"></div>
-        </div>
-
-        <!-- Controls Area -->
-        <div id="controlsArea">
-            <div id="turnIndicator">Waiting for players...</div>
-
-            <!-- 3D Dice -->
-            <div class="dice-scene">
-                <div class="cube" id="diceCube">
-                    <div class="cube__face cube__face--1">1</div>
-                    <div class="cube__face cube__face--2">2</div>
-                    <div class="cube__face cube__face--3">3</div>
-                    <div class="cube__face cube__face--4">4</div>
-                    <div class="cube__face cube__face--5">5</div>
-                    <div class="cube__face cube__face--6">6</div>
-                </div>
-            </div>
-
-            <button id="rollBtn" class="btn" disabled>Roll Dice</button>
-        </div>
-    </div>
-
-    <!-- Scripts -->
-    <script src="/socket.io/socket.io.js"></script>
-    <script src="public/board_map.js"></script>
-    <script src="public/game.js"></script>
+  <script src="public/game.js"></script>
 </body>
 
 </html>

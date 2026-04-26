@@ -10,6 +10,7 @@ const io = new Server(server);
 const PORT = process.env.PORT || 3000;
 
 app.use(express.static(path.join(__dirname, 'public')));
+app.use('/public', express.static(path.join(__dirname, 'public')));
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
@@ -25,6 +26,39 @@ const COLORS = ['green', 'blue', 'red', 'yellow'];
 // State
 // rooms[code] = { code, players: { socketId: { color, name } }, state: { turnIndex, diceValue, tokens } }
 const rooms = new Map();
+
+function addLog(state, message) {
+    state.logs.push(message);
+    if (state.logs.length > 60) state.logs = state.logs.slice(-60);
+}
+
+function normalizeRoomCode(roomCode) {
+    return String(roomCode || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 4);
+}
+
+function normalizeName(playerName) {
+    return String(playerName || 'Player').trim().slice(0, 24) || 'Player';
+}
+
+function activeColors(state) {
+    return COLORS.filter(color => state.players[color].joined);
+}
+
+function advanceTurn(state) {
+    const joined = activeColors(state);
+    if (joined.length === 0) {
+        state.turnIndex = 0;
+        return;
+    }
+
+    for (let i = 1; i <= COLORS.length; i++) {
+        const candidate = (state.turnIndex + i) % COLORS.length;
+        if (state.players[COLORS[candidate]].joined) {
+            state.turnIndex = candidate;
+            return;
+        }
+    }
+}
 
 function createInitialState() {
     return {
@@ -46,7 +80,12 @@ io.on('connection', (socket) => {
     console.log(`Socket connected: ${socket.id}`);
 
     socket.on('joinRoom', ({ roomCode, playerName }) => {
-        roomCode = roomCode.toUpperCase();
+        roomCode = normalizeRoomCode(roomCode);
+        playerName = normalizeName(playerName);
+        if (roomCode.length !== 4) {
+            socket.emit('errorMsg', 'Enter a valid 4-character room code.');
+            return;
+        }
         if (!rooms.has(roomCode)) {
             rooms.set(roomCode, {
                 code: roomCode,
@@ -78,7 +117,11 @@ io.on('connection', (socket) => {
         room.playersOnline++;
         socket.join(roomCode);
 
-        room.state.logs.push(`${playerName} joined as ${assignedColor.toUpperCase()}`);
+        if (!room.state.players[COLORS[room.state.turnIndex]].joined) {
+            room.state.turnIndex = COLORS.indexOf(assignedColor);
+        }
+
+        addLog(room.state, `${playerName} joined as ${assignedColor.toUpperCase()}`);
         console.log(`[${roomCode}] ${playerName} joined as ${assignedColor}`);
 
         socket.emit('joined', { roomCode, color: assignedColor, state: room.state });
@@ -86,6 +129,7 @@ io.on('connection', (socket) => {
     });
 
     socket.on('rollDice', ({ roomCode }) => {
+        roomCode = normalizeRoomCode(roomCode);
         const room = rooms.get(roomCode);
         if (!room) return;
 
@@ -108,12 +152,13 @@ io.on('connection', (socket) => {
         room.state.diceValue = roll;
         room.state.rollValid = true;
 
-        room.state.logs.push(`${player.name} rolled a ${roll}`);
+        addLog(room.state, `${player.name} rolled a ${roll}`);
 
         io.to(roomCode).emit('diceRolled', { roll, state: room.state });
     });
 
     socket.on('moveToken', ({ roomCode, tokenIndex }) => {
+        roomCode = normalizeRoomCode(roomCode);
         const room = rooms.get(roomCode);
         if (!room) return;
 
@@ -122,6 +167,7 @@ io.on('connection', (socket) => {
 
         if (COLORS[room.state.turnIndex] !== player.color) return;
         if (!room.state.rollValid) return;
+        if (!Number.isInteger(tokenIndex) || tokenIndex < 0 || tokenIndex > 3) return;
 
         const color = player.color;
         const step = room.state.players[color].tokens[tokenIndex];
@@ -132,11 +178,11 @@ io.on('connection', (socket) => {
         if (step === -1 && roll === 6) {
             validMove = true;
             room.state.players[color].tokens[tokenIndex] = 0;
-            room.state.logs.push(`${player.name} brought a token out!`);
+            addLog(room.state, `${player.name} brought a token out!`);
         } else if (step !== -1 && step + roll <= 56) {
             validMove = true;
             room.state.players[color].tokens[tokenIndex] += roll;
-            room.state.logs.push(`${player.name} moved a token ${roll} spaces.`);
+            addLog(room.state, `${player.name} moved a token ${roll} spaces.`);
         }
 
         if (!validMove) return;
@@ -159,7 +205,7 @@ io.on('connection', (socket) => {
                                 if (movingGlobalIndex === otherGlobalIndex) {
                                     room.state.players[c].tokens[idx] = -1; // Captured!
                                     capturedSomeone = true;
-                                    room.state.logs.push(`${player.name} CAPTURED ${c}'s token!`);
+                                    addLog(room.state, `${player.name} captured ${c}'s token.`);
                                 }
                             }
                         });
@@ -170,10 +216,18 @@ io.on('connection', (socket) => {
 
         room.state.rollValid = false;
 
+        if (room.state.players[color].tokens.every(s => s === 56)) {
+            room.state.winner = color;
+            room.state.diceValue = null;
+            addLog(room.state, `${player.name} finished all tokens and won the game!`);
+            io.to(roomCode).emit('gameStateUpdate', room.state);
+            return;
+        }
+
         // Determine next turn
         // Rule: rolling a 6 or capturing someone grants an extra turn
         if (roll !== 6 && !capturedSomeone) {
-            room.state.turnIndex = (room.state.turnIndex + 1) % 4;
+            advanceTurn(room.state);
             room.state.diceValue = null;
         }
 
@@ -182,12 +236,13 @@ io.on('connection', (socket) => {
 
     // Pass turn if no valid moves exist
     socket.on('passTurn', ({ roomCode }) => {
+        roomCode = normalizeRoomCode(roomCode);
         const room = rooms.get(roomCode);
         if (!room) return;
         const player = room.connections.get(socket.id);
         if (!player || COLORS[room.state.turnIndex] !== player.color) return;
 
-        room.state.turnIndex = (room.state.turnIndex + 1) % 4;
+        advanceTurn(room.state);
         room.state.diceValue = null;
         room.state.rollValid = false;
 
@@ -203,13 +258,16 @@ io.on('connection', (socket) => {
                 room.connections.delete(socket.id);
                 room.state.players[player.color].joined = false;
                 room.state.players[player.color].name = null;
-                room.state.logs.push(`${player.name} (${player.color}) disconnected.`);
+                addLog(room.state, `${player.name} (${player.color}) disconnected.`);
                 room.playersOnline--;
 
                 if (room.playersOnline <= 0) {
                     rooms.delete(code); // Clean up empty room
                     console.log(`Room ${code} deleted (empty)`);
                 } else {
+                    if (!room.state.players[COLORS[room.state.turnIndex]].joined) {
+                        advanceTurn(room.state);
+                    }
                     io.to(code).emit('gameStateUpdate', room.state);
                 }
             }

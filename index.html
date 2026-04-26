@@ -4,577 +4,173 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Razzrohith's Games</title>
-  <meta name="description" content="Play Snake and Sequence online – fun multiplayer games by Razzrohith.">
+  <meta name="description" content="A premium temporary game lounge while Razz Rohith's portfolio is under maintenance.">
+  <title>Razz Rohith | Game Lounge</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;700;900&display=swap" rel="stylesheet">
-  <style>
-    *,
-    *::before,
-    *::after {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
-    :root {
-      --bg: #06060f;
-      --primary: #6c63ff;
-      --accent: #ff6584;
-      --gold: #f5c518;
-      --text: #f0f0ff;
-      --muted: #9090b0;
-      --card-bg: rgba(255, 255, 255, 0.04);
-      --card-border: rgba(255, 255, 255, 0.08);
-      --radius: 24px;
-    }
-
-    html {
-      scroll-behavior: smooth;
-    }
-
-    body {
-      font-family: 'Outfit', sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100vh;
-      overflow-x: hidden;
-      cursor: none;
-    }
-
-    /* ── Cursor: plain dot, zero animation, zero bubble ── */
-    #cursor {
-      position: fixed;
-      width: 7px;
-      height: 7px;
-      background: #fff;
-      border-radius: 50%;
-      pointer-events: none;
-      z-index: 9999;
-      top: 0;
-      left: 0;
-    }
-
-    body:has(a:hover) #cursor,
-    body:has(button:hover) #cursor {
-      background: #f5c518;
-      width: 9px;
-      height: 9px;
-    }
-
-    /* ── Canvas stars ── */
-    #stars-canvas {
-      position: fixed;
-      inset: 0;
-      z-index: 0;
-      opacity: .6;
-    }
-
-    /* ── Layout ── */
-    .page {
-      position: relative;
-      z-index: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 60px 24px 80px;
-      min-height: 100vh;
-    }
-
-    /* ── Hero ── */
-    .hero {
-      text-align: center;
-      margin-bottom: 72px;
-    }
-
-    .hero-badge {
-      display: inline-block;
-      padding: 6px 18px;
-      border-radius: 999px;
-      border: 1px solid rgba(108, 99, 255, .4);
-      background: rgba(108, 99, 255, .1);
-      color: var(--primary);
-      font-size: .85rem;
-      font-weight: 700;
-      letter-spacing: .08em;
-      text-transform: uppercase;
-      margin-bottom: 24px;
-      animation: fadeInDown .6s ease both;
-    }
-
-    .hero h1 {
-      font-size: clamp(2.8rem, 7vw, 5.5rem);
-      font-weight: 900;
-      line-height: 1.05;
-      letter-spacing: -.03em;
-      background: linear-gradient(135deg, #ffffff 0%, var(--primary) 50%, var(--accent) 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      animation: fadeInDown .7s .1s ease both;
-    }
-
-    .hero-sub {
-      margin-top: 18px;
-      color: var(--muted);
-      font-size: 1.18rem;
-      font-weight: 300;
-      animation: fadeInDown .7s .2s ease both;
-    }
-
-    /* ── Floating blobs ── */
-    .blob {
-      position: fixed;
-      border-radius: 50%;
-      filter: blur(80px);
-      opacity: .18;
-      pointer-events: none;
-      animation: blobFloat 10s ease-in-out infinite;
-    }
-
-    .blob1 {
-      width: 500px;
-      height: 500px;
-      background: var(--primary);
-      top: -120px;
-      left: -150px;
-      animation-delay: 0s;
-    }
-
-    .blob2 {
-      width: 400px;
-      height: 400px;
-      background: var(--accent);
-      bottom: -100px;
-      right: -100px;
-      animation-delay: 4s;
-    }
-
-
-    /* ── Cards grid ── */
-    .games {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-      gap: 28px;
-      width: 100%;
-      max-width: 960px;
-    }
-
-    .card {
-      position: relative;
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
-      border-radius: var(--radius);
-      padding: 40px 32px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      text-align: center;
-      text-decoration: none;
-      color: inherit;
-      overflow: hidden;
-      backdrop-filter: blur(12px);
-      transition: transform .35s cubic-bezier(.22, 1, .36, 1), box-shadow .35s, border-color .35s;
-      animation: fadeInUp .6s ease both;
-    }
-
-    .card:nth-child(2) {
-      animation-delay: .12s;
-    }
-
-    /* glowing top line on hover */
-    .card::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 2px;
-      background: linear-gradient(90deg, transparent, var(--primary), transparent);
-      transform: scaleX(0);
-      transition: transform .4s ease;
-    }
-
-    .card:hover::before {
-      transform: scaleX(1);
-    }
-
-    /* shimmer */
-    .card::after {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(135deg, rgba(255, 255, 255, .04) 0%, transparent 60%);
-      opacity: 0;
-      transition: opacity .4s;
-    }
-
-    .card:hover::after {
-      opacity: 1;
-    }
-
-    .card:hover {
-      transform: translateY(-14px) scale(1.01);
-      border-color: rgba(108, 99, 255, .45);
-      box-shadow: 0 32px 80px rgba(108, 99, 255, .22), 0 0 0 1px rgba(108, 99, 255, .1);
-    }
-
-    .card-icon {
-      font-size: 5rem;
-      margin-bottom: 20px;
-      transform: rotate(-3deg);
-      display: block;
-      filter: drop-shadow(0 0 16px rgba(108, 99, 255, .5));
-      transition: transform .4s, filter .4s;
-    }
-
-    .card:hover .card-icon {
-      transform: rotate(3deg) scale(1.12);
-      filter: drop-shadow(0 0 28px rgba(255, 101, 132, .7));
-    }
-
-    .card h2 {
-      font-size: 2rem;
-      font-weight: 900;
-      margin-bottom: 10px;
-      letter-spacing: -.02em;
-    }
-
-    .card p {
-      color: var(--muted);
-      font-size: 1rem;
-      line-height: 1.65;
-      margin-bottom: 28px;
-    }
-
-    /* tag chips */
-    .tags {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-      justify-content: center;
-      margin-bottom: 28px;
-    }
-
-    .tag {
-      padding: 4px 12px;
-      border-radius: 999px;
-      background: rgba(108, 99, 255, .15);
-      border: 1px solid rgba(108, 99, 255, .3);
-      font-size: .75rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: .05em;
-      color: #a89fff;
-    }
-
-    .btn {
-      position: relative;
-      padding: 14px 36px;
-      background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
-      color: white;
-      border: none;
-      border-radius: 999px;
-      font-family: inherit;
-      font-weight: 700;
-      font-size: 1rem;
-      cursor: none;
-      overflow: hidden;
-      transition: transform .2s, box-shadow .2s;
-      box-shadow: 0 8px 24px rgba(108, 99, 255, .35);
-    }
-
-    .btn::after {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(135deg, rgba(255, 255, 255, .15), transparent);
-    }
-
-    .btn:hover {
-      transform: scale(1.05);
-      box-shadow: 0 12px 32px rgba(108, 99, 255, .5);
-    }
-
-    /* Card-specific accent colors */
-    .card.sequence:hover {
-      box-shadow: 0 32px 80px rgba(245, 197, 24, .18), 0 0 0 1px rgba(245, 197, 24, .15);
-      border-color: rgba(245, 197, 24, .4);
-    }
-
-    .card.sequence::before {
-      background: linear-gradient(90deg, transparent, var(--gold), transparent);
-    }
-
-    .card.sequence:hover .card-icon {
-      filter: drop-shadow(0 0 28px #f5c518aa);
-    }
-
-    .card.sequence .tag {
-      background: rgba(245, 197, 24, .12);
-      border-color: rgba(245, 197, 24, .3);
-      color: #f5e07a;
-    }
-
-    .card.sequence .btn {
-      background: linear-gradient(135deg, #b8860b, var(--gold));
-      box-shadow: 0 8px 24px rgba(245, 197, 24, .3);
-    }
-
-    /* ── Footer ── */
-    footer {
-      margin-top: 72px;
-      text-align: center;
-      color: var(--muted);
-      font-size: .9rem;
-    }
-
-    /* ── Animations ── */
-    @keyframes fadeInDown {
-      from {
-        opacity: 0;
-        transform: translateY(-22px);
-      }
-
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    @keyframes fadeInUp {
-      from {
-        opacity: 0;
-        transform: translateY(30px);
-      }
-
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    @keyframes blobFloat {
-
-      0%,
-      100% {
-        transform: translateY(0) scale(1);
-      }
-
-      50% {
-        transform: translateY(-30px) scale(1.06);
-      }
-    }
-
-    @media (max-width: 600px) {
-      body {
-        cursor: auto;
-      }
-
-      #cursor {
-        display: none;
-      }
-
-      .games {
-        grid-template-columns: 1fr;
-      }
-
-      .hero h1 {
-        font-size: 2.5rem;
-      }
-    }
-
-    /* ── Game Overlay (Static URL) ── */
-    #gameOverlay {
-      position: fixed;
-      inset: 0;
-      z-index: 10000;
-      background: var(--bg);
-      display: none;
-      flex-direction: column;
-    }
-
-    #gameOverlay.active {
-      display: flex;
-    }
-
-    #closeOverlay {
-      height: 46px;
-      background: linear-gradient(90deg, #0f0c29, #302b63, #24243e);
-      border-bottom: 1px solid rgba(245, 197, 24, .25);
-      color: #fff;
-      display: flex;
-      align-items: center;
-      padding: 0 16px;
-      font-family: inherit;
-      font-size: .9rem;
-      font-weight: 700;
-      cursor: pointer;
-      justify-content: space-between;
-    }
-
-    #closeOverlay:hover {
-      background: #302b63;
-    }
-
-    #overlayFrame {
-      flex: 1;
-      width: 100%;
-      border: none;
-      background: #000;
-    }
-  </style>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./assets/css/game-shell.css">
 </head>
 
-<body>
-  <!-- Custom cursor dot -->
-  <div id="cursor"></div>
+<body class="hub-body">
+  <div class="site-progress" aria-hidden="true"></div>
+  <a class="skip-link" href="#games">Skip to games</a>
 
-  <!-- Floating colour blobs -->
-  <div class="blob blob1"></div>
-  <div class="blob blob2"></div>
+  <header class="site-header glass-nav" data-reveal>
+    <a class="brand" href="./" aria-label="Razz Rohith game lounge home">
+      <span class="brand-mark">RR</span>
+      <span>
+        <strong>Razz Rohith</strong>
+        <small>Interactive maintenance lounge</small>
+      </span>
+    </a>
+    <nav class="header-nav" aria-label="Primary">
+      <a href="#experience">Experience</a>
+      <a href="#games">Games</a>
+      <a href="#status">Status</a>
+    </nav>
+  </header>
 
-  <!-- Particle star canvas -->
-  <canvas id="stars-canvas"></canvas>
-
-  <div class="page">
-    <!-- Hero -->
-    <header class="hero">
-      <span class="hero-badge">🎮 Game Hub</span>
-      <h1>Razzrohith's<br>Games</h1>
-      <p class="hero-sub">Pick a game, invite your friends &amp; start playing instantly.</p>
-    </header>
-
-    <!-- Game Cards -->
-    <main class="games">
-      <a href="./sequence-play.html" class="card sequence" id="sequenceCard">
-        <span class="card-icon">🃏</span>
-        <h2>Sequence</h2>
-        <p>Form rows of five chips on the board while blocking your opponents. Use Jacks as wild cards.</p>
-        <div class="tags">
-          <span class="tag">Multiplayer</span>
-          <span class="tag">Strategy</span>
-          <span class="tag">Mobile-Friendly</span>
+  <main>
+    <section class="hero-section cinematic-section" aria-labelledby="hero-title">
+      <div class="hero-copy" data-reveal>
+        <p class="eyebrow">Temporary site active</p>
+        <h1 id="hero-title">A polished game lounge while the main site gets rebuilt.</h1>
+        <p class="hero-text">
+          The portfolio is being upgraded behind the curtain. In the meantime, this page becomes a compact
+          interactive arcade with multiplayer tables, a refined local game, and smooth motion throughout.
+        </p>
+        <div class="hero-actions">
+          <a class="button primary magnetic" href="#games">Explore games</a>
+          <a class="button secondary magnetic" href="./snake/">Start Snake</a>
         </div>
-        <button class="btn">Play Sequence →</button>
-      </a>
+      </div>
 
-      <a href="./ludo/" class="card" id="ludoCard">
-        <span class="card-icon">🎲</span>
-        <h2>Ludo 3D</h2>
-        <p>A premium 3D multiplayer experience. Race your 4 tokens to the center of the galaxy!</p>
-        <div class="tags">
-          <span class="tag">Multiplayer</span>
-          <span class="tag">Strategy</span>
-          <span class="tag">3D</span>
+      <div class="hero-visual" data-reveal data-tilt>
+        <div class="orbital-card hero-card-one">
+          <span>Sequence</span>
+          <strong>5 in a row</strong>
         </div>
-        <button class="btn">Play Ludo →</button>
-      </a>
-
-      <a href="./snake/" class="card" id="snakeCard">
-        <span class="card-icon">🐍</span>
-        <h2>Snake</h2>
-        <p>Classic arcade snake. Eat the food, grow longer, avoid the walls and your own tail.</p>
-        <div class="tags">
-          <span class="tag">Arcade</span>
-          <span class="tag">Solo</span>
-          <span class="tag">High Score</span>
+        <div class="orbital-card hero-card-two">
+          <span>Ludo</span>
+          <strong>Room ready</strong>
         </div>
-        <button class="btn">Play Snake →</button>
-      </a>
-    </main>
+        <div class="device-frame">
+          <img src="./assets/img/lounge-orbit.svg" alt="Abstract game lounge interface preview">
+        </div>
+      </div>
+    </section>
 
-    <footer>
-      <p style="opacity:.45;font-size:.8rem;">Made with ❤️ &nbsp;&mdash;&nbsp; Game Hub</p>
-    </footer>
-  </div>
+    <section class="story-section" id="experience" aria-labelledby="experience-title">
+      <div class="section-heading narrow" data-reveal>
+        <p class="eyebrow">Experience layer</p>
+        <h2 id="experience-title">Built to feel alive without becoming noisy.</h2>
+      </div>
+      <div class="story-grid">
+        <article class="story-card" data-reveal>
+          <span class="story-number">01</span>
+          <h3>Responsive stage</h3>
+          <p>Large screens get cinematic spacing and depth. Smaller screens collapse into quick, scannable game access.</p>
+        </article>
+        <article class="story-card" data-reveal>
+          <span class="story-number">02</span>
+          <h3>Motion with purpose</h3>
+          <p>Cards reveal on scroll, previews respond to pointer movement, and controls stay fast and readable.</p>
+        </article>
+        <article class="story-card" data-reveal>
+          <span class="story-number">03</span>
+          <h3>Playable first</h3>
+          <p>The visual polish supports the real job: launch a multiplayer room or jump into a local arcade game quickly.</p>
+        </article>
+      </div>
+    </section>
 
-  <!-- Game Overlay -->
-  <div id="gameOverlay">
-    <div id="closeOverlay">
-      <span>← Back to Lobby</span>
-      <span id="overlayTitle" style="color:var(--gold);letter-spacing:.1em;"></span>
-    </div>
-    <iframe id="overlayFrame" allow="fullscreen"></iframe>
-  </div>
+    <section class="games-section" id="games" aria-labelledby="games-title">
+      <div class="section-heading" data-reveal>
+        <div>
+          <p class="eyebrow">Game library</p>
+          <h2 id="games-title">Three ways to stay entertained.</h2>
+        </div>
+        <p class="section-note">Each game keeps its own rhythm, with a unified shell around the experience.</p>
+      </div>
 
-  <script>
-    // ── Game Overlay Logic (Strictly Static URL) ──
-    const overlay = document.getElementById('gameOverlay');
-    const frame = document.getElementById('overlayFrame');
-    const closeBtn = document.getElementById('closeOverlay');
-    const titleEl = document.getElementById('overlayTitle');
+      <div class="game-grid premium-grid">
+        <article class="game-card feature-card" data-reveal data-tilt>
+          <div class="game-media image-media">
+            <img src="./sequence/public/board_preview.png" alt="Sequence board preview">
+            <span class="media-badge">Strategy</span>
+          </div>
+          <div class="game-content">
+            <p class="game-kicker">Multiplayer table</p>
+            <h3>Sequence</h3>
+            <p>Build rows of five chips, block opponents, and use Jacks as tactical pivots.</p>
+            <ul class="feature-list">
+              <li>Room codes and rejoin flow</li>
+              <li>Turn state and sequence scoring</li>
+              <li>Hosted multiplayer launcher</li>
+            </ul>
+            <a class="button primary magnetic" href="./sequence-play.html">Launch Sequence</a>
+          </div>
+        </article>
 
-    function openGame(e, path, id, title) {
-      e.preventDefault();
-      frame.src = path;
-      titleEl.textContent = title;
-      overlay.classList.add('active');
-      document.body.style.overflow = 'hidden'; // stop page scroll
-    }
+        <article class="game-card" data-reveal data-tilt>
+          <div class="game-media image-media">
+            <img src="./ludo/public/assets/ludo_board.png" alt="Ludo board preview">
+            <span class="media-badge warm">Race</span>
+          </div>
+          <div class="game-content">
+            <p class="game-kicker">Multiplayer board race</p>
+            <h3>Ludo</h3>
+            <p>Roll, move, capture, and race tokens home in a shared room with server-side dice.</p>
+            <ul class="feature-list">
+              <li>Socket-powered rooms</li>
+              <li>Turn skipping for empty seats</li>
+              <li>Winner state handling</li>
+            </ul>
+            <a class="button primary magnetic" href="./ludo-play.html">Launch Ludo</a>
+          </div>
+        </article>
 
-    closeBtn.addEventListener('click', () => {
-      overlay.classList.remove('active');
-      frame.src = ''; // stop game
-      document.body.style.overflow = '';
-      // Force URL back exactly to base if browser did anything weird
-      window.history.replaceState({}, document.title, window.location.pathname);
-    });
+        <article class="game-card" data-reveal data-tilt>
+          <div class="game-media snake-media">
+            <span class="snake-line"></span>
+            <span class="food-dot"></span>
+            <span class="media-badge cool">Arcade</span>
+          </div>
+          <div class="game-content">
+            <p class="game-kicker">Solo challenge</p>
+            <h3>Snake</h3>
+            <p>A polished local arcade loop with speed modes, wall rules, pause, and high scores.</p>
+            <ul class="feature-list">
+              <li>Keyboard, swipe, and D-pad</li>
+              <li>Classic and wrap modes</li>
+              <li>No server required</li>
+            </ul>
+            <a class="button primary magnetic" href="./snake/">Play Snake</a>
+          </div>
+        </article>
+      </div>
+    </section>
 
-    document.getElementById('sequenceCard').addEventListener('click', e => openGame(e, './sequence-play.html', 'sequence', 'SEQUENCE'));
-    document.getElementById('ludoCard').addEventListener('click', e => openGame(e, './ludo-play.html', 'ludo', 'LUDO 3D'));
-    document.getElementById('snakeCard').addEventListener('click', e => openGame(e, './snake/', 'snake', 'SNAKE'));
-    // ── Glowing cursor ──
-    const cursor = document.getElementById('cursor');
-    document.addEventListener('mousemove', e => {
-      cursor.style.left = e.clientX + 'px';
-      cursor.style.top = e.clientY + 'px';
-    });
+    <section class="status-band" id="status" aria-label="Maintenance status">
+      <div class="status-copy" data-reveal>
+        <p class="eyebrow">Current status</p>
+        <h2>The rebuild continues. The games stay open.</h2>
+      </div>
+      <div class="status-metrics" data-reveal>
+        <span><b>3</b> playable games</span>
+        <span><b>2</b> multiplayer launchers</span>
+        <span><b>1</b> local arcade rebuild</span>
+      </div>
+    </section>
+  </main>
 
-    // ── Star particle canvas ──
-    const canvas = document.getElementById('stars-canvas');
-    const ctx = canvas.getContext('2d');
-    let stars = [];
-    function resize() { canvas.width = innerWidth; canvas.height = innerHeight; }
-    resize();
-    window.addEventListener('resize', resize);
-    function makeStar() {
-      return {
-        x: Math.random() * canvas.width, y: Math.random() * canvas.height,
-        r: Math.random() * 1.4 + .3, a: Math.random(), da: (Math.random() - .5) * .006,
-        dx: (Math.random() - .5) * .15, dy: (Math.random() - .5) * .15
-      };
-    }
-    for (let i = 0; i < 180; i++) stars.push(makeStar());
-    function drawStars() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      for (const s of stars) {
-        s.a += s.da; if (s.a <= 0 || s.a >= 1) s.da *= -1;
-        s.x += s.dx; s.y += s.dy;
-        if (s.x < 0) s.x = canvas.width; if (s.x > canvas.width) s.x = 0;
-        if (s.y < 0) s.y = canvas.height; if (s.y > canvas.height) s.y = 0;
-        ctx.beginPath();
-        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(160,140,255,${s.a})`;
-        ctx.fill();
-      }
-      requestAnimationFrame(drawStars);
-    }
-    drawStars();
+  <footer class="site-footer" data-reveal>
+    <span>Razz Rohith</span>
+    <span>Premium temporary experience, built for quick play while the main site evolves.</span>
+  </footer>
 
-    // ── Mouse-move card tilt ──
-    document.querySelectorAll('.card').forEach(card => {
-      card.addEventListener('mousemove', e => {
-        const r = card.getBoundingClientRect();
-        const x = (e.clientX - r.left) / r.width - .5;
-        const y = (e.clientY - r.top) / r.height - .5;
-        card.style.transform = `translateY(-14px) scale(1.01) rotateX(${-y * 8}deg) rotateY(${x * 8}deg)`;
-      });
-      card.addEventListener('mouseleave', () => {
-        card.style.transform = '';
-      });
-    });
-  </script>
+  <script src="./assets/js/site-motion.js"></script>
 </body>
 
 </html>

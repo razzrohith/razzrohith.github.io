@@ -112,14 +112,22 @@ function generateRoomCode() {
   return Math.random().toString(36).substring(2, 6).toUpperCase();
 }
 
+const PLAYER_COLORS = ['#e63946', '#4cc9f0', '#06d6a0', '#ffd166', '#7209b7', '#f72585', '#3a0ca3', '#2f2f2f'];
+
+function normalizeBoardStyle(boardType) {
+  if (boardType === 'sequel5' || boardType === 'Sequel5 Board (New)') return 'Sequel5 Board (New)';
+  return 'Classic Board';
+}
+
 async function createRoom(hostId, hostName, boardStyle = 'Classic Board') {
   const roomId = generateRoomCode();
+  const normalizedBoardStyle = normalizeBoardStyle(boardStyle);
   const room = new Room({
     id: roomId,
     hostId,
     board: Array(BOARD_SIZE).fill(null).map(() => Array(BOARD_SIZE).fill(null)),
     cardPositions: CLASSIC_BOARD_LAYOUT, // Always use standard Sequence board layout
-    boardStyle: boardStyle,
+    boardStyle: normalizedBoardStyle,
     players: [],
     deck: [],
     discardPile: [],
@@ -127,7 +135,7 @@ async function createRoom(hostId, hostName, boardStyle = 'Classic Board') {
     winner: null,
     turnIndex: 0,
     gameStarted: false,
-    availableColors: ['#e63946', '#4cc9f0', '#06d6a0', '#ffd166', '#7209b7', '#f72585', '#3a0ca3']
+    availableColors: [...PLAYER_COLORS]
   });
   await room.save();
   return room;
@@ -308,7 +316,7 @@ io.on('connection', (socket) => {
     try {
       const room = await createRoom(socket.id, name || 'Host', boardType);
       if (!room.availableColors || room.availableColors.length === 0) {
-        room.availableColors = ['#e63946', '#4cc9f0', '#06d6a0', '#ffd166', '#7209b7', '#f72585', '#3a0ca3'];
+        room.availableColors = [...PLAYER_COLORS];
       }
       const myColor = room.availableColors.shift();
 
@@ -364,7 +372,7 @@ io.on('connection', (socket) => {
         return;
       }
       if (!room.availableColors || room.availableColors.length === 0) {
-        room.availableColors = ['#e63946', '#4cc9f0', '#06d6a0', '#ffd166', '#7209b7', '#f72585', '#3a0ca3'];
+        room.availableColors = [...PLAYER_COLORS];
       }
       const myColor = room.availableColors.shift();
 

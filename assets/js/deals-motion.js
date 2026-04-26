@@ -1,5 +1,8 @@
 (function () {
   const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let revealObserver;
+  let counterObserver;
+  let ticking = false;
 
   function reveal() {
     const items = document.querySelectorAll('.motion-item:not(.in-view)');
@@ -7,16 +10,16 @@
       items.forEach((item) => item.classList.add('in-view'));
       return;
     }
-    const observer = new IntersectionObserver((entries) => {
+    revealObserver ||= new IntersectionObserver((entries) => {
       entries.forEach((entry) => {
         if (!entry.isIntersecting) return;
         entry.target.classList.add('in-view');
-        observer.unobserve(entry.target);
+        revealObserver.unobserve(entry.target);
       });
     }, { threshold: 0.14, rootMargin: '0px 0px -8% 0px' });
     items.forEach((item, index) => {
       item.style.transitionDelay = `${Math.min(index % 8, 6) * 45}ms`;
-      observer.observe(item);
+      revealObserver.observe(item);
     });
   }
 
@@ -40,14 +43,16 @@
       };
       requestAnimationFrame(tick);
     };
-    const observer = new IntersectionObserver((entries) => {
+    counterObserver ||= new IntersectionObserver((entries) => {
       entries.forEach((entry) => {
         if (!entry.isIntersecting || entry.target.dataset.counted) return;
         entry.target.dataset.counted = 'true';
         animate(entry.target);
       });
     }, { threshold: 0.7 });
-    nodes.forEach((node) => observer.observe(node));
+    nodes.forEach((node) => {
+      if (!node.dataset.counted) counterObserver.observe(node);
+    });
   }
 
   function parallax() {
@@ -55,10 +60,14 @@
     const hero = document.querySelector('.hero-stage');
     if (!hero) return;
     window.addEventListener('scroll', () => {
-      const offset = Math.min(window.scrollY * 0.08, 54);
-      hero.style.setProperty('--hero-drift', `${offset}px`);
-      hero.querySelectorAll('.floating-deal-card').forEach((card, index) => {
-        card.style.translate = `0 ${offset * (index + 1) * -0.18}px`;
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        const offset = Math.min(window.scrollY * 0.08, 54);
+        hero.querySelectorAll('.floating-deal-card').forEach((card, index) => {
+          card.style.translate = `0 ${offset * (index + 1) * -0.18}px`;
+        });
+        ticking = false;
       });
     }, { passive: true });
   }

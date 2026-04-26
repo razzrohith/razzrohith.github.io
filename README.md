@@ -6,7 +6,7 @@ This repository now serves a static frontend prototype for an original premium d
 
 - `index.html` is the DealNest homepage prototype.
 - `deal.html` is the reusable deal detail page prototype.
-- `categories.html`, `stores.html`, `coupons.html`, `community.html`, `search.html`, `saved.html`, `alerts.html`, `post-deal.html`, `login.html`, and `games.html` are static platform pages rendered from shared mock data.
+- `categories.html`, `category.html`, `stores.html`, `store.html`, `coupons.html`, `community.html`, `search.html`, `saved.html`, `alerts.html`, `post-deal.html`, `login.html`, `games.html`, and `admin.html` are static platform pages rendered from shared mock data.
 - `assets/css/deals.css` contains the deals marketplace design system.
 - `assets/js/deals-data.js` contains realistic fake deal, coupon, store, and community data.
 - `assets/js/deals-app.js` renders deal cards and powers search, filters, sorting, save/vote actions, coupon copy feedback, and mobile navigation.

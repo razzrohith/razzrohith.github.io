@@ -101,12 +101,16 @@
     return data.stores.find((store) => store.name === name) || { initials: name.slice(0, 2), followers: 0, rating: 0 };
   }
 
+  function toneFor(category) {
+    return (data.categories.find((item) => item.name === category)?.tone || 'mint').toLowerCase();
+  }
+
   function cardTemplate(deal, compact = false) {
     const saved = state.saved.has(deal.id);
     const voted = state.voted.has(deal.id);
     const heat = deal.heat + (voted ? 1 : 0);
     return `
-      <article class="deal-card motion-item" data-deal-id="${deal.id}">
+      <article class="deal-card tone-${toneFor(deal.category)} motion-item" data-deal-id="${deal.id}">
         <a class="deal-image" href="${deal.dealUrl}" aria-label="View ${deal.title}">
           <img src="${deal.image}" alt="${deal.title}" loading="lazy">
           <span class="discount-badge">${deal.discount}% off</span>
@@ -114,8 +118,8 @@
         </a>
         <div class="deal-body">
           <div class="deal-meta">
-            <span>${deal.store}</span>
-            <span class="category-badge">${deal.category}</span>
+            <span><a href="./store.html?name=${encodeURIComponent(deal.store)}">${deal.store}</a></span>
+            <span class="category-badge"><a href="./category.html?name=${encodeURIComponent(deal.category)}">${deal.category}</a></span>
           </div>
           <h3 class="deal-title"><a href="${deal.dealUrl}">${deal.title}</a></h3>
           ${compact ? '' : `<p class="deal-description">${deal.description}</p>`}
@@ -242,7 +246,7 @@
       return `
         <article class="store-card motion-item">
           <span>${store.initials}</span>
-          <h3>${store.name}</h3>
+          <h3><a href="./store.html?name=${encodeURIComponent(store.name)}">${store.name}</a></h3>
           <p>${storeDeals.length} active deals / ${compactNumber(store.followers)} followers / ${store.rating} rating</p>
           <button type="button" data-placeholder="Store following will connect to alert rules in a later phase.">Follow store</button>
           <small>${heat} store heat</small>

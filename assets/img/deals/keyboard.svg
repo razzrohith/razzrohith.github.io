@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="520" viewBox="0 0 720 520" role="img" aria-label="Keyboard illustration">
+  <rect x="116" y="152" width="488" height="218" rx="42" fill="#14202f"/>
+  <g fill="#f5f8fb">
+    <rect x="160" y="196" width="62" height="48" rx="14"/><rect x="236" y="196" width="62" height="48" rx="14"/><rect x="312" y="196" width="62" height="48" rx="14"/><rect x="388" y="196" width="62" height="48" rx="14"/><rect x="464" y="196" width="62" height="48" rx="14"/>
+    <rect x="160" y="262" width="76" height="48" rx="14"/><rect x="252" y="262" width="76" height="48" rx="14"/><rect x="344" y="262" width="76" height="48" rx="14"/><rect x="436" y="262" width="90" height="48" rx="14"/>
+  </g>
+  <rect x="270" y="324" width="180" height="28" rx="14" fill="#a8f4de"/>
+  <circle cx="548" cy="172" r="44" fill="#ffcf5a"/>
+</svg>

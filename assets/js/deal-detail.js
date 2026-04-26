@@ -40,19 +40,22 @@
   }
 
   function relatedCard(item) {
+    const tone = (data.categories.find((category) => category.name === item.category)?.tone || 'mint').toLowerCase();
+    const storeUrl = `./store.html?name=${encodeURIComponent(item.store)}`;
+    const categoryUrl = `./category.html?name=${encodeURIComponent(item.category)}`;
     return `
-      <article class="deal-card">
-        <div class="deal-image">
+      <article class="deal-card tone-${tone}">
+        <a class="deal-image" href="./deal.html?id=${encodeURIComponent(item.id)}" aria-label="Open ${item.title}">
           <img src="${item.image}" alt="${item.title}">
           <span class="discount-badge">${item.discount}% off</span>
           <span class="status-badge">${item.status}</span>
-        </div>
+        </a>
         <div class="deal-body">
           <div class="deal-meta">
-            <span>${item.store}</span>
-            <span class="category-badge">${item.category}</span>
+            <span><a href="${storeUrl}">${item.store}</a></span>
+            <span class="category-badge"><a href="${categoryUrl}">${item.category}</a></span>
           </div>
-          <h3 class="deal-title">${item.title}</h3>
+          <h3 class="deal-title"><a href="./deal.html?id=${encodeURIComponent(item.id)}">${item.title}</a></h3>
           <div class="price-row">
             <span class="price">${money(item.currentPrice)}</span>
             <span class="was-price">${money(item.originalPrice)}</span>
@@ -69,6 +72,8 @@
     const isSaved = saved.has(deal.id);
     const hasVoted = voted.has(deal.id);
     const heat = deal.heat + (hasVoted ? 1 : 0);
+    const storeUrl = `./store.html?name=${encodeURIComponent(deal.store)}`;
+    const categoryUrl = `./category.html?name=${encodeURIComponent(deal.category)}`;
     document.title = `${deal.title} | DealNest`;
     crumbTitle.textContent = deal.title;
 
@@ -88,8 +93,8 @@
 
       <section class="deal-summary motion-item">
         <div class="deal-meta">
-          <span>${deal.store}</span>
-          <span class="category-badge">${deal.category}</span>
+          <span><a href="${storeUrl}">${deal.store}</a></span>
+          <span class="category-badge"><a href="${categoryUrl}">${deal.category}</a></span>
           <span>${deal.status}</span>
         </div>
         <h1>${deal.title}</h1>
@@ -124,6 +129,7 @@
         <a class="deal-merchant-button" href="#" data-action="merchant">Go to store</a>
       </section>
     `;
+    requestAnimationFrame(() => window.DealNestMotion?.refresh());
   }
 
   function renderInstructions() {

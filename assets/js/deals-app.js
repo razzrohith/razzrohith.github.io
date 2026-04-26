@@ -124,7 +124,7 @@
           `}
           <div class="deal-actions">
             <button class="save-btn ${saved ? 'saved' : ''}" type="button" data-action="save" data-id="${deal.id}" aria-label="${saved ? 'Unsave' : 'Save'} ${deal.title}">${saved ? 'Saved' : 'Save'}</button>
-            <a class="deal-action" href="${deal.dealUrl}" data-action="deal" data-id="${deal.id}">Get deal</a>
+            <a class="deal-action" href="${deal.dealUrl}">Get deal</a>
           </div>
         </div>
       </article>
@@ -233,7 +233,7 @@
   }
 
   function handleDealAction(event) {
-    const target = event.target.closest('[data-action]');
+    const target = event.target.closest(actionableSelectors);
     if (!target) return;
     const { action, id, code, placeholder } = target.dataset;
     if (placeholder) {
@@ -269,11 +269,6 @@
       }).catch(() => {
         toast(`Coupon: ${code}`);
       });
-    }
-    if (action === 'deal') {
-      event.preventDefault();
-      const deal = data.deals.find((item) => item.id === id);
-      toast(`${deal ? deal.store : 'Deal'} detail pages arrive in Phase 2`);
     }
   }
 

@@ -18,7 +18,7 @@ window.DealScoutData = {
       comments: 94,
       couponCode: 'NIMBUS150',
       status: 'Live',
-      dealUrl: '#deal-laptop-01',
+      dealUrl: './deal.html?id=deal-laptop-01',
       tags: ['Trending', 'Free Shipping', 'Popular']
     },
     {
@@ -37,7 +37,7 @@ window.DealScoutData = {
       comments: 58,
       couponCode: 'QUIET20',
       status: 'Live',
-      dealUrl: '#deal-headphones-02',
+      dealUrl: './deal.html?id=deal-headphones-02',
       tags: ['Trending', 'Free Shipping']
     },
     {
@@ -56,7 +56,7 @@ window.DealScoutData = {
       comments: 41,
       couponCode: '',
       status: 'Live',
-      dealUrl: '#deal-chair-03',
+      dealUrl: './deal.html?id=deal-chair-03',
       tags: ['Popular', 'Home']
     },
     {
@@ -75,7 +75,7 @@ window.DealScoutData = {
       comments: 122,
       couponCode: 'PLAYMORE',
       status: 'Live',
-      dealUrl: '#deal-console-04',
+      dealUrl: './deal.html?id=deal-console-04',
       tags: ['Trending', 'Gaming', 'Free Shipping', 'Popular']
     },
     {
@@ -94,7 +94,7 @@ window.DealScoutData = {
       comments: 29,
       couponCode: '',
       status: 'Expiring Soon',
-      dealUrl: '#deal-luggage-05',
+      dealUrl: './deal.html?id=deal-luggage-05',
       tags: ['Expiring Soon', 'Travel', 'Free Shipping']
     },
     {
@@ -113,7 +113,7 @@ window.DealScoutData = {
       comments: 17,
       couponCode: 'RAINREADY',
       status: 'Live',
-      dealUrl: '#deal-jacket-06',
+      dealUrl: './deal.html?id=deal-jacket-06',
       tags: ['Fashion', 'Free Shipping']
     },
     {
@@ -132,7 +132,7 @@ window.DealScoutData = {
       comments: 13,
       couponCode: 'FRESHBEANS',
       status: 'Live',
-      dealUrl: '#deal-coffee-07',
+      dealUrl: './deal.html?id=deal-coffee-07',
       tags: ['New', 'Free Shipping']
     },
     {
@@ -151,7 +151,7 @@ window.DealScoutData = {
       comments: 22,
       couponCode: '',
       status: 'Live',
-      dealUrl: '#deal-kitchen-08',
+      dealUrl: './deal.html?id=deal-kitchen-08',
       tags: ['New', 'Home']
     }
   ],
@@ -164,5 +164,25 @@ window.DealScoutData = {
     { title: 'Best time to buy travel gear before summer?', replies: 28, tag: 'Buying advice' },
     { title: 'Share your under-$100 desk upgrade finds', replies: 64, tag: 'Community picks' },
     { title: 'How do you verify marketplace refurb deals?', replies: 19, tag: 'Deal safety' }
+  ],
+  comments: [
+    {
+      user: 'pricewatcher',
+      badge: 'Deal scout',
+      time: '12 min ago',
+      text: 'The coupon applied cleanly in the mock checkout flow. The storage and memory configuration make this one feel like the best value in the current laptop set.'
+    },
+    {
+      user: 'cartlogic',
+      badge: 'Power member',
+      time: '24 min ago',
+      text: 'Worth comparing warranty terms before buying. I would still mark this as hot because the discount leaves room for an accessory bundle.'
+    },
+    {
+      user: 'mod-ava',
+      badge: 'Moderator',
+      time: '31 min ago',
+      text: 'Reminder for the future production version: confirm final price, store reputation, and return window before posting live offers.'
+    }
   ]
 };

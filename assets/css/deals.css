@@ -755,7 +755,7 @@ p {
 
 .deal-actions {
   display: grid;
-  grid-template-columns: 44px 1fr;
+  grid-template-columns: minmax(64px, .34fr) 1fr;
   gap: 9px;
 }
 
@@ -808,6 +808,387 @@ p {
   color: var(--ink);
   background: #fff;
   padding: 7px 10px;
+}
+
+.detail-page {
+  width: calc(100% - 32px);
+  max-width: 1220px;
+  margin: 0 auto;
+}
+
+.detail-header {
+  margin-bottom: 26px;
+}
+
+.link-button {
+  display: inline-grid;
+  place-items: center;
+  min-height: 46px;
+}
+
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin: 34px 0 16px;
+  color: var(--muted);
+  font-size: .86rem;
+  font-weight: 850;
+}
+
+.breadcrumb a {
+  color: var(--brand);
+  text-decoration: none;
+}
+
+.breadcrumb span:last-child {
+  max-width: min(74vw, 680px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.detail-hero {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(320px, .95fr) minmax(0, 1.05fr);
+  gap: 22px;
+  align-items: stretch;
+  padding: 18px;
+  border: 1px solid rgba(255, 255, 255, .8);
+  border-radius: 34px;
+  background:
+    linear-gradient(140deg, rgba(255, 255, 255, .92), rgba(255, 255, 255, .72)),
+    radial-gradient(circle at 0% 20%, rgba(168, 244, 222, .36), transparent 28rem);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.detail-hero::before {
+  content: "";
+  position: absolute;
+  inset: 18px 18px auto auto;
+  width: 220px;
+  height: 220px;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(255, 207, 90, .32), transparent 68%);
+  pointer-events: none;
+}
+
+.product-gallery,
+.deal-summary,
+.detail-panel {
+  position: relative;
+  border: 1px solid var(--line);
+  border-radius: 28px;
+  background: rgba(255, 255, 255, .82);
+  box-shadow: 0 14px 34px rgba(27, 43, 65, .08);
+}
+
+.product-gallery {
+  display: grid;
+  gap: 14px;
+  padding: 14px;
+}
+
+.gallery-main {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 460px;
+  overflow: hidden;
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at 50% 26%, rgba(255, 255, 255, .95), transparent 24%),
+    linear-gradient(135deg, #eef8ff, #eefdf8 52%, #fff6d9);
+}
+
+.gallery-main img {
+  width: min(86%, 560px);
+  height: min(78%, 440px);
+  object-fit: contain;
+  filter: drop-shadow(0 26px 32px rgba(27, 43, 65, .18));
+  transition: transform .35s var(--ease), filter .35s var(--ease);
+}
+
+.product-gallery:hover .gallery-main img {
+  transform: translateY(-4px) scale(1.025);
+  filter: drop-shadow(0 34px 38px rgba(27, 43, 65, .2));
+}
+
+.gallery-thumbs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.gallery-thumbs button {
+  display: grid;
+  place-items: center;
+  min-height: 92px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--cloud);
+  transition: transform .2s var(--ease), border-color .2s var(--ease), box-shadow .2s var(--ease);
+}
+
+.gallery-thumbs button:hover,
+.gallery-thumbs button.active {
+  transform: translateY(-2px);
+  border-color: rgba(15, 118, 110, .42);
+  box-shadow: 0 12px 24px rgba(15, 118, 110, .12);
+}
+
+.gallery-thumbs img {
+  width: 72%;
+  height: 70px;
+  object-fit: contain;
+}
+
+.deal-summary {
+  display: grid;
+  align-content: start;
+  gap: 18px;
+  padding: clamp(22px, 4vw, 38px);
+}
+
+.deal-summary h1 {
+  max-width: 780px;
+  margin: 0;
+  font-size: clamp(2.2rem, 4vw, 4.7rem);
+  line-height: .94;
+  letter-spacing: -.055em;
+}
+
+.summary-price {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding-bottom: 6px;
+}
+
+.summary-price span {
+  color: var(--brand);
+  font-size: clamp(2.3rem, 5vw, 4.6rem);
+  font-weight: 950;
+  letter-spacing: -.06em;
+}
+
+.summary-price del {
+  color: var(--muted);
+  font-size: clamp(1.05rem, 1.8vw, 1.32rem);
+  font-weight: 800;
+}
+
+.summary-price strong {
+  border-radius: 999px;
+  color: #fff;
+  background: linear-gradient(135deg, var(--hot), var(--pink));
+  padding: 9px 12px;
+  font-size: .82rem;
+  font-weight: 950;
+}
+
+.detail-facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.detail-facts div {
+  min-height: 82px;
+  display: grid;
+  gap: 5px;
+  align-content: center;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--cloud);
+  padding: 14px;
+}
+
+.detail-facts span,
+.coupon-detail span,
+.comment-card span,
+.panel-kicker {
+  color: var(--muted);
+  font-size: .78rem;
+  font-weight: 850;
+}
+
+.detail-facts strong {
+  color: var(--ink);
+  line-height: 1.25;
+}
+
+.coupon-detail {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  border: 1px dashed rgba(15, 118, 110, .42);
+  border-radius: 22px;
+  background:
+    linear-gradient(135deg, rgba(168, 244, 222, .3), rgba(255, 207, 90, .16)),
+    #fff;
+  padding: 15px;
+}
+
+.coupon-detail strong {
+  display: block;
+  margin-top: 4px;
+  color: var(--brand);
+  font-size: 1.18rem;
+  letter-spacing: .04em;
+}
+
+.coupon-detail button,
+.deal-merchant-button,
+.comment-composer button {
+  border: 0;
+  border-radius: 999px;
+  color: #fff;
+  background: linear-gradient(135deg, var(--ink), #24415f);
+  padding: 13px 16px;
+  font-weight: 950;
+  text-decoration: none;
+  transition: transform .2s var(--ease), box-shadow .2s var(--ease);
+}
+
+.coupon-detail button:hover,
+.deal-merchant-button:hover,
+.comment-composer button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 24px rgba(27, 43, 65, .14);
+}
+
+.muted-coupon {
+  border-style: solid;
+  background: var(--cloud);
+}
+
+.muted-coupon strong {
+  color: var(--ink-2);
+  letter-spacing: 0;
+}
+
+.detail-actions {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.detail-actions .heat-button,
+.detail-actions .save-btn,
+.detail-actions .ghost-button {
+  min-height: 52px;
+  border-radius: 16px;
+  padding: 0 12px;
+  white-space: nowrap;
+}
+
+.deal-merchant-button {
+  display: grid;
+  place-items: center;
+  min-height: 58px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, var(--brand), var(--brand-2));
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: minmax(280px, .55fr) minmax(0, 1fr);
+  gap: 22px;
+  margin-top: 22px;
+}
+
+.detail-panel {
+  padding: clamp(20px, 3vw, 28px);
+}
+
+.detail-panel h2 {
+  margin: 5px 0 18px;
+  font-size: clamp(1.7rem, 3vw, 2.7rem);
+  line-height: .98;
+  letter-spacing: -.04em;
+}
+
+.panel-kicker {
+  text-transform: uppercase;
+  letter-spacing: .14em;
+}
+
+.instructions-panel ol {
+  display: grid;
+  gap: 13px;
+  margin: 0;
+  padding-left: 22px;
+  color: var(--ink-2);
+  line-height: 1.65;
+  font-weight: 650;
+}
+
+.instructions-panel li::marker {
+  color: var(--brand);
+  font-weight: 950;
+}
+
+.comment-composer {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.comment-composer textarea {
+  width: 100%;
+  min-height: 86px;
+  resize: vertical;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  color: var(--ink);
+  background: var(--cloud);
+  padding: 14px;
+  font: inherit;
+}
+
+.comments-list {
+  display: grid;
+  gap: 12px;
+}
+
+.comment-card {
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: #fff;
+  padding: 15px;
+}
+
+.comment-card div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.comment-card strong {
+  color: var(--ink);
+}
+
+.comment-card p {
+  margin: 10px 0 0;
+  color: var(--ink-2);
+  line-height: 1.6;
+}
+
+.related-section {
+  margin-top: 64px;
+}
+
+.single-action {
+  grid-template-columns: 1fr;
 }
 
 .feed-layout {
@@ -1240,7 +1621,9 @@ p {
   .split-section,
   .community-section,
   .games-archive,
-  .site-footer {
+  .site-footer,
+  .detail-hero,
+  .detail-grid {
     grid-template-columns: 1fr;
   }
 
@@ -1261,6 +1644,14 @@ p {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .gallery-main {
+    min-height: 380px;
+  }
+
+  .detail-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .site-footer nav {
     justify-content: start;
   }
@@ -1277,7 +1668,8 @@ p {
   .community-section,
   .games-archive,
   .site-footer,
-  .split-section {
+  .split-section,
+  .detail-page {
     width: calc(100% - 22px);
   }
 
@@ -1337,8 +1729,49 @@ p {
   .compact-grid,
   .store-grid,
   .trust-strip,
-  .archive-links {
+  .archive-links,
+  .detail-facts,
+  .detail-actions,
+  .comment-composer {
     grid-template-columns: 1fr;
+  }
+
+  .detail-hero,
+  .product-gallery,
+  .deal-summary,
+  .detail-panel {
+    border-radius: 24px;
+  }
+
+  .detail-hero {
+    padding: 10px;
+  }
+
+  .breadcrumb {
+    margin-top: 22px;
+  }
+
+  .gallery-main {
+    min-height: 300px;
+    border-radius: 20px;
+  }
+
+  .gallery-thumbs button {
+    min-height: 72px;
+  }
+
+  .gallery-thumbs img {
+    height: 54px;
+  }
+
+  .coupon-detail {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .coupon-detail button,
+  .comment-composer button {
+    width: 100%;
   }
 
   .section-heading,

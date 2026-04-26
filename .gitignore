@@ -1,0 +1,8 @@
+.chrome-dealnest-qa/
+.chrome-ludo-qa/
+sequence_backup/
+node_modules/
+dealnest-desktop-check.png
+dealnest-mobile-check.png
+ludo-ui-check.png
+test.txt

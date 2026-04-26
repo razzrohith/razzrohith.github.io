@@ -73,7 +73,7 @@
     crumbTitle.textContent = deal.title;
 
     detail.innerHTML = `
-      <section class="product-gallery">
+      <section class="product-gallery motion-item">
         <div class="gallery-main">
           <img src="${deal.image}" alt="${deal.title}">
           <span class="discount-badge">${deal.discount}% off</span>
@@ -86,13 +86,14 @@
         </div>
       </section>
 
-      <section class="deal-summary">
+      <section class="deal-summary motion-item">
         <div class="deal-meta">
           <span>${deal.store}</span>
           <span class="category-badge">${deal.category}</span>
           <span>${deal.status}</span>
         </div>
         <h1>${deal.title}</h1>
+        <p class="deal-description">${deal.description}</p>
         <div class="summary-price">
           <span>${money(deal.currentPrice)}</span>
           <del>${money(deal.originalPrice)}</del>
@@ -225,4 +226,5 @@
   renderRelated();
   bindMenu();
   document.body.addEventListener('click', handleAction);
+  window.DealNestMotion?.refresh();
 }());

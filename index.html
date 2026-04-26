@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="DealNest is an original premium deals-discovery community prototype with curated offers, coupons, filters, and community previews.">
+  <meta name="description" content="DealNest is an original premium deals-discovery community prototype with curated offers, coupons, alerts, and community previews.">
   <title>DealNest | Premium Deals Community</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -12,7 +12,7 @@
   <link rel="stylesheet" href="./assets/css/deals.css">
 </head>
 
-<body>
+<body class="home-page">
   <div class="page-glow" aria-hidden="true"></div>
   <a class="skip-link" href="#hot-deals">Skip to deals</a>
 
@@ -25,38 +25,34 @@
       </span>
     </a>
 
-    <button class="menu-toggle" id="menuToggle" type="button" aria-expanded="false" aria-controls="primaryNav" aria-label="Open menu">
-      Menu
-    </button>
+    <button class="menu-toggle" id="menuToggle" type="button" aria-expanded="false" aria-controls="primaryNav" aria-label="Open menu">Menu</button>
 
     <nav class="primary-nav" id="primaryNav" aria-label="Primary navigation">
-      <a href="#trending">Trending</a>
-      <a href="#hot-deals">Hot Deals</a>
-      <a href="#coupons">Coupons</a>
-      <a href="#community">Community</a>
-      <a href="#games">Games archive</a>
+      <a href="./categories.html">Categories</a>
+      <a href="./stores.html">Stores</a>
+      <a href="./coupons.html">Coupons</a>
+      <a href="./community.html">Community</a>
+      <a href="./games.html">Games</a>
     </nav>
 
     <div class="header-actions">
-      <button class="ghost-button" type="button" data-placeholder="Account access will arrive in the member dashboard phase.">Log in</button>
-      <button class="post-button" type="button" data-placeholder="Deal posting opens in Phase 2 with validation and preview.">Post a Deal</button>
+      <a class="ghost-button link-button" href="./login.html">Log in</a>
+      <a class="post-button link-button" href="./post-deal.html">Post a Deal</a>
     </div>
   </header>
 
   <main>
-    <section class="hero">
-      <div class="hero-copy">
-        <p class="eyebrow">Original deals community prototype</p>
-        <h1><span>Discover</span> <span>sharper</span> <span>prices</span> <span>before they</span> <span>disappear.</span></h1>
-        <p class="hero-text">
-          Browse community-ranked deals, coupon drops, store highlights, and curated picks in a polished marketplace built for fast comparison.
-        </p>
+    <section class="hero cinematic-hero">
+      <div class="hero-copy motion-item">
+        <p class="eyebrow">Original shopping intelligence</p>
+        <h1><span>Find the deal</span> <span>before the feed</span> <span>catches fire.</span></h1>
+        <p class="hero-text">A premium deal-discovery prototype where curated offers, coupon signals, community heat, and alerts feel fast, visual, and trustworthy.</p>
 
         <form class="search-panel" role="search" id="searchForm">
           <label class="sr-only" for="dealSearch">Search deals, stores, categories, or keywords</label>
           <span class="search-mark" aria-hidden="true"></span>
-          <input id="dealSearch" type="search" placeholder="Search laptops, gaming, travel, coupons..." autocomplete="off">
-          <button type="submit">Search</button>
+          <input id="dealSearch" type="search" placeholder="Search laptops, gaming, coffee, travel, coupons..." autocomplete="off">
+          <button type="submit">Search deals</button>
         </form>
 
         <div class="hero-pills" aria-label="Popular deal shortcuts">
@@ -64,73 +60,62 @@
           <button type="button" data-filter-shortcut="Free Shipping">Free shipping</button>
           <button type="button" data-filter-shortcut="Gaming">Gaming</button>
           <button type="button" data-filter-shortcut="Expiring Soon">Ending soon</button>
+          <button type="button" data-filter-shortcut="desk setup">Desk setup</button>
         </div>
       </div>
 
-      <aside class="hero-card" aria-label="Marketplace snapshot">
-        <div class="hero-card-top">
-          <span>Today's pulse</span>
-          <strong>1,284 heat</strong>
+      <aside class="hero-stage motion-item" aria-label="Live deal preview">
+        <div class="floating-deal-card card-a">
+          <span>Hot drop</span>
+          <strong>Nimbus laptop</strong>
+          <b>$749</b>
         </div>
-        <div class="pulse-stack">
-          <div><span>Hot laptop drop</span><b>+38%</b></div>
-          <div><span>Audio coupon run</span><b>+50%</b></div>
-          <div><span>Travel set alert</span><b>Ends soon</b></div>
+        <div class="floating-deal-card card-b">
+          <span>Coupon copied</span>
+          <strong>PLAYMORE</strong>
+          <b>33% off</b>
         </div>
-        <div class="mini-chart" aria-hidden="true">
-          <span style="height:42%"></span>
-          <span style="height:66%"></span>
-          <span style="height:52%"></span>
-          <span style="height:82%"></span>
-          <span style="height:70%"></span>
-          <span style="height:92%"></span>
+        <div class="floating-deal-card card-c">
+          <span>Community heat</span>
+          <strong>8,864</strong>
+          <b>live pulse</b>
+        </div>
+        <div class="orbital-board" aria-hidden="true">
+          <span></span>
+          <span></span>
+          <span></span>
         </div>
       </aside>
     </section>
 
-    <section class="trust-strip" aria-label="DealNest quality signals">
-      <article>
-        <span>8</span>
-        <strong>curated sample deals</strong>
-        <p>Structured like a real feed without using copied marketplace content.</p>
-      </article>
-      <article>
-        <span>4</span>
-        <strong>interactive controls</strong>
-        <p>Search, filters, sorting, and local save/heat feedback are live.</p>
-      </article>
-      <article>
-        <span>0</span>
-        <strong>borrowed listings</strong>
-        <p>All stores, users, coupons, and product visuals are original mock data.</p>
-      </article>
-    </section>
-
-    <section class="category-strip" aria-label="Deal categories">
-      <button type="button" data-filter-shortcut="Electronics">Electronics</button>
-      <button type="button" data-filter-shortcut="Home">Home</button>
-      <button type="button" data-filter-shortcut="Fashion">Fashion</button>
-      <button type="button" data-filter-shortcut="Gaming">Gaming</button>
-      <button type="button" data-filter-shortcut="Travel">Travel</button>
-      <button type="button" data-filter-shortcut="Kitchen">Kitchen</button>
-      <button type="button" data-filter-shortcut="Audio">Audio</button>
-    </section>
-
-    <section class="section-block" id="trending">
+    <section class="pulse-section section-block" id="trending">
       <div class="section-heading">
         <div>
-          <p class="eyebrow">Momentum picks</p>
+          <p class="eyebrow">Live deal pulse</p>
+          <h2>Momentum you can scan in seconds.</h2>
+        </div>
+        <ul class="trend-list" id="trendList" aria-label="Trending stores"></ul>
+      </div>
+      <div class="trust-strip pulse-grid" id="pulseRail"></div>
+    </section>
+
+    <section class="section-block spotlight-section" id="dealSpotlight"></section>
+
+    <section class="section-block">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Fast movers</p>
           <h2>Trending deals</h2>
         </div>
-        <p>Deals gaining heat quickly across the community.</p>
+        <a class="text-link" href="./search.html?filter=Trending">Open search</a>
       </div>
       <div class="deal-grid compact-grid" id="trendingDeals"></div>
     </section>
 
     <section class="feed-layout" id="hot-deals">
-      <aside class="filter-panel" aria-label="Deal filters">
+      <aside class="filter-panel motion-item" aria-label="Deal filters">
         <div class="panel-title">
-          <span>Refine</span>
+          <span>Refine feed</span>
           <button type="button" id="clearFilters">Clear</button>
         </div>
 
@@ -153,6 +138,7 @@
             <button type="button" data-filter="Fashion">Fashion</button>
             <button type="button" data-filter="Gaming">Gaming</button>
             <button type="button" data-filter="Travel">Travel</button>
+            <button type="button" data-filter="Outdoors">Outdoors</button>
           </div>
         </div>
 
@@ -165,12 +151,12 @@
 
         <label class="field">
           Max price
-          <input id="priceFilter" type="range" min="25" max="800" value="800" step="25">
-          <span id="priceValue">$800 and under</span>
+          <input id="priceFilter" type="range" min="25" max="900" value="900" step="25">
+          <span id="priceValue">$900 and under</span>
         </label>
       </aside>
 
-      <section class="feed-panel">
+      <section class="feed-panel motion-item">
         <div class="feed-toolbar">
           <div>
             <p class="eyebrow">Community ranked</p>
@@ -184,6 +170,17 @@
           <p>Try clearing filters or searching for a broader category.</p>
         </div>
       </section>
+    </section>
+
+    <section class="section-block immersive-categories">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Browse with intent</p>
+          <h2>Immersive categories</h2>
+        </div>
+        <a class="text-link" href="./categories.html">All categories</a>
+      </div>
+      <div class="category-card-grid" id="categoryGrid"></div>
     </section>
 
     <section class="split-section">
@@ -200,9 +197,10 @@
       <div class="section-block" id="coupons">
         <div class="section-heading">
           <div>
-            <p class="eyebrow">Codes worth trying</p>
+            <p class="eyebrow">Verified savings</p>
             <h2>Coupon highlights</h2>
           </div>
+          <a class="text-link" href="./coupons.html">All coupons</a>
         </div>
         <div class="coupon-list" id="couponList"></div>
       </div>
@@ -214,7 +212,7 @@
           <p class="eyebrow">Fresh finds</p>
           <h2>New deals</h2>
         </div>
-        <a class="text-link" href="#hot-deals">View all</a>
+        <a class="text-link" href="./search.html?sort=new">View all</a>
       </div>
       <div class="deal-grid compact-grid" id="newDeals"></div>
     </section>
@@ -225,31 +223,52 @@
           <p class="eyebrow">Store watch</p>
           <h2>Popular stores</h2>
         </div>
-        <p>Follow stores later to power custom alerts.</p>
+        <a class="text-link" href="./stores.html">Store directory</a>
       </div>
       <div class="store-grid" id="storeGrid"></div>
     </section>
 
     <section class="community-section" id="community">
       <div>
-        <p class="eyebrow">Community preview</p>
-        <h2>People comparing notes make deals better.</h2>
-        <p>Future phases can add threads, reputation, moderation, saved searches, and alert subscriptions.</p>
+        <p class="eyebrow">Community layer</p>
+        <h2>Better deals happen when people compare notes.</h2>
+        <p>Threads, member badges, coupon reports, and moderation-ready signals turn static shopping into shared intelligence.</p>
         <div class="community-actions">
-          <button type="button" data-placeholder="Forum posting will be enabled when accounts and moderation are added.">Start a discussion</button>
-          <button type="button" data-placeholder="Deal alerts will be connected to saved searches in a later phase.">Create alert</button>
+          <a class="deal-action" href="./community.html">Browse community</a>
+          <a class="ghost-button link-button" href="./alerts.html">Create alert</a>
         </div>
       </div>
       <div class="topic-list" id="topicList"></div>
     </section>
 
+    <section class="alert-section section-block">
+      <div class="alert-copy">
+        <p class="eyebrow">Deal alerts</p>
+        <h2>Build a watchlist before prices move.</h2>
+        <p>Future account flows can turn these keyword chips into saved alerts. For now, they behave like fast feed shortcuts.</p>
+      </div>
+      <div class="alert-builder motion-item">
+        <label>
+          Keyword
+          <input type="text" value="gaming monitor" aria-label="Example alert keyword">
+        </label>
+        <label>
+          Max price
+          <input type="text" value="$250" aria-label="Example alert max price">
+        </label>
+        <div id="alertPreview"></div>
+        <a class="post-button link-button" href="./alerts.html">Open alerts</a>
+      </div>
+    </section>
+
     <section class="games-archive" id="games">
       <div>
-        <p class="eyebrow">Archive</p>
+        <p class="eyebrow">Secondary archive</p>
         <h2>Games are still available.</h2>
-        <p>The site focus has moved to deals, but the previous maintenance games remain reachable here.</p>
+        <p>The old maintenance games remain accessible, but the main product experience now belongs to DealNest.</p>
       </div>
       <div class="archive-links">
+        <a href="./games.html">Games archive</a>
         <a href="./snake/">Snake</a>
         <a href="./ludo/">Ludo Royale</a>
         <a href="./sequence-play.html">Sequence</a>
@@ -264,14 +283,15 @@
     </div>
     <nav aria-label="Footer">
       <a href="#top">Back to top</a>
-      <a href="#stores">Stores</a>
-      <a href="#coupons">Coupons</a>
-      <a href="#community">Community</a>
-      <a href="#games">Games archive</a>
+      <a href="./stores.html">Stores</a>
+      <a href="./coupons.html">Coupons</a>
+      <a href="./community.html">Community</a>
+      <a href="./games.html">Games archive</a>
     </nav>
   </footer>
 
   <script src="./assets/js/deals-data.js"></script>
+  <script src="./assets/js/deals-motion.js"></script>
   <script src="./assets/js/deals-app.js"></script>
 </body>
 

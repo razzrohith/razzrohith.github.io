@@ -126,7 +126,7 @@
           <button type="button" class="ghost-button" data-action="expired">Report expired</button>
         </div>
 
-        <a class="deal-merchant-button" href="#" data-action="merchant">Go to store</a>
+        <a class="deal-merchant-button" href="${storeUrl}">Get deal at ${deal.store}</a>
       </section>
     `;
     requestAnimationFrame(() => window.DealNestMotion?.refresh());
@@ -207,10 +207,6 @@
     }
     if (action === 'expired') {
       toast('Thanks. Expiration reports will enter the moderation queue in a later phase.');
-    }
-    if (action === 'merchant') {
-      event.preventDefault();
-      toast(`${deal.store} outbound links will be connected after affiliate/link rules are defined.`);
     }
   }
 

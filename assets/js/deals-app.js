@@ -8,7 +8,8 @@
     store: '',
     maxPrice: 900,
     saved: new Set(JSON.parse(localStorage.getItem('dealnest:saved') || '[]')),
-    voted: new Set(JSON.parse(localStorage.getItem('dealnest:voted') || '[]'))
+    voted: new Set(JSON.parse(localStorage.getItem('dealnest:voted') || '[]')),
+    followedStores: new Set(JSON.parse(localStorage.getItem('dealnest:followedStores') || '[]'))
   };
 
   const els = {
@@ -70,7 +71,8 @@
   }
 
   function dealTokens(deal) {
-    return [deal.category, deal.status, deal.store, deal.shipping, ...deal.tags];
+    const values = [deal.category, deal.status, deal.store, deal.shipping, ...deal.tags];
+    return values.flatMap((value) => [value, value.toLowerCase()]);
   }
 
   function matchesDeal(deal) {
@@ -83,7 +85,7 @@
     if (deal.currentPrice > state.maxPrice) return false;
     if (state.filters.size > 0) {
       const tokens = new Set(dealTokens(deal));
-      const hasEveryFilter = [...state.filters].every((filter) => tokens.has(filter));
+      const hasEveryFilter = [...state.filters].every((filter) => tokens.has(filter) || tokens.has(filter.toLowerCase()));
       if (!hasEveryFilter) return false;
     }
     return true;
@@ -243,12 +245,13 @@
     els.storeGrid.innerHTML = data.stores.slice(0, 8).map((store) => {
       const storeDeals = data.deals.filter((deal) => deal.store === store.name);
       const heat = storeDeals.reduce((sum, deal) => sum + deal.heat, 0);
+      const followed = state.followedStores.has(store.name);
       return `
         <article class="store-card motion-item">
           <span>${store.initials}</span>
           <h3><a href="./store.html?name=${encodeURIComponent(store.name)}">${store.name}</a></h3>
           <p>${storeDeals.length} active deals / ${compactNumber(store.followers)} followers / ${store.rating} rating</p>
-          <button type="button" data-placeholder="Store following will connect to alert rules in a later phase.">Follow store</button>
+          <button type="button" class="${followed ? 'saved' : ''}" data-action="follow-store" data-store="${store.name}">${followed ? 'Following' : 'Follow store'}</button>
           <small>${heat} store heat</small>
         </article>
       `;
@@ -317,7 +320,7 @@
     const category = data.categories.some((item) => item.name === value);
     state.filters.clear();
     state.query = '';
-    if (category || ['Free Shipping', 'Expiring Soon', 'Popular', 'Gaming', 'Travel', 'Home', 'Fashion', 'Electronics', 'Kitchen', 'Audio', 'Outdoors'].includes(value)) {
+    if (category || ['Free Shipping', 'Expiring Soon', 'Popular', 'Gaming', 'Travel', 'Home', 'Fashion', 'Electronics', 'Kitchen', 'Audio', 'Outdoors', 'Wellness', 'Pets'].includes(value)) {
       state.filters.add(value);
     } else {
       state.query = value;
@@ -363,6 +366,18 @@
     if (action === 'copy') {
       navigator.clipboard?.writeText(code).then(() => toast(`Copied ${code}`)).catch(() => toast(`Coupon: ${code}`));
     }
+    if (action === 'follow-store') {
+      const store = target.dataset.store;
+      if (state.followedStores.has(store)) {
+        state.followedStores.delete(store);
+        toast(`Unfollowed ${store}`);
+      } else {
+        state.followedStores.add(store);
+        toast(`Following ${store}`);
+      }
+      persist('followedStores', state.followedStores);
+      renderStores();
+    }
   }
 
   function bindEvents() {
@@ -390,6 +405,8 @@
       const button = event.target.closest('[data-filter]');
       if (!button) return;
       const filter = button.dataset.filter;
+      state.query = '';
+      els.search.value = '';
       if (state.filters.has(filter)) state.filters.delete(filter);
       else state.filters.add(filter);
       updateFilterButtons();

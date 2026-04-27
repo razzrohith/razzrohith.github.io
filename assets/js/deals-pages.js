@@ -3,9 +3,18 @@
   const page = document.body.dataset.page;
   const params = new URLSearchParams(window.location.search);
   const saved = new Set(JSON.parse(localStorage.getItem('dealnest:saved') || '[]'));
+  const followedStores = new Set(JSON.parse(localStorage.getItem('dealnest:followedStores') || '[]'));
 
   function money(value) {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: value % 1 === 0 ? 0 : 2 }).format(value);
+  }
+
+  function compact(value) {
+    return new Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 1 }).format(value);
+  }
+
+  function persist(key, set) {
+    localStorage.setItem(`dealnest:${key}`, JSON.stringify([...set]));
   }
 
   function toast(message) {
@@ -21,11 +30,27 @@
     toast.timer = setTimeout(() => node.classList.remove('show'), 1800);
   }
 
-  function dealCard(deal) {
-    const tone = (data.categories.find((item) => item.name === deal.category)?.tone || 'mint').toLowerCase();
+  function toneFor(category) {
+    return (data.categories.find((item) => item.name === category)?.tone || 'mint').toLowerCase();
+  }
+
+  function storeByName(name) {
+    return data.stores.find((store) => store.name === name) || { name, initials: name.slice(0, 2).toUpperCase(), followers: 0, rating: 0 };
+  }
+
+  function couponsForStore(name) {
+    return data.coupons.filter((coupon) => coupon.store === name);
+  }
+
+  function categoryDeals(name) {
+    return data.deals.filter((deal) => deal.category === name);
+  }
+
+  function dealCard(deal, compactCard = false) {
+    const isSaved = saved.has(deal.id);
     return `
-      <article class="deal-card tone-${tone} motion-item">
-        <a class="deal-image" href="${deal.dealUrl}">
+      <article class="deal-card tone-${toneFor(deal.category)} motion-item" data-deal-id="${deal.id}">
+        <a class="deal-image" href="${deal.dealUrl}" aria-label="Open ${deal.title}">
           <img src="${deal.image}" alt="${deal.title}" loading="lazy">
           <span class="discount-badge">${deal.discount}% off</span>
           <span class="status-badge">${deal.status}</span>
@@ -33,15 +58,24 @@
         <div class="deal-body">
           <div class="deal-meta"><span><a href="./store.html?name=${encodeURIComponent(deal.store)}">${deal.store}</a></span><span class="category-badge"><a href="./category.html?name=${encodeURIComponent(deal.category)}">${deal.category}</a></span></div>
           <h3 class="deal-title"><a href="${deal.dealUrl}">${deal.title}</a></h3>
-          <p class="deal-description">${deal.description}</p>
+          ${compactCard ? '' : `<p class="deal-description">${deal.description}</p>`}
           <div class="price-row"><span class="price">${money(deal.currentPrice)}</span><span class="was-price">${money(deal.originalPrice)}</span></div>
-          <div class="deal-actions single-action"><a class="deal-action" href="${deal.dealUrl}">View deal</a></div>
+          <div class="deal-signals"><span>${deal.heat} heat</span><span>${deal.comments} comments</span><span>${deal.postedTime}</span></div>
+          ${deal.couponCode && !compactCard ? `<div class="coupon-row"><code>${deal.couponCode}</code><button class="copy-btn" type="button" data-action="copy" data-code="${deal.couponCode}">Copy</button></div>` : ''}
+          <div class="deal-actions">
+            <button class="save-btn ${isSaved ? 'saved' : ''}" type="button" data-action="save" data-id="${deal.id}">${isSaved ? 'Saved' : 'Save'}</button>
+            <a class="deal-action" href="${deal.dealUrl}">View deal</a>
+          </div>
         </div>
       </article>
     `;
   }
 
-  function shell(title, eyebrow, intro, body) {
+  function stat(label, value, detail) {
+    return `<article><span>${value}</span><strong>${label}</strong><p>${detail}</p></article>`;
+  }
+
+  function pageShell(title, eyebrow, intro, body) {
     const root = document.getElementById('pageContent');
     root.innerHTML = `
       <section class="page-hero section-block motion-item">
@@ -51,116 +85,239 @@
       </section>
       ${body}
     `;
-    window.DealNestMotion?.refresh();
+    requestAnimationFrame(() => window.DealNestMotion?.refresh());
   }
 
   function categories() {
-    shell('Shop by category', 'Discovery map', 'Original category rooms with enough context to support future category landing pages.',
-      `<section class="section-block"><div class="category-card-grid">${data.categories.map((category) => {
-        const deals = data.deals.filter((deal) => deal.category === category.name);
-        return `<a class="category-card tone-${category.tone} motion-item" href="./category.html?name=${encodeURIComponent(category.name)}"><span>${category.icon}</span><strong>${category.name}</strong><p>${category.description}</p><small>${deals.length} active deals</small></a>`;
+    const totalDeals = data.deals.length;
+    pageShell('Shop by category', 'Discovery map', 'Browse rich category rooms with active deals, store signals, and the hottest current offer in each lane.',
+      `<section class="section-block"><div class="trust-strip">${stat('categories', data.categories.length, 'Balanced shopping lanes with real mock inventory.')}${stat('active deals', totalDeals, 'Every card links into a filtered category route.')}${stat('top heat', Math.max(...data.deals.map((deal) => deal.heat)), 'Community momentum helps prioritize the feed.')}</div></section>
+      <section class="section-block"><div class="category-card-grid">${data.categories.map((category) => {
+        const deals = categoryDeals(category.name);
+        const top = [...deals].sort((a, b) => b.heat - a.heat)[0];
+        const stores = [...new Set(deals.map((deal) => deal.store))].slice(0, 3).join(', ') || 'Stores coming soon';
+        return `<a class="category-card tone-${category.tone} motion-item rich-category-card" href="./category.html?name=${encodeURIComponent(category.name)}"><span>${category.icon}</span><strong>${category.name}</strong><p>${category.description}</p><small>${deals.length} active deals / ${stores}</small>${top ? `<em>Top: ${top.title}</em>` : '<em>New deals arriving soon</em>'}</a>`;
       }).join('')}</div></section>`);
   }
 
   function stores() {
-    shell('Store directory', 'Store watch', 'Follow-worthy mock stores with ratings, followers, active deal counts, and heat.',
-      `<section class="store-section"><div class="store-grid">${data.stores.map((store) => {
+    pageShell('Store directory', 'Store watch', 'Follow stores, scan trust signals, compare coupon depth, and jump into dedicated store profiles.',
+      `<section class="section-block"><div class="store-grid">${data.stores.map((store) => {
         const deals = data.deals.filter((deal) => deal.store === store.name);
-        return `<article class="store-card motion-item"><span>${store.initials}</span><h3><a href="./store.html?name=${encodeURIComponent(store.name)}">${store.name}</a></h3><p>${deals.length} active deals / ${store.followers.toLocaleString('en-US')} followers / ${store.rating} rating</p><button type="button" data-placeholder="Store follow rules will connect to accounts later.">Follow store</button><small>${deals.reduce((sum, deal) => sum + deal.heat, 0)} heat</small></article>`;
+        const coupons = couponsForStore(store.name);
+        const heat = deals.reduce((sum, deal) => sum + deal.heat, 0);
+        const followed = followedStores.has(store.name);
+        return `<article class="store-card motion-item rich-store-card"><span>${store.initials}</span><h3><a href="./store.html?name=${encodeURIComponent(store.name)}">${store.name}</a></h3><p>${deals.length} active deals / ${coupons.length} coupons / ${compact(store.followers)} followers</p><div class="store-badges"><b>${store.rating} trust</b><b>${heat} heat</b></div><button type="button" class="${followed ? 'saved' : ''}" data-action="follow-store" data-store="${store.name}">${followed ? 'Following' : 'Follow store'}</button></article>`;
       }).join('')}</div></section>`);
   }
 
   function coupons() {
-    shell('Coupon desk', 'Verified savings', 'A richer coupon surface with store labels, code copy, verification state, and expiration cues.',
-      `<section class="section-block"><div class="coupon-list coupon-page-grid">${data.coupons.map((coupon) => `<article class="coupon-card motion-item"><div><strong>${coupon.store}</strong><code>${coupon.code}</code></div><p>${coupon.description}</p><footer><small>${coupon.verified ? 'Verified' : 'Community tested'} / ${coupon.expires}</small><button class="copy-btn" type="button" data-action="copy" data-code="${coupon.code}">Copy code</button></footer></article>`).join('')}</div></section>`);
+    const stores = [...new Set(data.coupons.map((coupon) => coupon.store))];
+    pageShell('Coupon desk', 'Verified savings', 'Copy codes, filter by store, and scan expiration pressure without leaving the coupon workspace.',
+      `<section class="section-block coupon-workspace">
+        <div class="feed-toolbar"><div><p class="eyebrow">Coupon filters</p><h2>Find usable codes fast</h2></div><select id="couponStoreFilter" aria-label="Filter coupons by store"><option value="">All stores</option>${stores.map((store) => `<option value="${store}">${store}</option>`).join('')}</select></div>
+        <div class="chip-list coupon-tabs"><button type="button" class="active" data-coupon-filter="all">All</button><button type="button" data-coupon-filter="verified">Verified</button><button type="button" data-coupon-filter="expiring">Expiring soon</button></div>
+        <div class="coupon-list coupon-page-grid" id="couponResults"></div>
+      </section>`);
+    renderCouponResults();
+  }
+
+  function renderCouponResults() {
+    const root = document.getElementById('couponResults');
+    if (!root) return;
+    const active = document.querySelector('[data-coupon-filter].active')?.dataset.couponFilter || 'all';
+    const store = document.getElementById('couponStoreFilter')?.value || '';
+    const filtered = data.coupons.filter((coupon) => {
+      if (store && coupon.store !== store) return false;
+      if (active === 'verified' && !coupon.verified) return false;
+      if (active === 'expiring' && !/tonight|48|tuesday|sunday|saturday/i.test(coupon.expires)) return false;
+      return true;
+    });
+    root.innerHTML = filtered.map((coupon) => `<article class="coupon-card motion-item"><div><strong>${coupon.store}</strong><code>${coupon.code}</code></div><p>${coupon.description}</p><footer><small>${coupon.verified ? 'Verified code' : 'Community tested'} / ${coupon.expires}</small><button class="copy-btn" type="button" data-action="copy" data-code="${coupon.code}">Copy code</button></footer></article>`).join('') || '<div class="empty-state"><strong>No coupons match</strong><p>Clear the store or status filter to see more codes.</p></div>';
+    window.DealNestMotion?.refresh();
   }
 
   function community() {
-    shell('Community hub', 'Discussion layer', 'Forum-style previews for deal safety, buying advice, coupon reports, and category-specific threads.',
-      `<section class="community-section"><div><h2>Members make the signal stronger.</h2><p>Future phases can add authentication, reputation, moderation queues, markdown comments, and thread detail pages.</p></div><div class="topic-list">${data.communityTopics.map((topic) => `<article class="topic-card motion-item"><div><strong>${topic.title}</strong><span>${topic.tag} / ${topic.user}</span></div><b>${topic.replies} replies</b></article>`).join('')}</div></section>`);
+    const topTags = [...new Set(data.communityTopics.map((topic) => topic.tag))].slice(0, 6);
+    pageShell('Community hub', 'Discussion layer', 'A populated forum preview for deal safety, coupon reports, buying advice, and category-specific conversation.',
+      `<section class="community-section community-page"><div><h2>Members make the signal stronger.</h2><p>Use discussion previews to validate deal quality before clicking through. Reputation, moderation, and thread detail pages can plug into this structure later.</p><div class="hero-pills">${topTags.map((tag) => `<button type="button" data-placeholder="${tag} threads will open when forum routing is added.">${tag}</button>`).join('')}</div></div><div class="topic-list">${data.communityTopics.map((topic) => `<article class="topic-card motion-item"><div><strong>${topic.title}</strong><span>${topic.tag} / ${topic.user}</span><p>${data.users.find((user) => user.username === topic.user)?.badge || 'Community member'}</p></div><b>${topic.replies} replies</b></article>`).join('')}</div></section>
+      <section class="section-block"><div class="section-heading"><div><p class="eyebrow">Community standards</p><h2>Guidelines that keep deals useful</h2></div></div><div class="trust-strip">${stat('Verify price', '01', 'Post final cart price, shipping, coupon terms, and expiration context.')}${stat('Compare stores', '02', 'Mention warranty, return windows, and marketplace risk where relevant.')}${stat('Respect signal', '03', 'Vote on deal quality and report expired or misleading offers.')}</div></section>`);
   }
 
   function search() {
     const query = (params.get('q') || params.get('filter') || '').toLowerCase();
     const sort = params.get('sort') || 'trending';
-    const results = data.deals.filter((deal) => !query || [deal.title, deal.description, deal.store, deal.category, deal.shipping, ...deal.tags].join(' ').toLowerCase().includes(query));
+    const results = data.deals.filter((deal) => !query || [deal.title, deal.description, deal.store, deal.category, deal.shipping, deal.couponCode, ...deal.tags].join(' ').toLowerCase().includes(query));
     if (sort === 'new') results.reverse();
     if (sort === 'popular') results.sort((a, b) => b.comments + b.votes - (a.comments + a.votes));
     if (sort === 'expiring') results.sort((a, b) => Number(b.status === 'Expiring Soon') - Number(a.status === 'Expiring Soon') || b.heat - a.heat);
-    shell('Search results', 'Find faster', query ? `Showing mock results for "${query}".` : 'Showing all mock deals. Use the homepage search for interactive filtering.',
-      `<section class="section-block"><div class="deal-grid">${results.map(dealCard).join('') || '<div class="empty-state"><strong>No matching deals yet</strong><p>Try another keyword from the homepage.</p></div>'}</div></section>`);
+    if (sort === 'trending') results.sort((a, b) => b.heat - a.heat);
+    pageShell('Search results', 'Find faster', query ? `Showing static MVP results for "${query}".` : 'Showing all deals sorted by community heat.',
+      `<section class="section-block"><div class="feed-toolbar"><div><p class="eyebrow">${results.length} matches</p><h2>Deals matching your intent</h2></div><a class="text-link" href="./">Refine on homepage</a></div><div class="deal-grid">${results.map((deal) => dealCard(deal)).join('') || '<div class="empty-state"><strong>No matching deals yet</strong><p>Try another keyword from the homepage.</p></div>'}</div></section>`);
   }
 
   function savedPage() {
     const results = data.deals.filter((deal) => saved.has(deal.id));
-    shell('Saved deals', 'Your watchlist', 'Saved deals persist locally in this browser until account storage is added.',
-      `<section class="section-block"><div class="deal-grid">${results.map(dealCard).join('') || '<div class="empty-state"><strong>No saved deals yet</strong><p>Save deals from the homepage or detail pages to fill this view.</p></div>'}</div></section>`);
+    pageShell('Saved deals', 'Your watchlist', 'Saved deals persist locally in this browser and update from homepage or detail page actions.',
+      `<section class="section-block"><div class="feed-toolbar"><div><p class="eyebrow">${results.length} saved</p><h2>Deals you are watching</h2></div><a class="text-link" href="./#hot-deals">Find more</a></div><div class="deal-grid">${results.map((deal) => dealCard(deal)).join('') || '<div class="empty-state"><strong>No saved deals yet</strong><p>Save deals from the homepage or detail pages to fill this view.</p></div>'}</div></section>`);
   }
 
   function alerts() {
-    shell('Deal alerts', 'Watchlist builder', 'A premium placeholder for keyword alerts, store follows, price ceilings, and category notifications.',
-      `<section class="alert-section section-block"><div class="alert-copy"><h2>Alert rules will make DealNest personal.</h2><p>Preview how keyword watches, category triggers, and account-backed notifications will feel.</p></div><div class="alert-builder motion-item"><label>Keyword<input value="laptop under 800"></label><label>Category<input value="Electronics"></label><label>Max price<input value="$800"></label><button class="post-button" type="button" data-placeholder="Alert saving will be enabled when accounts are implemented.">Save alert</button></div></section>`);
+    pageShell('Deal alerts', 'Watchlist builder', 'Build a local alert preview with keyword, category, store, max price, discount target, and notification options.',
+      `<section class="alert-section section-block"><div class="alert-copy"><h2>Your next price drop radar.</h2><p>This static MVP validates alert UX before accounts and delivery channels are wired up.</p><div class="trust-strip mini-stats">${stat('keywords', data.trendingSearches.length, 'Popular searches can seed alerts.')}${stat('stores', data.stores.length, 'Store follows can become triggers.')}</div></div><form class="alert-builder motion-item" id="alertForm"><label>Keyword<input name="keyword" value="gaming monitor"></label><label>Category<select name="category">${data.categories.map((category) => `<option>${category.name}</option>`).join('')}</select></label><label>Store<select name="store"><option>Any store</option>${data.stores.map((store) => `<option>${store.name}</option>`).join('')}</select></label><label>Max price<input name="price" value="250"></label><label>Minimum discount %<input name="discount" value="35"></label><div><button type="button" data-channel="Email">Email</button><button type="button" data-channel="Browser">Browser</button><button type="button" data-channel="Dashboard">Dashboard</button></div><button class="post-button" type="submit">Preview alert</button><output id="alertOutput">Alert preview will appear here.</output></form></section>`);
   }
 
   function postDeal() {
-    shell('Post a deal', 'Submission preview', 'A production flow can validate price, store, coupon, expiration, image, and community rules before publishing.',
-      `<section class="alert-section section-block"><div class="alert-copy"><h2>Structured posting keeps deals trustworthy.</h2><p>This placeholder keeps the UX alive without pretending submissions are live yet.</p></div><form class="alert-builder motion-item"><label>Deal title<input value="Example: Premium monitor bundle"></label><label>Store<input value="Northline Tech"></label><label>Price<input value="$229"></label><button class="post-button" type="button" data-placeholder="Deal submission opens in the backend phase.">Preview deal</button></form></section>`);
+    pageShell('Post a deal', 'Submission studio', 'A real static submission flow with validation, structured fields, and a live card preview.',
+      `<section class="split-section post-workspace"><form class="section-block deal-form" id="postDealForm" novalidate><div class="section-heading"><div><p class="eyebrow">Required details</p><h2>Submit a clear, verifiable deal</h2></div></div><div class="form-grid"><label>Deal title<input name="title" value="Example: Premium monitor bundle" required></label><label>Deal URL<input name="url" value="https://example.com/deal" required></label><label>Current price<input name="price" value="229" required></label><label>Original price<input name="original" value="389" required></label><label>Store<select name="store">${data.stores.map((store) => `<option>${store.name}</option>`).join('')}</select></label><label>Category<select name="category">${data.categories.map((category) => `<option>${category.name}</option>`).join('')}</select></label><label>Coupon code<input name="coupon" value="SAVE40"></label><label>Expiration date<input name="expires" value="Ends Friday"></label><label class="wide-field">Image URL or upload placeholder<input name="image" value="./assets/img/deals/monitor.svg"></label><label class="wide-field">Description<textarea name="description" rows="5">Include final price, shipping notes, coupon terms, and why the deal is useful.</textarea></label></div><button class="post-button" type="submit">Validate preview</button><div class="form-errors" id="postErrors" aria-live="polite"></div></form><aside class="section-block"><div class="section-heading"><div><p class="eyebrow">Live preview</p><h2>Deal card preview</h2></div></div><div id="postPreview"></div></aside></section>`);
+    renderPostPreview();
+  }
+
+  function renderPostPreview() {
+    const form = document.getElementById('postDealForm');
+    const preview = document.getElementById('postPreview');
+    if (!form || !preview) return;
+    const values = Object.fromEntries(new FormData(form).entries());
+    const price = Number(values.price) || 0;
+    const original = Number(values.original) || price;
+    const discount = original > price ? Math.round((1 - price / original) * 100) : 0;
+    preview.innerHTML = dealCard({
+      id: 'preview-deal',
+      title: values.title || 'Untitled deal',
+      description: values.description || 'Add a helpful description.',
+      image: values.image || './assets/img/deals/monitor.svg',
+      currentPrice: price,
+      originalPrice: original,
+      discount,
+      store: values.store,
+      category: values.category,
+      shipping: 'Shipping details required',
+      postedTime: 'Preview',
+      postedBy: 'you',
+      heat: 0,
+      votes: 0,
+      comments: 0,
+      couponCode: values.coupon,
+      status: 'Draft',
+      dealUrl: '#',
+      tags: [values.category]
+    });
   }
 
   function login() {
-    shell('Member access', 'Account placeholder', 'Login and signup screens will later support saved deals, alerts, comments, voting history, and moderation roles.',
-      `<section class="alert-section section-block"><div class="alert-copy"><h2>Your deal memory will live here.</h2><p>For now, saves and votes use local browser storage only.</p></div><form class="alert-builder motion-item"><label>Email<input value="member@example.com"></label><label>Password<input type="password" value="previewonly"></label><button class="post-button" type="button" data-placeholder="Authentication is a later phase.">Continue</button></form></section>`);
+    pageShell('Member access', 'Account center', 'A polished placeholder for the member flows that will power saved deals, alerts, voting, comments, and moderation roles.',
+      `<section class="split-section"><form class="section-block deal-form"><div class="section-heading"><div><p class="eyebrow">Preview login</p><h2>Sign in to your DealNest workspace</h2></div></div><label>Email<input value="member@example.com"></label><label>Password<input type="password" value="previewonly"></label><button class="post-button" type="button" data-placeholder="Authentication is ready for backend wiring in a later phase.">Continue</button></form><aside class="section-block"><div class="trust-strip">${stat('saved deals', saved.size, 'Local browser watchlist today.')}${stat('followed stores', followedStores.size, 'Local store follows today.')}${stat('alerts', 3, 'Example alert rules waiting for accounts.')}</div></aside></section>`);
   }
 
   function games() {
-    shell('Games archive', 'Maintenance classics', 'The previous games remain available as a secondary archive while the main experience becomes DealNest.',
-      `<section class="games-archive"><div><h2>Playable archive</h2><p>These pages were preserved and kept out of the main shopping flow.</p></div><div class="archive-links"><a href="./snake/">Snake</a><a href="./ludo/">Ludo Royale</a><a href="./sequence-play.html">Sequence</a></div></section>`);
+    pageShell('Games archive', 'Maintenance classics', 'The previous games remain available as a secondary archive while DealNest becomes the main product.',
+      `<section class="games-archive"><div><h2>Playable archive</h2><p>These pages are preserved and separated from the shopping flow.</p></div><div class="archive-links"><a href="./snake/">Snake</a><a href="./ludo/">Ludo Royale</a><a href="./sequence-play.html">Sequence</a></div></section>`);
   }
 
   function categoryDetail() {
     const name = params.get('name') || '';
     const category = data.categories.find((item) => item.name.toLowerCase() === name.toLowerCase());
     if (!category) {
-      shell('Category not found', 'Category page', 'The requested category does not exist in this mock dataset.',
-        `<section class="section-block"><div class="empty-state"><strong>Unknown category</strong><p>Return to categories and choose another lane.</p></div></section>`);
+      pageShell('Category not found', 'Category page', 'The requested category does not exist in this dataset.', `<section class="section-block"><div class="empty-state"><strong>Unknown category</strong><p>Return to categories and choose another lane.</p></div></section>`);
       return;
     }
-    const deals = data.deals.filter((deal) => deal.category === category.name);
-    const top = [...deals].sort((a, b) => b.heat - a.heat).slice(0, 1);
-    shell(`${category.name} deals`, 'Category detail', `${category.description} This page previews how dedicated category routes can feel.`,
-      `<section class="section-block"><div class="trust-strip"><article><span>${deals.length}</span><strong>active deals</strong><p>Matching offers in this category.</p></article><article><span>${deals.reduce((sum, deal) => sum + deal.heat, 0)}</span><strong>combined heat</strong><p>Community momentum in this lane.</p></article><article><span>${top[0] ? `${top[0].discount}%` : '0%'}</span><strong>best discount</strong><p>Top markdown currently in the category.</p></article></div></section><section class="section-block"><div class="deal-grid">${deals.map(dealCard).join('')}</div></section>`);
+    const deals = categoryDeals(category.name);
+    const top = [...deals].sort((a, b) => b.heat - a.heat)[0];
+    const stores = [...new Set(deals.map((deal) => deal.store))];
+    pageShell(`${category.name} deals`, 'Category detail', `${category.description} Compare the best current offers, active stores, and community heat in this lane.`,
+      `<section class="section-block"><div class="trust-strip">${stat('active deals', deals.length, 'Current offers in this category.')}${stat('top stores', stores.length, stores.slice(0, 4).join(', ') || 'New stores soon.')}${stat('best heat', top ? top.heat : 0, top ? top.title : 'No top deal yet.')}</div></section><section class="section-block"><div class="deal-grid">${deals.map((deal) => dealCard(deal)).join('') || '<div class="empty-state"><strong>No active deals</strong><p>Check back as the feed grows.</p></div>'}</div></section>`);
   }
 
   function storeDetail() {
     const name = params.get('name') || '';
     const store = data.stores.find((item) => item.name.toLowerCase() === name.toLowerCase());
     if (!store) {
-      shell('Store not found', 'Store profile', 'The requested store does not exist in this mock dataset.',
-        `<section class="section-block"><div class="empty-state"><strong>Unknown store</strong><p>Return to stores and choose another listing.</p></div></section>`);
+      pageShell('Store not found', 'Store profile', 'The requested store does not exist in this dataset.', `<section class="section-block"><div class="empty-state"><strong>Unknown store</strong><p>Return to stores and choose another listing.</p></div></section>`);
       return;
     }
     const deals = data.deals.filter((deal) => deal.store === store.name);
-    const categories = [...new Set(deals.map((deal) => deal.category))].join(', ');
-    shell(store.name, 'Store profile', `Original store profile with deal activity, follower signal, and category footprint for ${store.name}.`,
-      `<section class="section-block"><div class="trust-strip"><article><span>${store.followers.toLocaleString('en-US')}</span><strong>followers</strong><p>Mock social proof for follow flow planning.</p></article><article><span>${store.rating}</span><strong>store rating</strong><p>Community trust and verification sentiment.</p></article><article><span>${deals.length}</span><strong>active deals</strong><p>${categories || 'No categories yet'}</p></article></div></section><section class="section-block"><div class="deal-grid">${deals.map(dealCard).join('') || '<div class="empty-state"><strong>No active deals</strong><p>This store will populate when new listings are added.</p></div>'}</div></section>`);
+    const coupons = couponsForStore(store.name);
+    pageShell(store.name, 'Store profile', `Track active deals, coupons, trust rating, followers, and category footprint for ${store.name}.`,
+      `<section class="section-block"><div class="trust-strip">${stat('followers', compact(store.followers), 'Mock social proof for future follow flows.')}${stat('trust rating', store.rating, 'Community sentiment and moderation signal.')}${stat('coupons', coupons.length, coupons.map((coupon) => coupon.code).join(', ') || 'No codes today.')}</div></section><section class="split-section"><div class="section-block"><div class="section-heading"><div><p class="eyebrow">Active deals</p><h2>${deals.length} current offers</h2></div></div><div class="deal-grid">${deals.map((deal) => dealCard(deal)).join('') || '<div class="empty-state"><strong>No active deals</strong><p>This store will populate when new listings are added.</p></div>'}</div></div><aside class="section-block"><div class="section-heading"><div><p class="eyebrow">Store coupons</p><h2>Codes and terms</h2></div></div><div class="coupon-list">${coupons.map((coupon) => `<article class="coupon-card"><div><strong>${coupon.store}</strong><code>${coupon.code}</code></div><p>${coupon.description}</p><footer><small>${coupon.expires}</small><button class="copy-btn" type="button" data-action="copy" data-code="${coupon.code}">Copy</button></footer></article>`).join('') || '<div class="empty-state"><strong>No current coupons</strong><p>Follow this store for future codes.</p></div>'}</div></aside></section>`);
   }
 
   function admin() {
-    const expiring = data.deals.filter((deal) => deal.status === 'Expiring Soon').slice(0, 8);
-    const queue = data.communityTopics.slice(0, 6);
-    shell('Moderation console', 'Admin structure', 'Placeholder moderation workspace for deal reports, quality checks, and community triage.',
-      `<section class="split-section"><article class="section-block"><div class="section-heading"><div><p class="eyebrow">Report queue</p><h2>Expiring and review-needed deals</h2></div></div><div class="editor-list">${expiring.map((deal) => `<article class="editor-item motion-item"><img src="${deal.image}" alt="${deal.title}"><div><h3>${deal.title}</h3><p>${deal.store} / ${deal.status} / ${deal.expires}</p></div><strong>${deal.heat} heat</strong></article>`).join('')}</div></article><article class="section-block"><div class="section-heading"><div><p class="eyebrow">Community triage</p><h2>Forum moderation preview</h2></div></div><div class="topic-list">${queue.map((topic) => `<article class="topic-card motion-item"><div><strong>${topic.title}</strong><span>${topic.tag} / ${topic.user}</span></div><b>${topic.replies} replies</b></article>`).join('')}</div><div class="community-actions"><button type="button" data-placeholder="Moderation actions activate once role auth is implemented.">Approve queue</button><button type="button" data-placeholder="Escalation workflow is a later backend phase.">Escalate</button></div></article></section>`);
+    const pending = data.moderation || [];
+    const reported = pending.filter((item) => /Reported|Expired|Community/.test(item.type));
+    pageShell('Moderation console', 'Admin structure', 'A populated static console for reported deals, pending submissions, coupon checks, and community triage.',
+      `<section class="section-block"><div class="trust-strip">${stat('queue items', pending.length, 'Mock work items ready for review.')}${stat('high priority', pending.filter((item) => item.severity === 'High').length, 'Needs attention first.')}${stat('reported', reported.length, 'Reports and flags from the community.')}</div></section><section class="split-section"><article class="section-block"><div class="section-heading"><div><p class="eyebrow">Moderation queue</p><h2>Review workload</h2></div></div><div class="editor-list">${pending.map((item) => `<article class="editor-item motion-item"><div class="queue-icon">${item.severity.slice(0, 1)}</div><div><h3>${item.title}</h3><p>${item.type} / ${item.owner} / ${item.status}</p></div><strong>${item.severity}</strong></article>`).join('')}</div></article><article class="section-block"><div class="section-heading"><div><p class="eyebrow">Reported deals</p><h2>Time-sensitive checks</h2></div></div><div class="editor-list">${data.deals.filter((deal) => deal.status === 'Expiring Soon').map((deal) => `<article class="editor-item motion-item"><img src="${deal.image}" alt="${deal.title}"><div><h3>${deal.title}</h3><p>${deal.store} / ${deal.expires} / ${deal.comments} comments</p></div><strong>${deal.heat} heat</strong></article>`).join('')}</div><div class="community-actions"><button type="button" data-placeholder="Approve workflow will connect to role auth later.">Approve selected</button><button type="button" data-placeholder="Escalation workflow will connect to backend later.">Escalate</button></div></article></section>`);
   }
 
   const renderers = { categories, stores, coupons, community, search, saved: savedPage, alerts, post: postDeal, login, games, category: categoryDetail, store: storeDetail, admin };
   renderers[page]?.();
 
+  document.body.addEventListener('input', (event) => {
+    if (event.target.closest('#postDealForm')) renderPostPreview();
+  });
+
+  document.body.addEventListener('submit', (event) => {
+    if (event.target.id === 'postDealForm') {
+      event.preventDefault();
+      const values = Object.fromEntries(new FormData(event.target).entries());
+      const errors = [];
+      if (!values.title || values.title.length < 12) errors.push('Use a clearer title with at least 12 characters.');
+      if (!/^https?:\/\//i.test(values.url || '')) errors.push('Add a valid deal URL beginning with http or https.');
+      if (Number(values.price) <= 0 || Number(values.original) <= 0) errors.push('Add valid current and original prices.');
+      if (Number(values.price) >= Number(values.original)) errors.push('Current price should be lower than original price.');
+      document.getElementById('postErrors').textContent = errors.length ? errors.join(' ') : 'Preview validated. Publishing will be wired to the backend later.';
+      toast(errors.length ? 'Fix highlighted deal details' : 'Deal preview validated');
+    }
+    if (event.target.id === 'alertForm') {
+      event.preventDefault();
+      const values = Object.fromEntries(new FormData(event.target).entries());
+      document.getElementById('alertOutput').textContent = `${values.keyword} in ${values.category}, ${values.store}, under $${values.price}, ${values.discount}%+ off.`;
+      toast('Alert preview created');
+    }
+  });
+
   document.body.addEventListener('click', (event) => {
-    const target = event.target.closest('[data-action], [data-placeholder]');
+    const target = event.target.closest('[data-action], [data-placeholder], [data-coupon-filter], [data-channel]');
     if (!target) return;
-    const { action, code, placeholder } = target.dataset;
+    const { action, code, placeholder, couponFilter, store, channel } = target.dataset;
     if (placeholder) toast(placeholder);
+    if (channel) {
+      target.classList.toggle('active');
+      toast(`${channel} notification ${target.classList.contains('active') ? 'enabled' : 'disabled'} in preview`);
+    }
+    if (couponFilter) {
+      document.querySelectorAll('[data-coupon-filter]').forEach((button) => button.classList.toggle('active', button === target));
+      renderCouponResults();
+    }
     if (action === 'copy') navigator.clipboard?.writeText(code).then(() => toast(`Copied ${code}`)).catch(() => toast(`Coupon: ${code}`));
+    if (action === 'save') {
+      const id = target.dataset.id;
+      if (saved.has(id)) {
+        saved.delete(id);
+        toast('Removed from saved deals');
+      } else {
+        saved.add(id);
+        toast('Saved for later');
+      }
+      persist('saved', saved);
+      target.classList.toggle('saved', saved.has(id));
+      target.textContent = saved.has(id) ? 'Saved' : 'Save';
+    }
+    if (action === 'follow-store') {
+      if (followedStores.has(store)) {
+        followedStores.delete(store);
+        toast(`Unfollowed ${store}`);
+      } else {
+        followedStores.add(store);
+        toast(`Following ${store}`);
+      }
+      persist('followedStores', followedStores);
+      target.classList.toggle('saved', followedStores.has(store));
+      target.textContent = followedStores.has(store) ? 'Following' : 'Follow store';
+    }
+  });
+
+  document.body.addEventListener('change', (event) => {
+    if (event.target.id === 'couponStoreFilter') renderCouponResults();
   });
 
   const menuToggle = document.getElementById('menuToggle');

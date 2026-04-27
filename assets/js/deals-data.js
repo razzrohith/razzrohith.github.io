@@ -7,7 +7,9 @@ window.DealScoutData = {
     { name: 'Fashion', icon: 'FA', tone: 'rose', description: 'Outerwear, essentials, footwear, and seasonal drops.' },
     { name: 'Kitchen', icon: 'KT', tone: 'green', description: 'Appliances, coffee gear, cookware, and prep tools.' },
     { name: 'Audio', icon: 'AU', tone: 'violet', description: 'Headphones, speakers, microphones, and creator gear.' },
-    { name: 'Outdoors', icon: 'OD', tone: 'leaf', description: 'Camping, trail, patio, and weather-ready gear.' }
+    { name: 'Outdoors', icon: 'OD', tone: 'leaf', description: 'Camping, trail, patio, and weather-ready gear.' },
+    { name: 'Wellness', icon: 'WL', tone: 'mint', description: 'Recovery, sleep, grooming, and everyday health gear.' },
+    { name: 'Pets', icon: 'PT', tone: 'gold', description: 'Smart feeders, beds, travel kits, and pet-home essentials.' }
   ],
   stores: [
     { name: 'Northline Tech', initials: 'NT', followers: 18400, rating: 4.8 },
@@ -21,7 +23,9 @@ window.DealScoutData = {
     { name: 'BrightCart', initials: 'BC', followers: 14210, rating: 4.6 },
     { name: 'TrailModo', initials: 'TM', followers: 8810, rating: 4.5 },
     { name: 'StudioDock', initials: 'SD', followers: 13740, rating: 4.8 },
-    { name: 'VistaSupply', initials: 'VS', followers: 15280, rating: 4.6 }
+    { name: 'VistaSupply', initials: 'VS', followers: 15280, rating: 4.6 },
+    { name: 'GlowLab', initials: 'GL', followers: 8120, rating: 4.6 },
+    { name: 'Pawly', initials: 'PW', followers: 10540, rating: 4.7 }
   ],
   users: [
     { username: 'pixelraj', badge: 'Launch scout' },
@@ -31,7 +35,7 @@ window.DealScoutData = {
     { username: 'boardingsoon', badge: 'Travel watcher' },
     { username: 'trailcart', badge: 'Outdoor scout' }
   ],
-  trendingSearches: ['laptop', 'gaming', 'free shipping', 'coffee', 'travel', 'desk setup'],
+  trendingSearches: ['laptop', 'gaming', 'free shipping', 'coffee', 'travel', 'desk setup', 'pet camera', 'sleep'],
   deals: [
     { id: 'deal-laptop-01', title: 'Nimbus 14 ultralight laptop with 16GB memory and 1TB SSD', description: 'Portable productivity notebook with a bright display, compact charger, and premium storage tier.', image: './assets/img/deals/laptop.svg', currentPrice: 749, originalPrice: 1199, discount: 38, store: 'Northline Tech', category: 'Electronics', shipping: 'Free 2-day shipping', postedTime: '18 min ago', postedBy: 'pixelraj', heat: 782, votes: 318, comments: 94, couponCode: 'NIMBUS150', status: 'Live', featured: true, trending: true, expires: 'Ends Sunday', dealUrl: './deal.html?id=deal-laptop-01', tags: ['Trending', 'Free Shipping', 'Popular', 'Laptop'] },
     { id: 'deal-headphones-02', title: 'AeroQuiet wireless headphones with travel case and 40-hour battery', description: 'Noise-softening headphones with quick charge and a hard travel shell.', image: './assets/img/deals/headphones.svg', currentPrice: 89, originalPrice: 179, discount: 50, store: 'SoundNest', category: 'Audio', shipping: 'Free shipping', postedTime: '42 min ago', postedBy: 'dealpilot', heat: 641, votes: 227, comments: 58, couponCode: 'QUIET20', status: 'Live', featured: false, trending: true, expires: 'Ends tonight', dealUrl: './deal.html?id=deal-headphones-02', tags: ['Trending', 'Free Shipping', 'Audio'] },
@@ -56,7 +60,11 @@ window.DealScoutData = {
     { id: 'deal-controller-21', title: 'PixelForge pro controller dock bundle with hall sticks', description: 'Low-latency controller with charging dock, remappable buttons, and textured grips.', image: './assets/img/deals/console.svg', currentPrice: 59, originalPrice: 109, discount: 46, store: 'PixelForge', category: 'Gaming', shipping: 'Free shipping', postedTime: '2 days ago', postedBy: 'framehunter', heat: 449, votes: 140, comments: 28, couponCode: 'DOCKPLAY', status: 'Live', featured: false, trending: false, expires: 'Ends Wednesday', dealUrl: './deal.html?id=deal-controller-21', tags: ['Gaming', 'Free Shipping'] },
     { id: 'deal-patio-22', title: 'VistaSupply fold-flat patio lounge chair pair', description: 'Outdoor chair pair with breathable sling fabric and compact winter storage.', image: './assets/img/deals/chair.svg', currentPrice: 96, originalPrice: 180, discount: 47, store: 'VistaSupply', category: 'Outdoors', shipping: '$8 delivery', postedTime: '2 days ago', postedBy: 'trailcart', heat: 284, votes: 79, comments: 14, couponCode: '', status: 'Live', featured: false, trending: false, expires: 'This week', dealUrl: './deal.html?id=deal-patio-22', tags: ['Outdoors', 'Home'] },
     { id: 'deal-watch-23', title: 'BrightCart fitness watch with GPS and sleep tracking', description: 'Slim wellness watch with always-on stats and a seven-day battery estimate.', image: './assets/img/deals/watch.svg', currentPrice: 118, originalPrice: 229, discount: 48, store: 'BrightCart', category: 'Electronics', shipping: 'Free shipping', postedTime: '2 days ago', postedBy: 'pixelraj', heat: 536, votes: 188, comments: 44, couponCode: 'MOVE30', status: 'Live', featured: true, trending: true, expires: 'Ends Sunday', dealUrl: './deal.html?id=deal-watch-23', tags: ['Electronics', 'Free Shipping', 'Popular'] },
-    { id: 'deal-duffel-24', title: 'UrbanTrail convertible weekender duffel with shoe garage', description: 'Carry-on friendly duffel with padded strap, shoe storage, and wipe-clean lining.', image: './assets/img/deals/luggage.svg', currentPrice: 54, originalPrice: 110, discount: 51, store: 'UrbanTrail', category: 'Travel', shipping: 'Free shipping over $50', postedTime: '2 days ago', postedBy: 'boardingsoon', heat: 308, votes: 90, comments: 21, couponCode: 'GOFAST', status: 'Expiring Soon', featured: false, trending: false, expires: 'Ends tonight', dealUrl: './deal.html?id=deal-duffel-24', tags: ['Travel', 'Fashion', 'Expiring Soon'] }
+    { id: 'deal-duffel-24', title: 'UrbanTrail convertible weekender duffel with shoe garage', description: 'Carry-on friendly duffel with padded strap, shoe storage, and wipe-clean lining.', image: './assets/img/deals/luggage.svg', currentPrice: 54, originalPrice: 110, discount: 51, store: 'UrbanTrail', category: 'Travel', shipping: 'Free shipping over $50', postedTime: '2 days ago', postedBy: 'boardingsoon', heat: 308, votes: 90, comments: 21, couponCode: 'GOFAST', status: 'Expiring Soon', featured: false, trending: false, expires: 'Ends tonight', dealUrl: './deal.html?id=deal-duffel-24', tags: ['Travel', 'Fashion', 'Expiring Soon'] },
+    { id: 'deal-sleep-25', title: 'GlowLab sunrise sleep lamp with wind-down sound modes', description: 'Bedside lamp with sunrise simulation, soft soundscapes, and app-free controls.', image: './assets/img/deals/lamp.svg', currentPrice: 46, originalPrice: 99, discount: 54, store: 'GlowLab', category: 'Wellness', shipping: 'Free shipping', postedTime: '3 days ago', postedBy: 'comfortfinds', heat: 331, votes: 101, comments: 17, couponCode: 'REST20', status: 'Live', featured: false, trending: true, expires: 'Ends Saturday', dealUrl: './deal.html?id=deal-sleep-25', tags: ['Wellness', 'Free Shipping', 'Home'] },
+    { id: 'deal-groom-26', title: 'GlowLab compact grooming kit with travel charging case', description: 'Quiet grooming set with five attachments, washable heads, and a pocket case.', image: './assets/img/deals/skincare.svg', currentPrice: 39, originalPrice: 86, discount: 55, store: 'GlowLab', category: 'Wellness', shipping: '$4 shipping', postedTime: '3 days ago', postedBy: 'dealpilot', heat: 224, votes: 68, comments: 12, couponCode: 'GLOW15', status: 'Live', featured: false, trending: false, expires: 'This week', dealUrl: './deal.html?id=deal-groom-26', tags: ['Wellness', 'Travel'] },
+    { id: 'deal-feeder-27', title: 'Pawly smart pet feeder with portion schedule and camera', description: 'Connected feeder with timed meals, voice notes, and a wide-angle check-in camera.', image: './assets/img/deals/pet.svg', currentPrice: 82, originalPrice: 159, discount: 48, store: 'Pawly', category: 'Pets', shipping: 'Free shipping', postedTime: '4 days ago', postedBy: 'trailcart', heat: 402, votes: 126, comments: 23, couponCode: 'PAWMEAL', status: 'Live', featured: true, trending: false, expires: 'Ends Tuesday', dealUrl: './deal.html?id=deal-feeder-27', tags: ['Pets', 'Free Shipping', 'Home'] },
+    { id: 'deal-petbed-28', title: 'Pawly washable bolster pet bed with cooling liner', description: 'Supportive bed with removable cover, low entry edge, and summer cooling insert.', image: './assets/img/deals/pet.svg', currentPrice: 48, originalPrice: 94, discount: 49, store: 'Pawly', category: 'Pets', shipping: 'Free shipping over $40', postedTime: '4 days ago', postedBy: 'comfortfinds', heat: 287, votes: 83, comments: 15, couponCode: '', status: 'Live', featured: false, trending: false, expires: 'This month', dealUrl: './deal.html?id=deal-petbed-28', tags: ['Pets', 'Home'] }
   ],
   coupons: [
     { code: 'NIMBUS150', store: 'Northline Tech', description: '$150 off select performance laptops', expires: 'Ends Sunday', verified: true },
@@ -68,7 +76,9 @@ window.DealScoutData = {
     { code: 'WEEKEND30', store: 'Skyway Travel', description: 'Weekend stay booking credit', expires: 'This month', verified: false },
     { code: 'PACKLIGHT', store: 'TrailModo', description: 'Weatherproof travel bags', expires: 'This week', verified: true },
     { code: 'MOVE30', store: 'BrightCart', description: 'Wearable tech event code', expires: 'Ends Sunday', verified: true },
-    { code: 'PAIRUP', store: 'SoundNest', description: 'Speaker pair savings', expires: 'Ends Sunday', verified: false }
+    { code: 'PAIRUP', store: 'SoundNest', description: 'Speaker pair savings', expires: 'Ends Sunday', verified: false },
+    { code: 'REST20', store: 'GlowLab', description: 'Sleep and recovery essentials', expires: 'Ends Saturday', verified: true },
+    { code: 'PAWMEAL', store: 'Pawly', description: 'Smart pet care discount', expires: 'Ends Tuesday', verified: true }
   ],
   communityTopics: [
     { title: 'Best time to buy travel gear before summer?', replies: 28, tag: 'Buying advice', user: 'boardingsoon' },
@@ -78,7 +88,17 @@ window.DealScoutData = {
     { title: 'Coupon stacking wins from this week', replies: 36, tag: 'Coupons', user: 'dealpilot' },
     { title: 'Gaming accessory prices that finally dropped', replies: 58, tag: 'Gaming', user: 'framehunter' },
     { title: 'Kitchen tools that feel premium under $100', replies: 22, tag: 'Kitchen', user: 'homechef' },
-    { title: 'How to spot fake urgency on deal pages', replies: 31, tag: 'Deal safety', user: 'mod-ava' }
+    { title: 'How to spot fake urgency on deal pages', replies: 31, tag: 'Deal safety', user: 'mod-ava' },
+    { title: 'Pet tech owners: which smart feeders are actually reliable?', replies: 26, tag: 'Pets', user: 'trailcart' },
+    { title: 'Sleep gadgets that helped without adding another subscription', replies: 18, tag: 'Wellness', user: 'comfortfinds' }
+  ],
+  moderation: [
+    { type: 'Reported deal', title: 'Price mismatch on travel luggage bundle', owner: 'mod-ava', status: 'Needs review', severity: 'High' },
+    { type: 'Pending deal', title: 'Member-submitted tablet dock package', owner: 'queue-bot', status: 'Verify image', severity: 'Medium' },
+    { type: 'Coupon report', title: 'PAIRUP works only on speaker pair colors', owner: 'dealpilot', status: 'Clarify terms', severity: 'Low' },
+    { type: 'Community flag', title: 'Refurb warranty claim needs source check', owner: 'mod-ava', status: 'Investigating', severity: 'Medium' },
+    { type: 'Expired report', title: 'UrbanTrail duffel promotion ending tonight', owner: 'boardingsoon', status: 'Time sensitive', severity: 'High' },
+    { type: 'Store audit', title: 'New seller profile needs trust badge review', owner: 'queue-bot', status: 'Pending', severity: 'Low' }
   ],
   comments: [
     { user: 'pricewatcher', badge: 'Deal scout', time: '12 min ago', text: 'The coupon applied cleanly in the mock checkout flow. The final price looks strongest when you compare the bundle value, not only the sticker discount.' },

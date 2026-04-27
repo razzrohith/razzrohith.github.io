@@ -6,7 +6,7 @@ Backend verification was performed before connecting the frontend to Supabase.
 
 These checks use only `SUPABASE_URL` and `SUPABASE_ANON_KEY` from local `.env`.
 
-- Public read access for approved deals: pass
+- Public read access for public-visible deals (`live`, `expiring_soon`): pass
 - Public read access for active categories: pass
 - Public read access for active stores: pass
 - Public read access for active coupons: pass
@@ -22,10 +22,10 @@ These checks use only `SUPABASE_URL` and `SUPABASE_ANON_KEY` from local `.env`.
 Run `supabase/verification.sql` in Supabase SQL Editor to inspect:
 
 - RLS status for all protected tables
-- Seed row counts
-- Approved deal join correctness
+- Seed row counts, including `public_visible_deals`
+- Public-visible deal join correctness
 - Unique indexes for duplicate votes, saved deals, and coupons
-- Default pending moderation status for user-created deals
+- Default pending deal status for user-created deals
 - Admin/moderator policy definitions
 - Storage bucket setup
 

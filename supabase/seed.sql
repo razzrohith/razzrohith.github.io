@@ -2,6 +2,8 @@
 -- Run after 20260427000000_initial_dealnest_schema.sql.
 -- This seed does not create auth users or store secrets.
 
+begin;
+
 insert into public.categories (name, slug, icon, tone, description, sort_order) values
   ('Electronics', 'electronics', 'EL', 'mint', 'Laptops, tablets, monitors, and connected gear.', 10),
   ('Gaming', 'gaming', 'GM', 'blue', 'Console bundles, accessories, controllers, and desk upgrades.', 20),
@@ -82,7 +84,7 @@ from (
     ('aeroquiet-wireless-headphones', 'AeroQuiet wireless headphones with travel case and 40-hour battery', 'Noise-softening headphones with quick charge and a hard travel shell.', './deal.html?id=deal-headphones-02', './assets/img/deals/headphones.svg', 89.00, 179.00, 50, 'SoundNest', 'Audio', 'Free shipping', 'QUIET20', 'live', false, true, 641, 227, 58, array['Trending','Free Shipping','Audio']),
     ('contour-mesh-ergonomic-chair', 'Contour mesh ergonomic chair with adjustable lumbar support', 'Workday chair with breathable mesh, tilt tension, and height-adjustable arm pads.', './deal.html?id=deal-chair-03', './assets/img/deals/chair.svg', 164.00, 299.00, 45, 'Haven Home', 'Home', '$9 oversize delivery', '', 'live', true, false, 511, 194, 41, array['Popular','Home','Office']),
     ('skyway-hardside-luggage-set', 'Skyway three-piece hardside luggage set with spinner wheels', 'Nested travel set with scratch-resistant shells and smooth spinner wheels.', './deal.html?id=deal-luggage-05', './assets/img/deals/luggage.svg', 139.00, 260.00, 47, 'Skyway Travel', 'Travel', 'Free shipping', '', 'expiring_soon', false, false, 436, 146, 29, array['Expiring Soon','Travel','Free Shipping']),
-    ('stormline-packable-rain-jacket', 'Stormline packable rain jacket with sealed pockets', 'Lightweight jacket that folds into its own pocket for commuter bags and trail kits.', './deal.html?id=deal-jacket-06', './assets/img/deals/jacket.svg', 58.00, 128.00, 55, 'UrbanTrail', 'Fashion', 'Free shipping over $50', 'RAINREADY', 'live', false, false, 389, 119, 17, array['Fashion','Free Shipping','Outdoors']),
+    ('stormline-packable-rain-jacket', 'Stormline packable rain jacket with sealed pockets', 'Lightweight jacket that folds into the chest pocket for commuter bags and trail kits.', './deal.html?id=deal-jacket-06', './assets/img/deals/jacket.svg', 58.00, 128.00, 55, 'UrbanTrail', 'Fashion', 'Free shipping over $50', 'RAINREADY', 'live', false, false, 389, 119, 17, array['Fashion','Free Shipping','Outdoors']),
     ('reserve-coffee-sampler', 'Reserve whole bean coffee sampler, four 12oz bags', 'Rotating roast bundle for pour-over, espresso, and cold brew testing.', './deal.html?id=deal-coffee-07', './assets/img/deals/coffee.svg', 32.00, 56.00, 43, 'Roast & Co.', 'Kitchen', 'Free shipping', 'FRESHBEANS', 'live', false, false, 274, 82, 13, array['New','Free Shipping','Kitchen']),
     ('novamix-compact-stand-mixer', 'NovaMix compact stand mixer with stainless bowl', 'Counter-friendly mixer with whisk, paddle, dough hook, and splash guard.', './deal.html?id=deal-kitchen-08', './assets/img/deals/kitchen.svg', 99.00, 189.00, 48, 'CookHaus', 'Kitchen', '$5 shipping', '', 'live', false, true, 322, 101, 22, array['New','Home','Kitchen']),
     ('low-profile-mechanical-keyboard-kit', 'Low-profile mechanical keyboard and silent switch kit', 'Slim hot-swap board with compact layout, dampened case, and matching keycaps.', './deal.html?id=deal-keyboard-10', './assets/img/deals/keyboard.svg', 72.00, 139.00, 48, 'PixelForge', 'Gaming', 'Free shipping', 'TYPEFAST', 'live', false, true, 553, 177, 39, array['Gaming','Free Shipping','Desk setup']),
@@ -151,9 +153,22 @@ on conflict (slug) do update set
   reply_count = excluded.reply_count,
   updated_at = now();
 
-insert into public.moderation_queue (entity_type, title, reason, priority, status) values
-  ('report', 'Price mismatch on travel luggage bundle', 'Community report says final cart price changed.', 'high', 'open'),
-  ('deal', 'Member-submitted tablet dock package', 'Pending deal needs image and store verification.', 'medium', 'open'),
-  ('coupon', 'PAIRUP works only on speaker pair colors', 'Coupon terms need clarification.', 'low', 'reviewing'),
-  ('thread', 'Refurb warranty claim needs source check', 'Community safety discussion flagged for moderator review.', 'medium', 'open'),
-  ('deal', 'UrbanTrail duffel promotion ending tonight', 'Time-sensitive expiration check.', 'high', 'open');
+insert into public.moderation_queue (entity_type, title, reason, priority, status)
+select seed.entity_type, seed.title, seed.reason, seed.priority, seed.status
+from (
+  values
+    ('report', 'Price mismatch on travel luggage bundle', 'Community report says final cart price changed.', 'high', 'open'),
+    ('deal', 'Member-submitted tablet dock package', 'Pending deal needs image and store verification.', 'medium', 'open'),
+    ('coupon', 'PAIRUP works only on speaker pair colors', 'Coupon terms need clarification.', 'low', 'reviewing'),
+    ('thread', 'Refurb warranty claim needs source check', 'Community safety discussion flagged for moderator review.', 'medium', 'open'),
+    ('deal', 'UrbanTrail duffel promotion ending tonight', 'Time-sensitive expiration check.', 'high', 'open')
+) as seed(entity_type, title, reason, priority, status)
+where not exists (
+  select 1
+  from public.moderation_queue queue
+  where queue.entity_type = seed.entity_type
+    and queue.title = seed.title
+    and queue.reason = seed.reason
+);
+
+commit;

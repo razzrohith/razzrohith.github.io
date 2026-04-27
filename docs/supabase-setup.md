@@ -70,7 +70,7 @@ Run these in order:
 
 Guests can browse public shopping content:
 
-- Deals
+- Deals with `status in ('live', 'expiring_soon')`
 - Deal detail data
 - Categories
 - Stores
@@ -79,6 +79,22 @@ Guests can browse public shopping content:
 - Approved community threads/posts
 
 Guests cannot write data.
+
+## Deal Status Model
+
+- `pending`: submitted by a user, waiting for admin/mod approval.
+- `live`: public visible deal.
+- `expiring_soon`: public visible deal close to expiration.
+- `expired`: not shown in the main public feed unless explicitly requested.
+- `rejected`: not public.
+- `hidden`: removed or moderated.
+
+The public deal RLS policy only exposes rows where:
+
+```sql
+moderation_status = 'approved'
+and status in ('live', 'expiring_soon')
+```
 
 ## Authenticated User Rule
 

@@ -99,7 +99,7 @@ create table if not exists public.deals (
   posted_by uuid references public.profiles(id) on delete set null,
   shipping_info text,
   coupon_code text,
-  status text not null default 'live' check (status in ('draft', 'live', 'expiring_soon', 'expired', 'removed')),
+  status text not null default 'pending' check (status in ('pending', 'live', 'expiring_soon', 'expired', 'rejected', 'hidden')),
   moderation_status text not null default 'approved' check (moderation_status in ('pending', 'approved', 'rejected', 'needs_review')),
   featured boolean not null default false,
   trending boolean not null default false,
@@ -314,9 +314,10 @@ drop policy if exists "Admins manage stores" on public.stores;
 create policy "Admins manage stores" on public.stores for all using (public.has_role('admin')) with check (public.has_role('admin'));
 
 drop policy if exists "Guests read approved deals" on public.deals;
-create policy "Guests read approved deals" on public.deals for select using (moderation_status = 'approved' and status <> 'removed');
+drop policy if exists "Guests read public visible deals" on public.deals;
+create policy "Guests read public visible deals" on public.deals for select using (moderation_status = 'approved' and status in ('live', 'expiring_soon'));
 drop policy if exists "Authenticated users create pending deals" on public.deals;
-create policy "Authenticated users create pending deals" on public.deals for insert with check (auth.uid() = posted_by and moderation_status = 'pending');
+create policy "Authenticated users create pending deals" on public.deals for insert with check (auth.uid() = posted_by and status = 'pending' and moderation_status = 'pending');
 drop policy if exists "Owners update own nonapproved deals" on public.deals;
 create policy "Owners update own nonapproved deals" on public.deals for update using (auth.uid() = posted_by and moderation_status in ('pending', 'rejected')) with check (auth.uid() = posted_by);
 drop policy if exists "Moderators manage deals" on public.deals;

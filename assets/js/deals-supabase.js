@@ -187,7 +187,7 @@
     const [categoriesRows, storesRows, dealsRows, couponsRows] = await Promise.all([
       request('categories', 'select=id,name,slug,icon,tone,description,is_active&is_active=eq.true&order=sort_order.asc'),
       request('stores', 'select=id,name,slug,initials,description,followers_count,rating,trust_label,is_active&is_active=eq.true&order=name.asc'),
-      request('deals', 'select=id,slug,title,description,instructions,deal_url,image_url,current_price,original_price,discount_percent,shipping_info,coupon_code,status,moderation_status,featured,trending,heat_score,vote_count,comment_count,tags,expires_at,created_at,stores(name,initials),categories(name,icon,tone)&moderation_status=eq.approved&status=neq.removed&order=heat_score.desc'),
+      request('deals', 'select=id,slug,title,description,instructions,deal_url,image_url,current_price,original_price,discount_percent,shipping_info,coupon_code,status,moderation_status,featured,trending,heat_score,vote_count,comment_count,tags,expires_at,created_at,stores(name,initials),categories(name,icon,tone)&moderation_status=eq.approved&status=in.(live,expiring_soon)&order=heat_score.desc'),
       request('coupons', 'select=id,code,description,category,verified,status,expires_at,stores(name,initials)&status=eq.active&order=created_at.desc')
     ]);
 

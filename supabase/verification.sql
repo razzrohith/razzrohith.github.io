@@ -33,7 +33,7 @@ order by tablename;
 -- 2. Public seed data counts.
 select 'categories' as table_name, count(*) as row_count from public.categories
 union all select 'stores', count(*) from public.stores
-union all select 'approved_deals', count(*) from public.deals where moderation_status = 'approved' and status <> 'removed'
+union all select 'public_visible_deals', count(*) from public.deals where moderation_status = 'approved' and status in ('live', 'expiring_soon')
 union all select 'active_coupons', count(*) from public.coupons where status = 'active'
 union all select 'approved_threads', count(*) from public.community_threads where status = 'approved'
 union all select 'moderation_queue', count(*) from public.moderation_queue;
@@ -50,7 +50,7 @@ from public.deals d
 join public.stores s on s.id = d.store_id
 join public.categories c on c.id = d.category_id
 where d.moderation_status = 'approved'
-  and d.status <> 'removed'
+  and d.status in ('live', 'expiring_soon')
 order by d.heat_score desc
 limit 10;
 

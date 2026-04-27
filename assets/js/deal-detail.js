@@ -1,16 +1,19 @@
 (async function () {
-  await window.DealNestDataReady;
+  await Promise.all([window.DealNestDataReady, window.DealNestAuthReady].filter(Boolean));
   const data = window.DealScoutData;
+  const Auth = window.DealNestAuth;
   const params = new URLSearchParams(window.location.search);
   const requestedId = params.get('id');
   const deal = data.deals.find((item) => item.id === requestedId || item.slug === requestedId || item.uuid === requestedId) || data.deals[0];
   const saved = new Set(JSON.parse(localStorage.getItem('dealnest:saved') || '[]'));
-  const voted = new Set(JSON.parse(localStorage.getItem('dealnest:voted') || '[]'));
+  const voted = new Set(Auth?.user ? JSON.parse(localStorage.getItem('dealnest:voted') || '[]') : []);
 
   const detail = document.getElementById('dealDetail');
   const crumbTitle = document.getElementById('crumbTitle');
   const relatedDeals = document.getElementById('relatedDeals');
   const commentsList = document.getElementById('commentsList');
+  const commentForm = document.getElementById('commentForm');
+  const commentOutput = document.getElementById('commentOutput');
   const instructionList = document.getElementById('instructionList');
   const menuToggle = document.getElementById('menuToggle');
   const primaryNav = document.getElementById('primaryNav');
@@ -28,6 +31,10 @@
   }
 
   function toast(message) {
+    if (Auth?.toast) {
+      Auth.toast(message);
+      return;
+    }
     let node = document.querySelector('.toast');
     if (!node) {
       node = document.createElement('div');
@@ -38,6 +45,112 @@
     node.classList.add('show');
     clearTimeout(toast.timer);
     toast.timer = setTimeout(() => node.classList.remove('show'), 1800);
+  }
+
+  function remoteEnabled() {
+    return Boolean(Auth?.isConfigured && Auth?.user);
+  }
+
+  async function syncMemberState() {
+    if (!remoteEnabled()) return;
+    const userId = Auth.currentUserId();
+    const [savedRows, voteRows] = await Promise.all([
+      Auth.rest(`saved_deals?select=deal_id&deal_id=eq.${encodeURIComponent(deal.uuid || deal.id)}&user_id=eq.${encodeURIComponent(userId)}`).catch(() => []),
+      Auth.rest(`deal_votes?select=deal_id&deal_id=eq.${encodeURIComponent(deal.uuid || deal.id)}&user_id=eq.${encodeURIComponent(userId)}`).catch(() => [])
+    ]);
+    if (savedRows.length) saved.add(deal.id);
+    if (voteRows.length) voted.add(deal.id);
+    persist('saved', saved);
+    persist('voted', voted);
+  }
+
+  async function toggleSaved() {
+    if (!remoteEnabled()) {
+      if (saved.has(deal.id)) {
+        saved.delete(deal.id);
+        toast('Removed from saved deals on this device');
+      } else {
+        saved.add(deal.id);
+        toast('Saved here. Create an account to sync saved deals across devices.');
+      }
+      persist('saved', saved);
+      renderDetail();
+      return;
+    }
+
+    const userId = Auth.currentUserId();
+    const remoteId = deal.uuid || deal.id;
+    try {
+      if (saved.has(deal.id)) {
+        await Auth.rest(`saved_deals?deal_id=eq.${encodeURIComponent(remoteId)}&user_id=eq.${encodeURIComponent(userId)}`, {
+          method: 'DELETE',
+          prefer: 'return=minimal'
+        });
+        saved.delete(deal.id);
+        toast('Removed from your account saves');
+      } else {
+        await Auth.rest('saved_deals?on_conflict=deal_id,user_id', {
+          method: 'POST',
+          prefer: 'resolution=ignore-duplicates,return=representation',
+          body: { deal_id: remoteId, user_id: userId }
+        });
+        saved.add(deal.id);
+        toast('Saved to your account');
+      }
+      persist('saved', saved);
+      renderDetail();
+    } catch (error) {
+      toast(error.message);
+    }
+  }
+
+  async function addHeat() {
+    if (!Auth?.requireAuth({
+      type: 'vote',
+      message: 'Sign in to add heat. One vote per member keeps deal scoring fair.',
+      action: { type: 'vote-detail', dealId: deal.id, page: location.href }
+    })) return;
+    if (voted.has(deal.id)) {
+      toast('You already added heat');
+      return;
+    }
+    try {
+      await Auth.rest('deal_votes?on_conflict=deal_id,user_id', {
+        method: 'POST',
+        prefer: 'resolution=ignore-duplicates,return=representation',
+        body: { deal_id: deal.uuid || deal.id, user_id: Auth.currentUserId(), value: 1 }
+      });
+      voted.add(deal.id);
+      persist('voted', voted);
+      toast('Heat added');
+      renderDetail();
+    } catch (error) {
+      toast(/duplicate|conflict/i.test(error.message) ? 'You already added heat' : error.message);
+    }
+  }
+
+  async function reportDeal() {
+    if (!Auth?.requireAuth({
+      type: 'report',
+      message: 'Sign in to report expired or incorrect deals.',
+      action: { type: 'report', dealId: deal.id, page: location.href }
+    })) return;
+    const reason = window.prompt('What should moderators review?', 'expired');
+    if (!reason) return;
+    try {
+      await Auth.rest('deal_reports', {
+        method: 'POST',
+        body: {
+          deal_id: deal.uuid || deal.id,
+          user_id: Auth.currentUserId(),
+          reason: reason.slice(0, 120),
+          details: `Reported from ${location.href}`
+        }
+      });
+      toast('Report sent to moderation');
+    } catch (error) {
+      toast(error.message);
+    }
   }
 
   function relatedCard(item) {
@@ -144,8 +257,25 @@
     instructionList.innerHTML = steps.map((step) => `<li>${step}</li>`).join('');
   }
 
-  function renderComments() {
-    commentsList.innerHTML = data.comments.map((comment) => `
+  async function loadComments() {
+    if (!Auth?.isConfigured || !deal.uuid) return data.comments;
+    try {
+      const rows = await Auth.publicRest(`deal_comments?select=id,body,created_at,profiles(display_name,username)&deal_id=eq.${encodeURIComponent(deal.uuid)}&status=eq.approved&order=created_at.desc`);
+      if (!rows.length) return data.comments;
+      return rows.map((row) => ({
+        user: row.profiles?.display_name || row.profiles?.username || 'DealNest member',
+        badge: 'Member',
+        time: new Date(row.created_at).toLocaleDateString(),
+        text: row.body
+      }));
+    } catch (error) {
+      return data.comments;
+    }
+  }
+
+  async function renderComments() {
+    const comments = await loadComments();
+    commentsList.innerHTML = comments.map((comment) => `
       <article class="comment-card">
         <div>
           <strong>${comment.user}</strong>
@@ -165,7 +295,7 @@
       .join('');
   }
 
-  function handleAction(event) {
+  async function handleAction(event) {
     const target = event.target.closest('[data-action], [data-placeholder]');
     if (!target) return;
     const { action, code, placeholder } = target.dataset;
@@ -182,32 +312,45 @@
       navigator.clipboard?.writeText(code).then(() => toast(`Copied ${code}`)).catch(() => toast(`Coupon: ${code}`));
     }
     if (action === 'vote') {
-      if (voted.has(deal.id)) {
-        toast('You already added heat');
-        return;
-      }
-      voted.add(deal.id);
-      persist('voted', voted);
-      toast('Heat added');
-      renderDetail();
+      await addHeat();
     }
     if (action === 'save') {
-      if (saved.has(deal.id)) {
-        saved.delete(deal.id);
-        toast('Removed from saved deals');
-      } else {
-        saved.add(deal.id);
-        toast('Saved for later');
-      }
-      persist('saved', saved);
-      renderDetail();
+      await toggleSaved();
     }
     if (action === 'share') {
       const url = window.location.href;
       navigator.clipboard?.writeText(url).then(() => toast('Deal link copied')).catch(() => toast('Share link ready in the address bar'));
     }
     if (action === 'expired') {
-      toast('Thanks. Expiration reports will enter the moderation queue in a later phase.');
+      await reportDeal();
+    }
+  }
+
+  async function submitComment(event) {
+    event.preventDefault();
+    if (!Auth?.requireAuth({
+      type: 'comment',
+      message: 'Sign in to join the deal discussion.',
+      action: { type: 'comment', dealId: deal.id, page: location.href }
+    })) return;
+    const values = Object.fromEntries(new FormData(event.target).entries());
+    const body = (values.body || '').trim();
+    if (body.length < 4) {
+      commentOutput.textContent = 'Add a little more detail before posting.';
+      return;
+    }
+    commentOutput.textContent = 'Posting...';
+    try {
+      await Auth.rest('deal_comments', {
+        method: 'POST',
+        body: { deal_id: deal.uuid || deal.id, user_id: Auth.currentUserId(), body }
+      });
+      event.target.reset();
+      commentOutput.textContent = 'Comment posted.';
+      toast('Comment posted');
+      await renderComments();
+    } catch (error) {
+      commentOutput.textContent = error.message;
     }
   }
 
@@ -223,11 +366,21 @@
     });
   }
 
+  await syncMemberState();
   renderDetail();
   renderInstructions();
-  renderComments();
+  await renderComments();
   renderRelated();
   bindMenu();
   document.body.addEventListener('click', handleAction);
+  commentForm?.addEventListener('submit', submitComment);
+  window.addEventListener('dealnest:auth-changed', async () => {
+    await syncMemberState();
+    renderDetail();
+  });
+  window.addEventListener('dealnest:resume-action', (event) => {
+    if (event.detail?.type === 'vote-detail') addHeat();
+    if (event.detail?.type === 'report') reportDeal();
+  });
   window.DealNestMotion?.refresh();
 }());

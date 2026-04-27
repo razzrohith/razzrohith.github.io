@@ -1,6 +1,7 @@
 (async function () {
-  await window.DealNestDataReady;
+  await Promise.all([window.DealNestDataReady, window.DealNestAuthReady].filter(Boolean));
   const data = window.DealScoutData;
+  const Auth = window.DealNestAuth;
   const storeNames = data.stores.map((store) => store.name);
   const state = {
     query: new URLSearchParams(window.location.search).get('q') || '',
@@ -9,7 +10,7 @@
     store: '',
     maxPrice: 900,
     saved: new Set(JSON.parse(localStorage.getItem('dealnest:saved') || '[]')),
-    voted: new Set(JSON.parse(localStorage.getItem('dealnest:voted') || '[]')),
+    voted: new Set(Auth?.user ? JSON.parse(localStorage.getItem('dealnest:voted') || '[]') : []),
     followedStores: new Set(JSON.parse(localStorage.getItem('dealnest:followedStores') || '[]'))
   };
 
@@ -59,6 +60,10 @@
   }
 
   function toast(message) {
+    if (Auth?.toast) {
+      Auth.toast(message);
+      return;
+    }
     let node = document.querySelector('.toast');
     if (!node) {
       node = document.createElement('div');
@@ -69,6 +74,105 @@
     node.classList.add('show');
     clearTimeout(toast.timer);
     toast.timer = setTimeout(() => node.classList.remove('show'), 1800);
+  }
+
+  function dealById(id) {
+    return data.deals.find((deal) => deal.id === id || deal.slug === id || deal.uuid === id);
+  }
+
+  function remoteEnabled() {
+    return Boolean(Auth?.isConfigured && Auth?.user);
+  }
+
+  async function syncMemberState() {
+    if (!remoteEnabled()) return;
+    const userId = Auth.currentUserId();
+    const [savedRows, voteRows] = await Promise.all([
+      Auth.rest(`saved_deals?select=deal_id&user_id=eq.${encodeURIComponent(userId)}`).catch(() => []),
+      Auth.rest(`deal_votes?select=deal_id&user_id=eq.${encodeURIComponent(userId)}`).catch(() => [])
+    ]);
+    savedRows.forEach((row) => {
+      const deal = dealById(row.deal_id);
+      if (deal) state.saved.add(deal.id);
+    });
+    voteRows.forEach((row) => {
+      const deal = dealById(row.deal_id);
+      if (deal) state.voted.add(deal.id);
+    });
+    persist('saved', state.saved);
+    persist('voted', state.voted);
+  }
+
+  async function toggleSaved(id) {
+    const deal = dealById(id);
+    if (!deal) return;
+    if (!remoteEnabled()) {
+      if (state.saved.has(id)) {
+        state.saved.delete(id);
+        toast('Removed from saved deals on this device');
+      } else {
+        state.saved.add(id);
+        toast('Saved here. Create an account to sync saved deals across devices.');
+      }
+      persist('saved', state.saved);
+      renderStaticSections();
+      renderFeed();
+      return;
+    }
+
+    const userId = Auth.currentUserId();
+    const remoteId = deal.uuid || deal.id;
+    try {
+      if (state.saved.has(id)) {
+        await Auth.rest(`saved_deals?deal_id=eq.${encodeURIComponent(remoteId)}&user_id=eq.${encodeURIComponent(userId)}`, {
+          method: 'DELETE',
+          prefer: 'return=minimal'
+        });
+        state.saved.delete(id);
+        toast('Removed from your account saves');
+      } else {
+        await Auth.rest('saved_deals?on_conflict=deal_id,user_id', {
+          method: 'POST',
+          prefer: 'resolution=ignore-duplicates,return=representation',
+          body: { deal_id: remoteId, user_id: userId }
+        });
+        state.saved.add(id);
+        toast('Saved to your account');
+      }
+      persist('saved', state.saved);
+      renderStaticSections();
+      renderFeed();
+    } catch (error) {
+      toast(error.message);
+    }
+  }
+
+  async function addHeat(id) {
+    const deal = dealById(id);
+    if (!deal) return;
+    if (!Auth?.requireAuth({
+      type: 'vote',
+      message: 'Sign in to add heat. One vote per member keeps the signal honest.',
+      action: { type: 'vote', dealId: id, page: location.href }
+    })) return;
+    if (state.voted.has(id)) {
+      toast('You already added heat');
+      return;
+    }
+    try {
+      await Auth.rest('deal_votes?on_conflict=deal_id,user_id', {
+        method: 'POST',
+        prefer: 'resolution=ignore-duplicates,return=representation',
+        body: { deal_id: deal.uuid || deal.id, user_id: Auth.currentUserId(), value: 1 }
+      });
+      state.voted.add(id);
+      persist('voted', state.voted);
+      toast('Heat added');
+      renderStaticSections();
+      renderFeed();
+    } catch (error) {
+      toast(/duplicate|conflict/i.test(error.message) ? 'You already added heat' : error.message);
+    }
   }
 
   function dealTokens(deal) {
@@ -333,7 +437,7 @@
     document.getElementById('hot-deals').scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
-  function handleDealAction(event) {
+  async function handleDealAction(event) {
     const target = event.target.closest(actionableSelectors);
     if (!target) return;
     const { action, id, code, placeholder } = target.dataset;
@@ -342,27 +446,10 @@
       return;
     }
     if (action === 'save') {
-      if (state.saved.has(id)) {
-        state.saved.delete(id);
-        toast('Removed from saved deals');
-      } else {
-        state.saved.add(id);
-        toast('Saved for later');
-      }
-      persist('saved', state.saved);
-      renderStaticSections();
-      renderFeed();
+      await toggleSaved(id);
     }
     if (action === 'vote') {
-      if (state.voted.has(id)) {
-        toast('You already added heat');
-        return;
-      }
-      state.voted.add(id);
-      persist('voted', state.voted);
-      toast('Heat added');
-      renderStaticSections();
-      renderFeed();
+      await addHeat(id);
     }
     if (action === 'copy') {
       navigator.clipboard?.writeText(code).then(() => toast(`Copied ${code}`)).catch(() => toast(`Coupon: ${code}`));
@@ -455,6 +542,16 @@
     });
   }
 
+  window.addEventListener('dealnest:auth-changed', async () => {
+    await syncMemberState();
+    renderStaticSections();
+    renderFeed();
+  });
+  window.addEventListener('dealnest:resume-action', (event) => {
+    if (event.detail?.type === 'vote') addHeat(event.detail.dealId);
+  });
+
+  await syncMemberState();
   populateStores();
   renderStaticSections();
   updateFilterButtons();

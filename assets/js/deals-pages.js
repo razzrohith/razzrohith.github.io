@@ -1,6 +1,7 @@
 (async function () {
-  await window.DealNestDataReady;
+  await Promise.all([window.DealNestDataReady, window.DealNestAuthReady].filter(Boolean));
   const data = window.DealScoutData;
+  const Auth = window.DealNestAuth;
   const page = document.body.dataset.page;
   const params = new URLSearchParams(window.location.search);
   const saved = new Set(JSON.parse(localStorage.getItem('dealnest:saved') || '[]'));
@@ -19,6 +20,10 @@
   }
 
   function toast(message) {
+    if (Auth?.toast) {
+      Auth.toast(message);
+      return;
+    }
     let node = document.querySelector('.toast');
     if (!node) {
       node = document.createElement('div');
@@ -39,12 +44,89 @@
     return data.stores.find((store) => store.name === name) || { name, initials: name.slice(0, 2).toUpperCase(), followers: 0, rating: 0 };
   }
 
+  function dealById(id) {
+    return data.deals.find((deal) => deal.id === id || deal.slug === id || deal.uuid === id);
+  }
+
+  function remoteEnabled() {
+    return Boolean(Auth?.isConfigured && Auth?.user);
+  }
+
+  function requireMember(type, message) {
+    return Auth?.requireAuth({ type, message, action: { type, page, url: location.href } });
+  }
+
+  function accessPanel(title, message, button = 'Sign in') {
+    return `<section class="section-block"><div class="access-panel"><p class="eyebrow">Member access</p><h2>${title}</h2><p>${message}</p><button class="post-button" type="button" data-auth-action="login">${button}</button><output></output></div></section>`;
+  }
+
+  async function fetchRows(path, fallback = []) {
+    if (!remoteEnabled()) return fallback;
+    return Auth.rest(path).catch(() => fallback);
+  }
+
+  async function toggleAccountSave(id, target) {
+    const deal = dealById(id);
+    if (!deal) return;
+    if (!remoteEnabled()) {
+      if (saved.has(id)) {
+        saved.delete(id);
+        toast('Removed from saved deals on this device');
+      } else {
+        saved.add(id);
+        toast('Saved here. Create an account to sync saved deals across devices.');
+      }
+      persist('saved', saved);
+      target?.classList.toggle('saved', saved.has(id));
+      if (target) target.textContent = saved.has(id) ? 'Saved' : 'Save';
+      return;
+    }
+    const remoteId = deal.uuid || deal.id;
+    const userId = Auth.currentUserId();
+    try {
+      if (saved.has(id)) {
+        await Auth.rest(`saved_deals?deal_id=eq.${encodeURIComponent(remoteId)}&user_id=eq.${encodeURIComponent(userId)}`, { method: 'DELETE', prefer: 'return=minimal' });
+        saved.delete(id);
+        toast('Removed from your account saves');
+      } else {
+        await Auth.rest('saved_deals?on_conflict=deal_id,user_id', {
+          method: 'POST',
+          prefer: 'resolution=ignore-duplicates,return=representation',
+          body: { deal_id: remoteId, user_id: userId }
+        });
+        saved.add(id);
+        toast('Saved to your account');
+      }
+      persist('saved', saved);
+      target?.classList.toggle('saved', saved.has(id));
+      if (target) target.textContent = saved.has(id) ? 'Saved' : 'Save';
+    } catch (error) {
+      toast(error.message);
+    }
+  }
+
   function couponsForStore(name) {
     return data.coupons.filter((coupon) => coupon.store === name);
   }
 
   function categoryDeals(name) {
     return data.deals.filter((deal) => deal.category === name);
+  }
+
+  function slugify(value) {
+    return String(value || 'deal')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 54) || 'deal';
+  }
+
+  function categoryId(name) {
+    return data.categories.find((category) => category.name === name)?.id || null;
+  }
+
+  function storeId(name) {
+    return data.stores.find((store) => store.name === name)?.id || null;
   }
 
   function dealCard(deal, compactCard = false) {
@@ -157,20 +239,31 @@
       `<section class="section-block"><div class="feed-toolbar"><div><p class="eyebrow">${results.length} matches</p><h2>Deals matching your intent</h2></div><a class="text-link" href="./">Refine on homepage</a></div><div class="deal-grid">${results.map((deal) => dealCard(deal)).join('') || '<div class="empty-state"><strong>No matching deals yet</strong><p>Try another keyword from the homepage.</p></div>'}</div></section>`);
   }
 
-  function savedPage() {
+  async function savedPage() {
+    if (remoteEnabled()) {
+      const rows = await fetchRows(`saved_deals?select=deal_id,created_at&user_id=eq.${encodeURIComponent(Auth.currentUserId())}&order=created_at.desc`);
+      rows.forEach((row) => {
+        const deal = dealById(row.deal_id);
+        if (deal) saved.add(deal.id);
+      });
+      persist('saved', saved);
+    }
     const results = data.deals.filter((deal) => saved.has(deal.id));
-    pageShell('Saved deals', 'Your watchlist', 'Saved deals persist locally in this browser and update from homepage or detail page actions.',
-      `<section class="section-block"><div class="feed-toolbar"><div><p class="eyebrow">${results.length} saved</p><h2>Deals you are watching</h2></div><a class="text-link" href="./#hot-deals">Find more</a></div><div class="deal-grid">${results.map((deal) => dealCard(deal)).join('') || '<div class="empty-state"><strong>No saved deals yet</strong><p>Save deals from the homepage or detail pages to fill this view.</p></div>'}</div></section>`);
+    pageShell('Saved deals', 'Your watchlist', remoteEnabled() ? 'These saves are synced to your DealNest account.' : 'Guest saves stay on this device. Create an account to sync saved deals across devices.',
+      `<section class="section-block"><div class="feed-toolbar"><div><p class="eyebrow">${results.length} saved</p><h2>Deals you are watching</h2></div><div class="community-actions"><a class="text-link" href="./#hot-deals">Find more</a>${remoteEnabled() ? '' : '<button class="ghost-button" type="button" data-auth-action="signup">Sync saves</button>'}</div></div><div class="deal-grid">${results.map((deal) => dealCard(deal)).join('') || '<div class="empty-state"><strong>No saved deals yet</strong><p>Save deals from the homepage or detail pages to fill this view.</p></div>'}</div></section>`);
   }
 
   function alerts() {
-    pageShell('Deal alerts', 'Watchlist builder', 'Build a local alert preview with keyword, category, store, max price, discount target, and notification options.',
+    const locked = !remoteEnabled() ? accessPanel('Sign in to create alerts', 'Guests can browse deals freely, but alert rules belong to your account so they can sync across devices.') : '';
+    pageShell('Deal alerts', 'Watchlist builder', 'Build account-backed alert rules with keyword, category, store, max price, discount target, and notification options.',
       `<section class="alert-section section-block"><div class="alert-copy"><h2>Your next price drop radar.</h2><p>This static MVP validates alert UX before accounts and delivery channels are wired up.</p><div class="trust-strip mini-stats">${stat('keywords', data.trendingSearches.length, 'Popular searches can seed alerts.')}${stat('stores', data.stores.length, 'Store follows can become triggers.')}</div></div><form class="alert-builder motion-item" id="alertForm"><label>Keyword<input name="keyword" value="gaming monitor"></label><label>Category<select name="category">${data.categories.map((category) => `<option>${category.name}</option>`).join('')}</select></label><label>Store<select name="store"><option>Any store</option>${data.stores.map((store) => `<option>${store.name}</option>`).join('')}</select></label><label>Max price<input name="price" value="250"></label><label>Minimum discount %<input name="discount" value="35"></label><div><button type="button" data-channel="Email">Email</button><button type="button" data-channel="Browser">Browser</button><button type="button" data-channel="Dashboard">Dashboard</button></div><button class="post-button" type="submit">Preview alert</button><output id="alertOutput">Alert preview will appear here.</output></form></section>`);
+    document.getElementById('pageContent').insertAdjacentHTML('beforeend', locked);
   }
 
   function postDeal() {
-    pageShell('Post a deal', 'Submission studio', 'A real static submission flow with validation, structured fields, and a live card preview.',
-      `<section class="split-section post-workspace"><form class="section-block deal-form" id="postDealForm" novalidate><div class="section-heading"><div><p class="eyebrow">Required details</p><h2>Submit a clear, verifiable deal</h2></div></div><div class="form-grid"><label>Deal title<input name="title" value="Example: Premium monitor bundle" required></label><label>Deal URL<input name="url" value="https://example.com/deal" required></label><label>Current price<input name="price" value="229" required></label><label>Original price<input name="original" value="389" required></label><label>Store<select name="store">${data.stores.map((store) => `<option>${store.name}</option>`).join('')}</select></label><label>Category<select name="category">${data.categories.map((category) => `<option>${category.name}</option>`).join('')}</select></label><label>Coupon code<input name="coupon" value="SAVE40"></label><label>Expiration date<input name="expires" value="Ends Friday"></label><label class="wide-field">Image URL or upload placeholder<input name="image" value="./assets/img/deals/monitor.svg"></label><label class="wide-field">Description<textarea name="description" rows="5">Include final price, shipping notes, coupon terms, and why the deal is useful.</textarea></label></div><button class="post-button" type="submit">Validate preview</button><div class="form-errors" id="postErrors" aria-live="polite"></div></form><aside class="section-block"><div class="section-heading"><div><p class="eyebrow">Live preview</p><h2>Deal card preview</h2></div></div><div id="postPreview"></div></aside></section>`);
+    const locked = !remoteEnabled() ? accessPanel('Sign in to post a deal', 'Browsing stays open to everyone, but submissions require an account and go to moderation before they appear publicly.') : '';
+    pageShell('Post a deal', 'Submission studio', 'Submit a clear, verifiable deal. New submissions are saved as pending and must be approved before public display.',
+      `${locked}<section class="split-section post-workspace"><form class="section-block deal-form" id="postDealForm" novalidate><div class="section-heading"><div><p class="eyebrow">Required details</p><h2>Submit a clear, verifiable deal</h2></div></div><div class="form-grid"><label>Deal title<input name="title" value="Example: Premium monitor bundle" required></label><label>Deal URL<input name="url" value="https://example.com/deal" required></label><label>Current price<input name="price" value="229" required></label><label>Original price<input name="original" value="389" required></label><label>Store<select name="store">${data.stores.map((store) => `<option value="${store.name}">${store.name}</option>`).join('')}</select></label><label>Category<select name="category">${data.categories.map((category) => `<option value="${category.name}">${category.name}</option>`).join('')}</select></label><label>Coupon code<input name="coupon" value="SAVE40"></label><label>Expiration date<input name="expires" type="date"></label><label class="wide-field">Image URL or upload placeholder<input name="image" value="./assets/img/deals/monitor.svg"></label><label class="wide-field">Description<textarea name="description" rows="5">Include final price, shipping notes, coupon terms, and why the deal is useful.</textarea></label></div><button class="post-button" type="submit">${remoteEnabled() ? 'Submit for review' : 'Sign in to submit'}</button><div class="form-errors" id="postErrors" aria-live="polite"></div></form><aside class="section-block"><div class="section-heading"><div><p class="eyebrow">Live preview</p><h2>Deal card preview</h2></div></div><div id="postPreview"></div></aside></section>`);
     renderPostPreview();
   }
 
@@ -206,8 +299,9 @@
   }
 
   function login() {
-    pageShell('Member access', 'Account center', 'A polished placeholder for the member flows that will power saved deals, alerts, voting, comments, and moderation roles.',
-      `<section class="split-section"><form class="section-block deal-form"><div class="section-heading"><div><p class="eyebrow">Preview login</p><h2>Sign in to your DealNest workspace</h2></div></div><label>Email<input value="member@example.com"></label><label>Password<input type="password" value="previewonly"></label><button class="post-button" type="button" data-placeholder="Authentication is ready for backend wiring in a later phase.">Continue</button></form><aside class="section-block"><div class="trust-strip">${stat('saved deals', saved.size, 'Local browser watchlist today.')}${stat('followed stores', followedStores.size, 'Local store follows today.')}${stat('alerts', 3, 'Example alert rules waiting for accounts.')}</div></aside></section>`);
+    const member = Auth?.user;
+    pageShell('Member access', 'Account center', member ? `You are signed in as ${member.email}.` : 'Sign in or create an account for saved deals, alerts, voting, comments, and moderation roles.',
+      `<section class="split-section"><article class="section-block access-panel"><div class="section-heading"><div><p class="eyebrow">${member ? 'Signed in' : 'Secure access'}</p><h2>${member ? 'Your account is active' : 'Open the member panel'}</h2></div></div><p>${member ? 'Use your dashboard for saved deals, submissions, comments, and alerts.' : 'Guest browsing remains open. Login is only required when you interact with member features.'}</p><div class="community-actions">${member ? '<a class="post-button link-button" href="./dashboard.html">Open dashboard</a><button class="ghost-button" type="button" data-auth-action="logout">Logout</button>' : '<button class="post-button" type="button" data-auth-action="login">Login</button><button class="ghost-button" type="button" data-auth-action="signup">Sign up</button>'}</div></article><aside class="section-block"><div class="trust-strip">${stat('saved deals', saved.size, 'Current browser watchlist.')}${stat('followed stores', followedStores.size, 'Local store follows today.')}${stat('protected actions', 6, 'Vote, comment, report, post, save, alert.')}</div></aside></section>`);
   }
 
   function games() {
@@ -242,37 +336,125 @@
       `<section class="section-block"><div class="trust-strip">${stat('followers', compact(store.followers), 'Mock social proof for future follow flows.')}${stat('trust rating', store.rating, 'Community sentiment and moderation signal.')}${stat('coupons', coupons.length, coupons.map((coupon) => coupon.code).join(', ') || 'No codes today.')}</div></section><section class="split-section"><div class="section-block"><div class="section-heading"><div><p class="eyebrow">Active deals</p><h2>${deals.length} current offers</h2></div></div><div class="deal-grid">${deals.map((deal) => dealCard(deal)).join('') || '<div class="empty-state"><strong>No active deals</strong><p>This store will populate when new listings are added.</p></div>'}</div></div><aside class="section-block"><div class="section-heading"><div><p class="eyebrow">Store coupons</p><h2>Codes and terms</h2></div></div><div class="coupon-list">${coupons.map((coupon) => `<article class="coupon-card"><div><strong>${coupon.store}</strong><code>${coupon.code}</code></div><p>${coupon.description}</p><footer><small>${coupon.expires}</small><button class="copy-btn" type="button" data-action="copy" data-code="${coupon.code}">Copy</button></footer></article>`).join('') || '<div class="empty-state"><strong>No current coupons</strong><p>Follow this store for future codes.</p></div>'}</div></aside></section>`);
   }
 
-  function admin() {
+  async function dashboard() {
+    if (!remoteEnabled()) {
+      pageShell('Dashboard', 'Member workspace', 'Dashboard data belongs to signed-in members.', accessPanel('Sign in to open your dashboard', 'Guests can browse the full public site, but saved account data and submissions need login.'));
+      return;
+    }
+    const userId = Auth.currentUserId();
+    const [savedRows, postedRows, commentRows, alertRows] = await Promise.all([
+      fetchRows(`saved_deals?select=deal_id,created_at&user_id=eq.${encodeURIComponent(userId)}&order=created_at.desc`),
+      fetchRows(`deals?select=id,slug,title,status,moderation_status,created_at&posted_by=eq.${encodeURIComponent(userId)}&order=created_at.desc`),
+      fetchRows(`deal_comments?select=id,body,created_at,deal_id&user_id=eq.${encodeURIComponent(userId)}&order=created_at.desc`),
+      fetchRows(`deal_alerts?select=id,keyword,max_price,min_discount_percent,is_active,created_at&user_id=eq.${encodeURIComponent(userId)}&order=created_at.desc`)
+    ]);
+    const savedDeals = savedRows.map((row) => dealById(row.deal_id)).filter(Boolean);
+    const memberName = Auth.user?.user_metadata?.display_name || Auth.user?.email?.split('@')[0] || 'DealNest member';
+    pageShell('Your dashboard', 'Member workspace', 'A private hub for your saved deals, posted deals, comments, alerts, and account profile.',
+      `<section class="section-block"><div class="trust-strip">${stat('saved', savedDeals.length, 'Deals synced to your account.')}${stat('submitted', postedRows.length, 'Pending and reviewed submissions.')}${stat('alerts', alertRows.length, 'Account alert rules.')}</div></section><section class="dashboard-grid"><article class="dashboard-card"><h3>Profile</h3><div class="profile-line"><strong>${memberName}</strong><span>${Auth.user?.email || ''}</span></div><a class="deal-action" href="./post-deal.html">Post a deal</a></article><article class="dashboard-card"><h3>Saved deals</h3><div class="dashboard-list">${savedDeals.map((deal) => `<article><strong><a href="${deal.dealUrl}">${deal.title}</a></strong><span>${deal.store} / ${money(deal.currentPrice)}</span></article>`).join('') || '<p>No account saves yet.</p>'}</div></article><article class="dashboard-card"><h3>Posted deals</h3><div class="dashboard-list">${postedRows.map((deal) => `<article><strong>${deal.title}</strong><span class="status-pill">${deal.status} / ${deal.moderation_status}</span></article>`).join('') || '<p>No submissions yet.</p>'}</div></article><article class="dashboard-card"><h3>Comments</h3><div class="dashboard-list">${commentRows.slice(0, 6).map((comment) => `<article><strong>${new Date(comment.created_at).toLocaleDateString()}</strong><p>${comment.body}</p></article>`).join('') || '<p>No comments yet.</p>'}</div></article><article class="dashboard-card"><h3>Deal alerts</h3><div class="dashboard-list">${alertRows.map((alert) => `<article><strong>${alert.keyword || 'Any keyword'}</strong><span>Under ${alert.max_price ? money(Number(alert.max_price)) : 'any price'} / ${alert.min_discount_percent || 0}%+ off</span></article>`).join('') || '<p>No alerts yet.</p>'}</div></article></section>`);
+  }
+
+  async function admin() {
+    if (!Auth?.user) {
+      pageShell('Moderation console', 'Admin structure', 'Admin and moderator tools require member authentication.', accessPanel('Sign in for moderation access', 'Normal browsing remains public. Admin pages are protected.'));
+      return;
+    }
+    const roles = await Auth.getRoles().catch(() => []);
+    if (!roles.includes('admin') && !roles.includes('moderator')) {
+      pageShell('Access denied', 'Admin structure', 'Your account is signed in, but it does not have moderator or admin permissions.',
+        `<section class="section-block"><div class="access-panel"><p class="eyebrow">Protected area</p><h2>Moderator role required</h2><p>Only admin and moderator accounts can access the moderation queue.</p><a class="deal-action" href="./">Return home</a></div></section>`);
+      return;
+    }
     const pending = data.moderation || [];
     const reported = pending.filter((item) => /Reported|Expired|Community/.test(item.type));
     pageShell('Moderation console', 'Admin structure', 'A populated static console for reported deals, pending submissions, coupon checks, and community triage.',
       `<section class="section-block"><div class="trust-strip">${stat('queue items', pending.length, 'Mock work items ready for review.')}${stat('high priority', pending.filter((item) => item.severity === 'High').length, 'Needs attention first.')}${stat('reported', reported.length, 'Reports and flags from the community.')}</div></section><section class="split-section"><article class="section-block"><div class="section-heading"><div><p class="eyebrow">Moderation queue</p><h2>Review workload</h2></div></div><div class="editor-list">${pending.map((item) => `<article class="editor-item motion-item"><div class="queue-icon">${item.severity.slice(0, 1)}</div><div><h3>${item.title}</h3><p>${item.type} / ${item.owner} / ${item.status}</p></div><strong>${item.severity}</strong></article>`).join('')}</div></article><article class="section-block"><div class="section-heading"><div><p class="eyebrow">Reported deals</p><h2>Time-sensitive checks</h2></div></div><div class="editor-list">${data.deals.filter((deal) => deal.status === 'Expiring Soon').map((deal) => `<article class="editor-item motion-item"><img src="${deal.image}" alt="${deal.title}"><div><h3>${deal.title}</h3><p>${deal.store} / ${deal.expires} / ${deal.comments} comments</p></div><strong>${deal.heat} heat</strong></article>`).join('')}</div><div class="community-actions"><button type="button" data-placeholder="Approve workflow will connect to role auth later.">Approve selected</button><button type="button" data-placeholder="Escalation workflow will connect to backend later.">Escalate</button></div></article></section>`);
   }
 
-  const renderers = { categories, stores, coupons, community, search, saved: savedPage, alerts, post: postDeal, login, games, category: categoryDetail, store: storeDetail, admin };
-  renderers[page]?.();
+  const renderers = { categories, stores, coupons, community, search, saved: savedPage, alerts, post: postDeal, login, games, category: categoryDetail, store: storeDetail, dashboard, admin };
+  await renderers[page]?.();
 
   document.body.addEventListener('input', (event) => {
     if (event.target.closest('#postDealForm')) renderPostPreview();
   });
 
-  document.body.addEventListener('submit', (event) => {
+  document.body.addEventListener('submit', async (event) => {
     if (event.target.id === 'postDealForm') {
       event.preventDefault();
+      if (!requireMember('post-deal', 'Sign in to submit deals for moderation.')) return;
       const values = Object.fromEntries(new FormData(event.target).entries());
       const errors = [];
       if (!values.title || values.title.length < 12) errors.push('Use a clearer title with at least 12 characters.');
       if (!/^https?:\/\//i.test(values.url || '')) errors.push('Add a valid deal URL beginning with http or https.');
       if (Number(values.price) <= 0 || Number(values.original) <= 0) errors.push('Add valid current and original prices.');
       if (Number(values.price) >= Number(values.original)) errors.push('Current price should be lower than original price.');
-      document.getElementById('postErrors').textContent = errors.length ? errors.join(' ') : 'Preview validated. Publishing will be wired to the backend later.';
-      toast(errors.length ? 'Fix highlighted deal details' : 'Deal preview validated');
+      if (!categoryId(values.category) || !storeId(values.store)) errors.push('Choose a valid store and category from the list.');
+      const output = document.getElementById('postErrors');
+      if (errors.length) {
+        output.textContent = errors.join(' ');
+        toast('Fix highlighted deal details');
+        return;
+      }
+      output.textContent = 'Submitting for review...';
+      const price = Number(values.price);
+      const original = Number(values.original);
+      const discount = Math.round((1 - price / original) * 100);
+      try {
+        await Auth.rest('deals', {
+          method: 'POST',
+          body: {
+            slug: `${slugify(values.title)}-${Date.now().toString(36)}`,
+            title: values.title,
+            description: values.description,
+            deal_url: values.url,
+            image_url: values.image || './assets/img/deals/monitor.svg',
+            current_price: price,
+            original_price: original,
+            discount_percent: discount,
+            store_id: storeId(values.store),
+            category_id: categoryId(values.category),
+            posted_by: Auth.currentUserId(),
+            shipping_info: 'Submitted by member',
+            coupon_code: values.coupon || null,
+            expires_at: values.expires ? new Date(values.expires).toISOString() : null,
+            status: 'pending',
+            moderation_status: 'pending',
+            tags: [values.category, values.store].filter(Boolean)
+          }
+        });
+        output.textContent = 'Your deal was submitted for review.';
+        toast('Deal submitted for review');
+      } catch (error) {
+        output.textContent = error.message;
+        toast('Submission could not be saved');
+      }
     }
     if (event.target.id === 'alertForm') {
       event.preventDefault();
+      if (!requireMember('deal-alert', 'Sign in to create account-backed deal alerts.')) return;
       const values = Object.fromEntries(new FormData(event.target).entries());
-      document.getElementById('alertOutput').textContent = `${values.keyword} in ${values.category}, ${values.store}, under $${values.price}, ${values.discount}%+ off.`;
-      toast('Alert preview created');
+      const output = document.getElementById('alertOutput');
+      output.textContent = 'Saving alert...';
+      try {
+        await Auth.rest('deal_alerts', {
+          method: 'POST',
+          body: {
+            user_id: Auth.currentUserId(),
+            keyword: values.keyword || null,
+            category_id: categoryId(values.category),
+            store_id: values.store === 'Any store' ? null : storeId(values.store),
+            max_price: Number(values.price) || null,
+            min_discount_percent: Number(values.discount) || null,
+            notify_email: Boolean(document.querySelector('[data-channel="Email"]')?.classList.contains('active')),
+            notify_browser: Boolean(document.querySelector('[data-channel="Browser"]')?.classList.contains('active')),
+            notify_dashboard: true
+          }
+        });
+        output.textContent = `${values.keyword} in ${values.category}, ${values.store}, under $${values.price}, ${values.discount}%+ off. Saved to your account.`;
+        toast('Alert saved');
+      } catch (error) {
+        output.textContent = error.message;
+      }
     }
   });
 
@@ -290,19 +472,7 @@
       renderCouponResults();
     }
     if (action === 'copy') navigator.clipboard?.writeText(code).then(() => toast(`Copied ${code}`)).catch(() => toast(`Coupon: ${code}`));
-    if (action === 'save') {
-      const id = target.dataset.id;
-      if (saved.has(id)) {
-        saved.delete(id);
-        toast('Removed from saved deals');
-      } else {
-        saved.add(id);
-        toast('Saved for later');
-      }
-      persist('saved', saved);
-      target.classList.toggle('saved', saved.has(id));
-      target.textContent = saved.has(id) ? 'Saved' : 'Save';
-    }
+    if (action === 'save') toggleAccountSave(target.dataset.id, target);
     if (action === 'follow-store') {
       if (followedStores.has(store)) {
         followedStores.delete(store);

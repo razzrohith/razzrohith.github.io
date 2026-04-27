@@ -1,4 +1,5 @@
-(function () {
+(async function () {
+  await window.DealNestDataReady;
   const data = window.DealScoutData;
   const storeNames = data.stores.map((store) => store.name);
   const state = {

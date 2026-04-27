@@ -1,4 +1,5 @@
-(function () {
+(async function () {
+  await window.DealNestDataReady;
   const data = window.DealScoutData;
   const page = document.body.dataset.page;
   const params = new URLSearchParams(window.location.search);

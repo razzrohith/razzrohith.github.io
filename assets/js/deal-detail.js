@@ -1,8 +1,9 @@
-(function () {
+(async function () {
+  await window.DealNestDataReady;
   const data = window.DealScoutData;
   const params = new URLSearchParams(window.location.search);
   const requestedId = params.get('id');
-  const deal = data.deals.find((item) => item.id === requestedId) || data.deals[0];
+  const deal = data.deals.find((item) => item.id === requestedId || item.slug === requestedId || item.uuid === requestedId) || data.deals[0];
   const saved = new Set(JSON.parse(localStorage.getItem('dealnest:saved') || '[]'));
   const voted = new Set(JSON.parse(localStorage.getItem('dealnest:voted') || '[]'));
 

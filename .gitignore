@@ -2,6 +2,10 @@
 .chrome-ludo-qa/
 sequence_backup/
 node_modules/
+.env
+.env.*
+!.env.example
+project-backup-before-backend-migration.zip
 dealnest-desktop-check.png
 dealnest-mobile-check.png
 ludo-ui-check.png

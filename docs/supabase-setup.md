@@ -1,0 +1,99 @@
+# Supabase Setup For DealNest
+
+This document prepares the backend schema only. The frontend is not connected yet.
+
+## Environment Files
+
+Create a local `.env` with real project values:
+
+```env
+SUPABASE_URL=
+SUPABASE_ANON_KEY=
+SITE_URL=
+```
+
+Keep `.env` local only. Do not commit it.
+
+The committed `.env.example` intentionally contains empty placeholders only.
+
+## Files Created
+
+- `supabase/migrations/20260427000000_initial_dealnest_schema.sql`
+- `supabase/seed.sql`
+- `.env.example`
+- `docs/supabase-setup.md`
+
+## SQL To Run In Supabase SQL Editor
+
+Run these in order:
+
+1. Open Supabase Dashboard.
+2. Select the DealNest project.
+3. Open SQL Editor.
+4. Copy all SQL from:
+   `supabase/migrations/20260427000000_initial_dealnest_schema.sql`
+5. Run it.
+6. Copy all SQL from:
+   `supabase/seed.sql`
+7. Run it.
+
+## What The Migration Creates
+
+- Public read tables for deals, stores, categories, coupons, approved comments, and approved community threads.
+- Authenticated-only tables/actions for votes, saved deals, reports, alerts, deal posting, comments, and community posting.
+- Moderator/admin-only tables for moderation queue, moderation actions, roles, and audit logs.
+- Storage buckets:
+  - `deal-images`
+  - `store-logos`
+  - `avatars`
+  - `community-uploads`
+
+## Guest Access Rule
+
+Guests can browse public shopping content:
+
+- Deals
+- Deal detail data
+- Categories
+- Stores
+- Coupons
+- Approved comments
+- Approved community threads/posts
+
+Guests cannot write data.
+
+## Authenticated User Rule
+
+Logged-in users can:
+
+- Submit pending deals
+- Vote once per deal
+- Save deals
+- Comment
+- Report deals
+- Create deal alerts
+- Upload allowed user content
+
+## Admin And Moderator Rule
+
+Moderators/admins can:
+
+- Review reports
+- Approve/reject deals
+- Hide comments/posts
+- Manage moderation queue
+- Manage coupons
+
+Admins additionally manage:
+
+- Roles
+- Categories
+- Stores
+- Audit logs
+
+## Important Safety Notes
+
+- Do not use the service role key in frontend code.
+- Do not commit `.env`.
+- Do not hardcode real Supabase URLs or keys in committed files.
+- Keep guest browsing open and only require login for write/account actions.

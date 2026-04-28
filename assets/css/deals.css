@@ -316,7 +316,7 @@ p {
 .auth-modal {
   position: fixed;
   inset: 0;
-  z-index: 180;
+  z-index: 9999;
   display: grid;
   place-items: center;
   padding: 18px;
@@ -334,6 +334,7 @@ p {
 
 .auth-dialog {
   position: relative;
+  z-index: 1;
   width: min(100%, 480px);
   border: 1px solid rgba(255, 255, 255, .78);
   border-radius: 30px;
@@ -344,6 +345,7 @@ p {
   padding: 28px;
   transform: translateY(18px) scale(.98);
   transition: transform .24s var(--ease);
+  pointer-events: auto;
 }
 
 .auth-modal.open .auth-dialog {
@@ -354,6 +356,7 @@ p {
   position: absolute;
   top: 18px;
   right: 18px;
+  z-index: 2;
   border: 1px solid var(--line);
   border-radius: 999px;
   color: var(--muted);

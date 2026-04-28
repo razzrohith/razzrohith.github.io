@@ -368,6 +368,12 @@
       if (button.dataset.authMode) setMode(button.dataset.authMode);
     });
 
+    document.addEventListener('keydown', (event) => {
+      if (event.key !== 'Escape') return;
+      const modal = document.getElementById('authModal');
+      if (modal?.classList.contains('open')) closeAuth();
+    });
+
     document.body.addEventListener('submit', async (event) => {
       if (event.target.id !== 'authForm') return;
       event.preventDefault();

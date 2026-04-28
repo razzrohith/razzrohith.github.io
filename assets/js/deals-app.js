@@ -10,6 +10,7 @@
     filters: new Set(),
     store: '',
     maxPrice: initialMaxPrice,
+    hasInteracted: Boolean(new URLSearchParams(window.location.search).get('q')),
     saved: new Set(JSON.parse(localStorage.getItem('dealnest:saved') || '[]')),
     voted: new Set(Auth?.user ? JSON.parse(localStorage.getItem('dealnest:voted') || '[]') : []),
     followedStores: new Set(JSON.parse(localStorage.getItem('dealnest:followedStores') || '[]'))
@@ -270,7 +271,11 @@
     els.dealFeed.removeAttribute('aria-busy');
     renderCards(els.dealFeed, filtered, false);
     els.resultCount.textContent = `${filtered.length} deal${filtered.length === 1 ? '' : 's'}`;
-    els.emptyState.classList.toggle('hidden', filtered.length > 0);
+    const showEmpty = filtered.length === 0 && state.hasInteracted;
+    els.emptyState.innerHTML = showEmpty
+      ? '<strong>No matching deals</strong><p>Try clearing filters, raising the price limit, or searching a broader keyword.</p>'
+      : '';
+    els.emptyState.classList.toggle('hidden', !showEmpty);
     window.DealNestMotion?.refresh();
   }
 
@@ -429,6 +434,7 @@
 
   function applyShortcut(value) {
     const category = data.categories.some((item) => item.name === value);
+    state.hasInteracted = true;
     state.filters.clear();
     state.query = '';
     if (category || ['Free Shipping', 'Expiring Soon', 'Popular', 'Gaming', 'Travel', 'Home', 'Fashion', 'Electronics', 'Kitchen', 'Audio', 'Outdoors', 'Wellness', 'Pets'].includes(value)) {
@@ -478,12 +484,14 @@
     els.search.value = state.query;
     els.searchForm.addEventListener('submit', (event) => {
       event.preventDefault();
+      state.hasInteracted = true;
       state.query = els.search.value;
       renderFeed();
       updateShortcutButtons();
       document.getElementById('hot-deals').scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
     els.search.addEventListener('input', () => {
+      state.hasInteracted = true;
       state.query = els.search.value;
       renderFeed();
       updateShortcutButtons();
@@ -491,6 +499,7 @@
     els.sortControls.addEventListener('click', (event) => {
       const button = event.target.closest('[data-sort]');
       if (!button) return;
+      state.hasInteracted = true;
       state.sort = button.dataset.sort;
       updateFilterButtons();
       renderFeed();
@@ -499,6 +508,7 @@
       const button = event.target.closest('[data-filter]');
       if (!button) return;
       const filter = button.dataset.filter;
+      state.hasInteracted = true;
       state.query = '';
       els.search.value = '';
       if (state.filters.has(filter)) state.filters.delete(filter);
@@ -513,10 +523,12 @@
       if (event.target.closest(actionableSelectors)) handleDealAction(event);
     });
     els.storeFilter.addEventListener('change', () => {
+      state.hasInteracted = true;
       state.store = els.storeFilter.value;
       renderFeed();
     });
     els.priceFilter.addEventListener('input', () => {
+      state.hasInteracted = true;
       state.maxPrice = Number(els.priceFilter.value);
       updateFilterButtons();
       renderFeed();
@@ -527,6 +539,7 @@
       state.filters.clear();
       state.store = '';
       state.maxPrice = initialMaxPrice;
+      state.hasInteracted = false;
       els.search.value = '';
       els.storeFilter.value = '';
       els.priceFilter.value = String(initialMaxPrice);

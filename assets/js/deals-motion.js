@@ -77,10 +77,12 @@
   function scrollProgress() {
     if (progressBound) return;
     progressBound = true;
-    const bar = document.createElement('div');
-    bar.className = 'scroll-progress';
-    bar.setAttribute('aria-hidden', 'true');
-    document.body.appendChild(bar);
+    const bar = document.querySelector('.scroll-progress') || document.createElement('div');
+    if (!bar.isConnected) {
+      bar.className = 'scroll-progress';
+      bar.setAttribute('aria-hidden', 'true');
+      document.body.appendChild(bar);
+    }
     const update = () => {
       const max = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
       bar.style.transform = `scaleX(${Math.min(window.scrollY / max, 1)})`;
@@ -94,18 +96,31 @@
     if (prefersReduced || magneticBound) return;
     magneticBound = true;
     const selector = '.post-button, .deal-action, .save-btn, .copy-btn, .heat-button, .ghost-button';
-    document.body.addEventListener('pointermove', (event) => {
-      const button = event.target.closest?.(selector);
-      if (!button || window.innerWidth < 760) return;
+    let activeButton = null;
+    let pendingEvent = null;
+    let frame = null;
+    const update = () => {
+      frame = null;
+      const button = activeButton;
+      const event = pendingEvent;
+      if (!button || !event) return;
       const rect = button.getBoundingClientRect();
       const x = (event.clientX - rect.left - rect.width / 2) / rect.width;
       const y = (event.clientY - rect.top - rect.height / 2) / rect.height;
       button.style.setProperty('--magnet-x', `${x * 8}px`);
       button.style.setProperty('--magnet-y', `${y * 6}px`);
+    };
+    document.body.addEventListener('pointermove', (event) => {
+      const button = event.target.closest?.(selector);
+      if (!button || window.innerWidth < 760) return;
+      activeButton = button;
+      pendingEvent = event;
+      frame ||= requestAnimationFrame(update);
     });
     document.body.addEventListener('pointerout', (event) => {
       const button = event.target.closest?.(selector);
       if (!button) return;
+      if (activeButton === button) activeButton = null;
       button.style.removeProperty('--magnet-x');
       button.style.removeProperty('--magnet-y');
     });
@@ -113,6 +128,7 @@
 
   function markEnhanced() {
     document.documentElement.classList.add('motion-enhanced');
+    document.documentElement.dataset.motion = prefersReduced ? 'reduced' : 'enhanced';
     document.querySelectorAll('.deal-card, .category-card, .store-card, .coupon-card, .topic-card, .dashboard-card, .admin-row')
       .forEach((node) => node.classList.add('depth-card'));
   }

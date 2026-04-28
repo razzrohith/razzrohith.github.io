@@ -131,6 +131,45 @@
     return body;
   }
 
+  function storagePath(path) {
+    return String(path || '')
+      .split('/')
+      .filter(Boolean)
+      .map((part) => encodeURIComponent(part))
+      .join('/');
+  }
+
+  function publicStorageUrl(bucket, path) {
+    if (isMissingConfig()) return '';
+    return `${supabaseUrl}/storage/v1/object/public/${encodeURIComponent(bucket)}/${storagePath(path)}`;
+  }
+
+  async function uploadFile(bucket, path, file, options = {}) {
+    if (isMissingConfig()) throw new Error('Supabase runtime config is missing.');
+    if (!session?.access_token) throw new Error('Please sign in first.');
+    const response = await fetch(`${supabaseUrl}/storage/v1/object/${encodeURIComponent(bucket)}/${storagePath(path)}`, {
+      method: 'POST',
+      headers: {
+        apikey: anonKey,
+        Authorization: `Bearer ${session.access_token}`,
+        'Content-Type': file.type || 'application/octet-stream',
+        'x-upsert': options.upsert ? 'true' : 'false'
+      },
+      body: file
+    });
+    const text = await response.text();
+    let body = null;
+    try {
+      body = text ? JSON.parse(text) : null;
+    } catch (error) {
+      body = text;
+    }
+    if (!response.ok) {
+      throw new Error(body?.message || body?.error || `Upload failed with ${response.status}`);
+    }
+    return { ...body, path, publicUrl: publicStorageUrl(bucket, path) };
+  }
+
   function toast(message) {
     let node = document.querySelector('.toast');
     if (!node) {
@@ -389,6 +428,8 @@
     requireAuth,
     rest,
     publicRest,
+    uploadFile,
+    publicStorageUrl,
     getRoles,
     toast,
     signIn,

@@ -188,6 +188,10 @@
     const heat = deal.heat + (hasVoted ? 1 : 0);
     const storeUrl = `./store.html?name=${encodeURIComponent(deal.store)}`;
     const categoryUrl = `./category.html?name=${encodeURIComponent(deal.category)}`;
+    const merchantUrl = deal.merchantUrl && deal.merchantUrl !== '#' ? deal.merchantUrl : storeUrl;
+    const statusNote = /expired|hidden|rejected|pending/i.test(deal.status)
+      ? `<div class="detail-state-note"><strong>${deal.status}</strong><span>This deal may be limited, under review, or unavailable from the main public feed.</span></div>`
+      : '';
     document.title = `${deal.title} | DealNest`;
     crumbTitle.textContent = deal.title;
 
@@ -213,6 +217,7 @@
         </div>
         <h1>${deal.title}</h1>
         <p class="deal-description">${deal.description}</p>
+        ${statusNote}
         <div class="summary-price">
           <span>${money(deal.currentPrice)}</span>
           <del>${money(deal.originalPrice)}</del>
@@ -222,6 +227,7 @@
           <div><span>Shipping</span><strong>${deal.shipping}</strong></div>
           <div><span>Posted</span><strong>${deal.postedTime}</strong></div>
           <div><span>Member</span><strong>${deal.postedBy}</strong></div>
+          <div><span>Expires</span><strong>${deal.expires || 'No deadline listed'}</strong></div>
           <div><span>Comments</span><strong>${deal.comments} replies</strong></div>
         </div>
 
@@ -240,14 +246,18 @@
           <button type="button" class="ghost-button" data-action="expired">Report expired</button>
         </div>
 
-        <a class="deal-merchant-button" href="${storeUrl}">Get deal at ${deal.store}</a>
+        <a class="deal-merchant-button" href="${merchantUrl}" target="_blank" rel="noopener">Get deal at ${deal.store}</a>
       </section>
     `;
     requestAnimationFrame(() => window.DealNestMotion?.refresh());
   }
 
   function renderInstructions() {
-    const steps = [
+    const customSteps = String(deal.instructions || '')
+      .split(/\n+/)
+      .map((step) => step.trim())
+      .filter(Boolean);
+    const steps = customSteps.length ? customSteps : [
       `Open the ${deal.store} offer page from the store button.`,
       deal.couponCode ? `Apply coupon code ${deal.couponCode} before checkout.` : 'Confirm the discount appears automatically in cart.',
       `Verify the final price is ${money(deal.currentPrice)} before tax and any optional services.`,

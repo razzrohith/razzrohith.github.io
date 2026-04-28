@@ -1049,6 +1049,12 @@ p {
   resize: vertical;
 }
 
+.deal-form input[readonly] {
+  color: var(--brand);
+  background: linear-gradient(135deg, rgba(168, 244, 222, .18), rgba(255, 207, 90, .14));
+  font-weight: 950;
+}
+
 .alert-builder output {
   display: block;
   border-radius: 16px;
@@ -2105,6 +2111,34 @@ p {
   line-height: 1.45;
 }
 
+.image-input-panel,
+.review-note,
+.detail-state-note {
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, .9), rgba(240, 253, 250, .7));
+  padding: 14px;
+}
+
+.image-input-panel {
+  display: grid;
+  gap: 8px;
+}
+
+.image-input-panel span,
+.review-note p,
+.detail-state-note span {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.45;
+  font-weight: 750;
+}
+
+.post-preview-panel {
+  position: sticky;
+  top: 110px;
+}
+
 .access-panel,
 .dashboard-card {
   border: 1px solid var(--line);
@@ -2142,6 +2176,10 @@ p {
   align-content: start;
 }
 
+.wide-dashboard-card {
+  grid-column: 1 / -1;
+}
+
 .dashboard-list {
   display: grid;
   gap: 10px;
@@ -2159,6 +2197,21 @@ p {
 .dashboard-list article {
   display: grid;
   gap: 6px;
+}
+
+.submitted-list article {
+  grid-template-columns: 82px minmax(0, 1fr);
+  align-items: center;
+}
+
+.submitted-list img,
+.admin-thumb img {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: contain;
+  border-radius: 16px;
+  background: #fff;
+  border: 1px solid var(--line);
 }
 
 .dashboard-list strong {
@@ -2269,6 +2322,15 @@ p {
   padding: 16px;
 }
 
+.admin-review-row {
+  grid-template-columns: 92px minmax(0, 1fr) auto auto;
+}
+
+.admin-thumb {
+  display: block;
+  min-width: 0;
+}
+
 .admin-row strong,
 .admin-row span,
 .admin-row small {
@@ -2288,6 +2350,10 @@ p {
   margin-top: 6px;
   color: var(--muted);
   line-height: 1.45;
+}
+
+.admin-row del {
+  color: var(--muted);
 }
 
 .admin-badges,

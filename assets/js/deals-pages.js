@@ -129,6 +129,34 @@
     return data.stores.find((store) => store.name === name)?.id || null;
   }
 
+  function calculateDiscount(price, original) {
+    if (!Number.isFinite(price) || !Number.isFinite(original) || price <= 0 || original <= 0 || price >= original) return 0;
+    return Math.max(0, Math.min(100, Math.round((1 - price / original) * 100)));
+  }
+
+  function normalizeImagePath(value) {
+    const trimmed = String(value || '').trim();
+    return trimmed || './assets/img/deals/monitor.svg';
+  }
+
+  function safeFileName(name) {
+    const cleaned = String(name || 'deal-image')
+      .toLowerCase()
+      .replace(/\.[^.]+$/, '')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 44) || 'deal-image';
+    return cleaned;
+  }
+
+  function validateDealImage(file) {
+    if (!file || !file.name) return '';
+    const allowed = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!allowed.includes(file.type)) return 'Upload a JPG, PNG, or WebP image.';
+    if (file.size > 5 * 1024 * 1024) return 'Deal images must be 5 MB or smaller.';
+    return '';
+  }
+
   function dealCard(deal, compactCard = false) {
     const isSaved = saved.has(deal.id);
     return `
@@ -263,7 +291,7 @@
   function postDeal() {
     const locked = !remoteEnabled() ? accessPanel('Sign in to post a deal', 'Browsing stays open to everyone, but submissions require an account and go to moderation before they appear publicly.') : '';
     pageShell('Post a deal', 'Submission studio', 'Submit a clear, verifiable deal. New submissions are saved as pending and must be approved before public display.',
-      `${locked}<section class="split-section post-workspace"><form class="section-block deal-form" id="postDealForm" novalidate><div class="section-heading"><div><p class="eyebrow">Required details</p><h2>Submit a clear, verifiable deal</h2></div></div><div class="form-grid"><label>Deal title<input name="title" value="Example: Premium monitor bundle" required></label><label>Deal URL<input name="url" value="https://example.com/deal" required></label><label>Current price<input name="price" value="229" required></label><label>Original price<input name="original" value="389" required></label><label>Store<select name="store">${data.stores.map((store) => `<option value="${store.name}">${store.name}</option>`).join('')}</select></label><label>Category<select name="category">${data.categories.map((category) => `<option value="${category.name}">${category.name}</option>`).join('')}</select></label><label>Coupon code<input name="coupon" value="SAVE40"></label><label>Expiration date<input name="expires" type="date"></label><label class="wide-field">Image URL or upload placeholder<input name="image" value="./assets/img/deals/monitor.svg"></label><label class="wide-field">Description<textarea name="description" rows="5">Include final price, shipping notes, coupon terms, and why the deal is useful.</textarea></label></div><button class="post-button" type="submit">${remoteEnabled() ? 'Submit for review' : 'Sign in to submit'}</button><div class="form-errors" id="postErrors" aria-live="polite"></div></form><aside class="section-block"><div class="section-heading"><div><p class="eyebrow">Live preview</p><h2>Deal card preview</h2></div></div><div id="postPreview"></div></aside></section>`);
+      `${locked}<section class="split-section post-workspace"><form class="section-block deal-form" id="postDealForm" novalidate><div class="section-heading"><div><p class="eyebrow">Submission details</p><h2>Build a moderator-ready deal</h2><p>Give reviewers the final price, source URL, product context, and image proof in one pass.</p></div></div><div class="form-grid"><label class="wide-field">Deal title<input name="title" placeholder="Example: 27-inch creator monitor with USB-C dock" required></label><label>Deal URL<input name="url" type="url" placeholder="https://example.com/deal" required></label><label>Store<select name="store" required><option value="">Choose store</option>${data.stores.map((store) => `<option value="${store.name}">${store.name}</option>`).join('')}</select></label><label>Category<select name="category" required><option value="">Choose category</option>${data.categories.map((category) => `<option value="${category.name}">${category.name}</option>`).join('')}</select></label><label>Current price<input name="price" inputmode="decimal" placeholder="229.00" required></label><label>Original price<input name="original" inputmode="decimal" placeholder="389.00" required></label><label>Discount %<input name="discount" inputmode="numeric" placeholder="Auto" readonly></label><label>Coupon code<input name="coupon" placeholder="Optional"></label><label>Shipping info<input name="shipping" placeholder="Free shipping, store pickup, or delivery terms"></label><label>Expiration date<input name="expires" type="date"></label><label class="wide-field">Short description<textarea name="description" rows="4" placeholder="What is the product, who is it for, and what makes this a strong deal?" required></textarea></label><label class="wide-field">Detailed instructions<textarea name="instructions" rows="4" placeholder="Add coupon steps, cart notes, membership requirements, rebate details, or checkout warnings."></textarea></label><div class="wide-field image-input-panel"><label>Upload product image<input name="imageFile" type="file" accept="image/jpeg,image/png,image/webp"></label><span>JPG, PNG, or WebP up to 5 MB. Images are reviewed with the deal.</span></div><label class="wide-field">Or use image URL<input name="image" placeholder="./assets/img/deals/monitor.svg"></label></div><button class="post-button" type="submit">${remoteEnabled() ? 'Submit for review' : 'Sign in to submit'}</button><div class="form-errors" id="postErrors" aria-live="polite">Submissions are private until a moderator approves them.</div></form><aside class="section-block post-preview-panel"><div class="section-heading"><div><p class="eyebrow">Live preview</p><h2>Moderator preview</h2></div></div><div id="postPreview"></div><div class="review-note"><strong>Moderation promise</strong><p>Your submission stays pending until reviewed. You cannot self-publish it.</p></div></aside></section>`);
     renderPostPreview();
   }
 
@@ -274,18 +302,24 @@
     const values = Object.fromEntries(new FormData(form).entries());
     const price = Number(values.price) || 0;
     const original = Number(values.original) || price;
-    const discount = original > price ? Math.round((1 - price / original) * 100) : 0;
+    const discount = calculateDiscount(price, original);
+    const discountInput = form.elements.discount;
+    if (discountInput) discountInput.value = discount ? String(discount) : '';
+    const file = form.elements.imageFile?.files?.[0];
+    const image = file ? URL.createObjectURL(file) : normalizeImagePath(values.image);
+    const store = values.store || data.stores[0]?.name || 'DealNest Store';
+    const category = values.category || data.categories[0]?.name || 'Deals';
     preview.innerHTML = dealCard({
       id: 'preview-deal',
       title: values.title || 'Untitled deal',
       description: values.description || 'Add a helpful description.',
-      image: values.image || './assets/img/deals/monitor.svg',
+      image,
       currentPrice: price,
       originalPrice: original,
       discount,
-      store: values.store,
-      category: values.category,
-      shipping: 'Shipping details required',
+      store,
+      category,
+      shipping: values.shipping || 'Shipping details required',
       postedTime: 'Preview',
       postedBy: 'you',
       heat: 0,
@@ -294,7 +328,7 @@
       couponCode: values.coupon,
       status: 'Draft',
       dealUrl: '#',
-      tags: [values.category]
+      tags: [category]
     });
   }
 
@@ -358,7 +392,7 @@
 
   async function fetchAdminData() {
     const [deals, reports, queue] = await Promise.all([
-      Auth.rest('deals?select=id,slug,title,status,moderation_status,current_price,original_price,discount_percent,shipping_info,coupon_code,created_at,updated_at,stores(name),categories(name)&order=created_at.desc&limit=200'),
+      Auth.rest('deals?select=id,slug,title,description,instructions,deal_url,image_url,status,moderation_status,current_price,original_price,discount_percent,shipping_info,coupon_code,posted_by,created_at,updated_at,stores(name),categories(name)&order=created_at.desc&limit=200'),
       Auth.rest('deal_reports?select=id,reason,details,status,created_at,deal_id,deals(title,slug,status,moderation_status)&order=created_at.desc&limit=100').catch(() => []),
       Auth.rest('moderation_queue?select=id,entity_type,entity_id,title,reason,priority,status,created_at,updated_at&order=created_at.desc&limit=100').catch(() => [])
     ]);
@@ -382,12 +416,18 @@
 
   function renderAdminDealRow(deal) {
     const needsReview = deal.status === 'pending' || deal.moderation_status === 'pending';
+    const submitter = deal.posted_by ? `${deal.posted_by.slice(0, 8)}...` : 'Seed or system';
     return `
-      <article class="admin-row motion-item" data-admin-status="${deal.status}" data-admin-moderation="${deal.moderation_status}">
+      <article class="admin-row admin-review-row motion-item" data-admin-status="${deal.status}" data-admin-moderation="${deal.moderation_status}">
+        <a class="admin-thumb" href="${deal.image_url || './assets/img/deals/monitor.svg'}" target="_blank" rel="noopener" aria-label="Open submitted image">
+          <img src="${deal.image_url || './assets/img/deals/monitor.svg'}" alt="">
+        </a>
         <div>
           <strong>${deal.title}</strong>
-          <span>${adminDealStore(deal)} / ${adminDealCategory(deal)} / ${money(Number(deal.current_price || 0))}</span>
-          <small>Submitted ${adminDate(deal.created_at)} / updated ${adminDate(deal.updated_at)}</small>
+          <span>${adminDealStore(deal)} / ${adminDealCategory(deal)} / ${money(Number(deal.current_price || 0))} <del>${deal.original_price ? money(Number(deal.original_price)) : ''}</del> / ${deal.discount_percent || 0}% off</span>
+          <small>Submitter ${submitter} / ${deal.shipping_info || 'No shipping note'} / ${deal.coupon_code || 'No coupon'}</small>
+          <small>${deal.description || 'No description'} ${deal.instructions ? `/ ${deal.instructions}` : ''}</small>
+          ${deal.deal_url ? `<a class="text-link" href="${deal.deal_url}" target="_blank" rel="noopener">Open submitted URL</a>` : ''}
         </div>
         <div class="admin-badges">
           <b>${adminStatus(deal.status)}</b>
@@ -501,14 +541,15 @@
     const userId = Auth.currentUserId();
     const [savedRows, postedRows, commentRows, alertRows] = await Promise.all([
       fetchRows(`saved_deals?select=deal_id,created_at&user_id=eq.${encodeURIComponent(userId)}&order=created_at.desc`),
-      fetchRows(`deals?select=id,slug,title,status,moderation_status,created_at&posted_by=eq.${encodeURIComponent(userId)}&order=created_at.desc`),
+      fetchRows(`deals?select=id,slug,title,status,moderation_status,image_url,current_price,original_price,discount_percent,created_at,updated_at&posted_by=eq.${encodeURIComponent(userId)}&order=created_at.desc`),
       fetchRows(`deal_comments?select=id,body,created_at,deal_id&user_id=eq.${encodeURIComponent(userId)}&order=created_at.desc`),
       fetchRows(`deal_alerts?select=id,keyword,max_price,min_discount_percent,is_active,created_at&user_id=eq.${encodeURIComponent(userId)}&order=created_at.desc`)
     ]);
     const savedDeals = savedRows.map((row) => dealById(row.deal_id)).filter(Boolean);
     const memberName = Auth.user?.user_metadata?.display_name || Auth.user?.email?.split('@')[0] || 'DealNest member';
+    const postedCount = (status, moderation) => postedRows.filter((deal) => (!status || deal.status === status) && (!moderation || deal.moderation_status === moderation)).length;
     pageShell('Your dashboard', 'Member workspace', 'A private hub for your saved deals, posted deals, comments, alerts, and account profile.',
-      `<section class="section-block"><div class="trust-strip">${stat('saved', savedDeals.length, 'Deals synced to your account.')}${stat('submitted', postedRows.length, 'Pending and reviewed submissions.')}${stat('alerts', alertRows.length, 'Account alert rules.')}</div></section><section class="dashboard-grid"><article class="dashboard-card"><h3>Profile</h3><div class="profile-line"><strong>${memberName}</strong><span>${Auth.user?.email || ''}</span></div><a class="deal-action" href="./post-deal.html">Post a deal</a></article><article class="dashboard-card"><h3>Saved deals</h3><div class="dashboard-list">${savedDeals.map((deal) => `<article><strong><a href="${deal.dealUrl}">${deal.title}</a></strong><span>${deal.store} / ${money(deal.currentPrice)}</span></article>`).join('') || '<p>No account saves yet.</p>'}</div></article><article class="dashboard-card"><h3>Posted deals</h3><div class="dashboard-list">${postedRows.map((deal) => `<article><strong>${deal.title}</strong><span class="status-pill">${deal.status} / ${deal.moderation_status}</span></article>`).join('') || '<p>No submissions yet.</p>'}</div></article><article class="dashboard-card"><h3>Comments</h3><div class="dashboard-list">${commentRows.slice(0, 6).map((comment) => `<article><strong>${new Date(comment.created_at).toLocaleDateString()}</strong><p>${comment.body}</p></article>`).join('') || '<p>No comments yet.</p>'}</div></article><article class="dashboard-card"><h3>Deal alerts</h3><div class="dashboard-list">${alertRows.map((alert) => `<article><strong>${alert.keyword || 'Any keyword'}</strong><span>Under ${alert.max_price ? money(Number(alert.max_price)) : 'any price'} / ${alert.min_discount_percent || 0}%+ off</span></article>`).join('') || '<p>No alerts yet.</p>'}</div></article></section>`);
+      `<section class="section-block"><div class="trust-strip">${stat('saved', savedDeals.length, 'Deals synced to your account.')}${stat('pending', postedCount('pending', 'pending'), 'Waiting for moderator review.')}${stat('approved', postedRows.filter((deal) => deal.moderation_status === 'approved').length, 'Approved or previously approved submissions.')}${stat('rejected', postedRows.filter((deal) => deal.moderation_status === 'rejected').length, 'Needs a better price, source, or details.')}${stat('alerts', alertRows.length, 'Account alert rules.')}</div></section><section class="dashboard-grid"><article class="dashboard-card"><h3>Profile</h3><div class="profile-line"><strong>${memberName}</strong><span>${Auth.user?.email || ''}</span></div><a class="deal-action" href="./post-deal.html">Post a deal</a></article><article class="dashboard-card"><h3>Saved deals</h3><div class="dashboard-list">${savedDeals.map((deal) => `<article><strong><a href="${deal.dealUrl}">${deal.title}</a></strong><span>${deal.store} / ${money(deal.currentPrice)}</span></article>`).join('') || '<p>No account saves yet.</p>'}</div></article><article class="dashboard-card wide-dashboard-card"><h3>Submitted deals</h3><div class="dashboard-list submitted-list">${postedRows.map((deal) => `<article><img src="${deal.image_url || './assets/img/deals/monitor.svg'}" alt=""><div><strong>${deal.title}</strong><span class="status-pill">${deal.status} / ${deal.moderation_status}</span><span>${money(Number(deal.current_price || 0))}${deal.original_price ? ` from ${money(Number(deal.original_price))}` : ''} / ${deal.discount_percent || 0}% off</span><small>Submitted ${adminDate(deal.created_at)} / updated ${adminDate(deal.updated_at)}</small></div></article>`).join('') || '<p>No submissions yet.</p>'}</div></article><article class="dashboard-card"><h3>Comments</h3><div class="dashboard-list">${commentRows.slice(0, 6).map((comment) => `<article><strong>${new Date(comment.created_at).toLocaleDateString()}</strong><p>${comment.body}</p></article>`).join('') || '<p>No comments yet.</p>'}</div></article><article class="dashboard-card"><h3>Deal alerts</h3><div class="dashboard-list">${alertRows.map((alert) => `<article><strong>${alert.keyword || 'Any keyword'}</strong><span>Under ${alert.max_price ? money(Number(alert.max_price)) : 'any price'} / ${alert.min_discount_percent || 0}%+ off</span></article>`).join('') || '<p>No alerts yet.</p>'}</div></article></section>`);
   }
 
   async function admin() {
@@ -563,13 +604,33 @@
     if (event.target.id === 'postDealForm') {
       event.preventDefault();
       if (!requireMember('post-deal', 'Sign in to submit deals for moderation.')) return;
-      const values = Object.fromEntries(new FormData(event.target).entries());
+      const form = event.target;
+      const submitButton = form.querySelector('button[type="submit"]');
+      const values = Object.fromEntries(new FormData(form).entries());
+      const file = form.elements.imageFile?.files?.[0];
+      const price = Number(values.price);
+      const original = Number(values.original);
+      const discount = calculateDiscount(price, original);
       const errors = [];
-      if (!values.title || values.title.length < 12) errors.push('Use a clearer title with at least 12 characters.');
-      if (!/^https?:\/\//i.test(values.url || '')) errors.push('Add a valid deal URL beginning with http or https.');
-      if (Number(values.price) <= 0 || Number(values.original) <= 0) errors.push('Add valid current and original prices.');
-      if (Number(values.price) >= Number(values.original)) errors.push('Current price should be lower than original price.');
+      const title = String(values.title || '').trim();
+      const description = String(values.description || '').trim();
+      const instructions = String(values.instructions || '').trim();
+      const shipping = String(values.shipping || '').trim();
+      let parsedUrl = null;
+      try {
+        parsedUrl = new URL(values.url);
+      } catch (error) {
+        parsedUrl = null;
+      }
+      if (!title || title.length < 12) errors.push('Use a clearer title with at least 12 characters.');
+      if (!parsedUrl || !/^https?:$/i.test(parsedUrl.protocol)) errors.push('Add a valid deal URL beginning with http or https.');
+      if (!Number.isFinite(price) || price <= 0 || !Number.isFinite(original) || original <= 0) errors.push('Add valid current and original prices.');
+      if (Number.isFinite(price) && Number.isFinite(original) && price >= original) errors.push('Current price should be lower than original price.');
       if (!categoryId(values.category) || !storeId(values.store)) errors.push('Choose a valid store and category from the list.');
+      if (description.length < 20) errors.push('Add a short description with at least 20 characters.');
+      if (!shipping) errors.push('Add shipping or pickup information.');
+      const fileError = validateDealImage(file);
+      if (fileError) errors.push(fileError);
       const output = document.getElementById('postErrors');
       if (errors.length) {
         output.textContent = errors.join(' ');
@@ -577,25 +638,25 @@
         return;
       }
       output.textContent = 'Submitting for review...';
-      const price = Number(values.price);
-      const original = Number(values.original);
-      const discount = Math.round((1 - price / original) * 100);
+      submitButton.disabled = true;
+      submitButton.textContent = 'Submitting...';
       try {
-        await Auth.rest('deals', {
+        const createdRows = await Auth.rest('deals?select=id,slug,status,moderation_status', {
           method: 'POST',
           body: {
-            slug: `${slugify(values.title)}-${Date.now().toString(36)}`,
-            title: values.title,
-            description: values.description,
-            deal_url: values.url,
-            image_url: values.image || './assets/img/deals/monitor.svg',
+            slug: `${slugify(title)}-${Date.now().toString(36)}`,
+            title,
+            description,
+            instructions,
+            deal_url: parsedUrl.href,
+            image_url: normalizeImagePath(values.image),
             current_price: price,
             original_price: original,
             discount_percent: discount,
             store_id: storeId(values.store),
             category_id: categoryId(values.category),
             posted_by: Auth.currentUserId(),
-            shipping_info: 'Submitted by member',
+            shipping_info: shipping,
             coupon_code: values.coupon || null,
             expires_at: values.expires ? new Date(values.expires).toISOString() : null,
             status: 'pending',
@@ -603,11 +664,43 @@
             tags: [values.category, values.store].filter(Boolean)
           }
         });
+        const created = createdRows?.[0];
+        let uploadedUrl = '';
+        if (file && created?.id && Auth.uploadFile) {
+          output.textContent = 'Uploading image...';
+          const extension = file.type === 'image/png' ? 'png' : file.type === 'image/webp' ? 'webp' : 'jpg';
+          const path = `${Auth.currentUserId()}/${created.id}/${Date.now()}-${safeFileName(file.name)}.${extension}`;
+          const upload = await Auth.uploadFile('deal-images', path, file, { upsert: false });
+          uploadedUrl = upload.publicUrl;
+          await Auth.rest(`deals?id=eq.${encodeURIComponent(created.id)}`, {
+            method: 'PATCH',
+            body: {
+              image_url: uploadedUrl,
+              status: 'pending',
+              moderation_status: 'pending'
+            }
+          });
+          await Auth.rest('deal_images', {
+            method: 'POST',
+            body: {
+              deal_id: created.id,
+              image_url: uploadedUrl,
+              alt_text: title,
+              sort_order: 0
+            }
+          }).catch(() => {});
+        }
         output.textContent = 'Your deal was submitted for review.';
         toast('Deal submitted for review');
+        form.reset();
+        renderPostPreview();
+        if (uploadedUrl) output.textContent = 'Your deal and image were submitted for review.';
       } catch (error) {
         output.textContent = error.message;
         toast('Submission could not be saved');
+      } finally {
+        submitButton.disabled = false;
+        submitButton.textContent = 'Submit for review';
       }
     }
     if (event.target.id === 'alertForm') {

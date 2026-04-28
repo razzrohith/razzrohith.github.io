@@ -59,6 +59,7 @@ If you are applying later incremental migrations, also run them in timestamp ord
 
 - `supabase/migrations/20260427020000_add_auth_action_foundation.sql`
 - `supabase/migrations/20260428000000_lock_owner_deal_updates.sql`
+- `supabase/migrations/20260428010000_tighten_deal_image_storage.sql`
 
 ## What The Migration Creates
 
@@ -152,6 +153,8 @@ and status in ('live', 'expiring_soon')
 ```
 
 Normal users must not be able to self-approve their own submissions. The migration `20260428000000_lock_owner_deal_updates.sql` tightens owner deal edits so user-owned rows can remain `pending/pending` only; admin/moderator approval still goes through moderator policies.
+
+Deal image uploads use the public `deal-images` storage bucket. The migration `20260428010000_tighten_deal_image_storage.sql` keeps public image reads available, limits uploads to JPG/PNG/WebP files up to 5 MB, and requires member uploads to be stored under a top-level folder matching the uploader's Auth user id. Frontend uploads should use paths shaped like `USER_ID/DEAL_ID/file-name.webp` and should not use upsert/overwrite behavior.
 
 ## Important Safety Notes
 

@@ -138,6 +138,8 @@
       id,
       title: row.title,
       description: row.description || 'Community-submitted deal.',
+      instructions: row.instructions || '',
+      merchantUrl: row.deal_url || '#',
       image: row.image_url || './assets/img/deals/monitor.svg',
       currentPrice: Number(row.current_price || 0),
       originalPrice: Number(row.original_price || row.current_price || 0),

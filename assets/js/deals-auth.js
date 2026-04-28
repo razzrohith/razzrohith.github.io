@@ -151,9 +151,15 @@
 
   function renderHeaderAuth() {
     document.querySelectorAll('.header-actions').forEach((actions) => {
-      const primaryPost = actions.querySelector('a[href="./post-deal.html"], a[href="post-deal.html"]');
       const existing = actions.querySelector('.auth-actions');
       existing?.remove();
+      actions.querySelectorAll('a, button').forEach((item) => {
+        const href = item.getAttribute('href') || '';
+        const label = item.textContent.trim().toLowerCase();
+        const isLegacyLogin = href.endsWith('login.html') || ['login', 'log in', 'sign up', 'logout', 'dashboard'].includes(label);
+        if (isLegacyLogin && !item.closest('.auth-actions')) item.remove();
+      });
+      const primaryPost = actions.querySelector('a[href="./post-deal.html"], a[href="post-deal.html"]');
       const wrap = document.createElement('div');
       wrap.className = 'auth-actions';
       if (session?.user) {

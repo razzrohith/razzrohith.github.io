@@ -3,12 +3,13 @@
   const data = window.DealScoutData;
   const Auth = window.DealNestAuth;
   const storeNames = data.stores.map((store) => store.name);
+  const initialMaxPrice = Math.max(100, Math.ceil(Math.max(...data.deals.map((deal) => Number(deal.currentPrice) || 0), 900) / 25) * 25);
   const state = {
     query: new URLSearchParams(window.location.search).get('q') || '',
     sort: 'trending',
     filters: new Set(),
     store: '',
-    maxPrice: 900,
+    maxPrice: initialMaxPrice,
     saved: new Set(JSON.parse(localStorage.getItem('dealnest:saved') || '[]')),
     voted: new Set(Auth?.user ? JSON.parse(localStorage.getItem('dealnest:voted') || '[]') : []),
     followedStores: new Set(JSON.parse(localStorage.getItem('dealnest:followedStores') || '[]'))
@@ -176,18 +177,21 @@
   }
 
   function dealTokens(deal) {
-    const values = [deal.category, deal.status, deal.store, deal.shipping, ...deal.tags];
-    return values.flatMap((value) => [value, value.toLowerCase()]);
+    const tags = Array.isArray(deal.tags) ? deal.tags : [];
+    const values = [deal.category, deal.status, deal.store, deal.shipping, ...tags].filter(Boolean);
+    return values.flatMap((value) => [String(value), String(value).toLowerCase()]);
   }
 
   function matchesDeal(deal) {
     const query = state.query.trim().toLowerCase();
-    const haystack = [deal.title, deal.description, deal.store, deal.category, deal.shipping, deal.couponCode, ...deal.tags]
+    const tags = Array.isArray(deal.tags) ? deal.tags : [];
+    const haystack = [deal.title, deal.description, deal.store, deal.category, deal.shipping, deal.couponCode, ...tags]
+      .filter(Boolean)
       .join(' ')
       .toLowerCase();
     if (query && !haystack.includes(query)) return false;
     if (state.store && deal.store !== state.store) return false;
-    if (deal.currentPrice > state.maxPrice) return false;
+    if (Number(deal.currentPrice) > state.maxPrice) return false;
     if (state.filters.size > 0) {
       const tokens = new Set(dealTokens(deal));
       const hasEveryFilter = [...state.filters].every((filter) => tokens.has(filter) || tokens.has(filter.toLowerCase()));
@@ -520,10 +524,10 @@
       state.sort = 'trending';
       state.filters.clear();
       state.store = '';
-      state.maxPrice = 900;
+      state.maxPrice = initialMaxPrice;
       els.search.value = '';
       els.storeFilter.value = '';
-      els.priceFilter.value = '900';
+      els.priceFilter.value = String(initialMaxPrice);
       updateFilterButtons();
       updateShortcutButtons();
       renderFeed();
@@ -551,6 +555,8 @@
     if (event.detail?.type === 'vote') addHeat(event.detail.dealId);
   });
 
+  els.priceFilter.max = String(initialMaxPrice);
+  els.priceFilter.value = String(initialMaxPrice);
   await syncMemberState();
   populateStores();
   renderStaticSections();

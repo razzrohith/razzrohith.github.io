@@ -266,6 +266,8 @@
 
   function renderFeed() {
     const filtered = sortDeals(data.deals.filter(matchesDeal));
+    els.dealFeed.classList.remove('feed-skeleton');
+    els.dealFeed.removeAttribute('aria-busy');
     renderCards(els.dealFeed, filtered, false);
     els.resultCount.textContent = `${filtered.length} deal${filtered.length === 1 ? '' : 's'}`;
     els.emptyState.classList.toggle('hidden', filtered.length > 0);
@@ -564,4 +566,5 @@
   updateShortcutButtons();
   renderFeed();
   bindEvents();
+  document.documentElement.classList.add('dealnest-ready');
 }());

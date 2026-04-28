@@ -3,6 +3,8 @@
   let revealObserver;
   let counterObserver;
   let ticking = false;
+  let magneticBound = false;
+  let progressBound = false;
 
   function reveal() {
     const items = document.querySelectorAll('.motion-item:not(.in-view)');
@@ -72,14 +74,60 @@
     }, { passive: true });
   }
 
+  function scrollProgress() {
+    if (progressBound) return;
+    progressBound = true;
+    const bar = document.createElement('div');
+    bar.className = 'scroll-progress';
+    bar.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(bar);
+    const update = () => {
+      const max = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
+      bar.style.transform = `scaleX(${Math.min(window.scrollY / max, 1)})`;
+    };
+    update();
+    window.addEventListener('scroll', update, { passive: true });
+    window.addEventListener('resize', update, { passive: true });
+  }
+
+  function magneticButtons() {
+    if (prefersReduced || magneticBound) return;
+    magneticBound = true;
+    const selector = '.post-button, .deal-action, .save-btn, .copy-btn, .heat-button, .ghost-button';
+    document.body.addEventListener('pointermove', (event) => {
+      const button = event.target.closest?.(selector);
+      if (!button || window.innerWidth < 760) return;
+      const rect = button.getBoundingClientRect();
+      const x = (event.clientX - rect.left - rect.width / 2) / rect.width;
+      const y = (event.clientY - rect.top - rect.height / 2) / rect.height;
+      button.style.setProperty('--magnet-x', `${x * 8}px`);
+      button.style.setProperty('--magnet-y', `${y * 6}px`);
+    });
+    document.body.addEventListener('pointerout', (event) => {
+      const button = event.target.closest?.(selector);
+      if (!button) return;
+      button.style.removeProperty('--magnet-x');
+      button.style.removeProperty('--magnet-y');
+    });
+  }
+
+  function markEnhanced() {
+    document.documentElement.classList.add('motion-enhanced');
+    document.querySelectorAll('.deal-card, .category-card, .store-card, .coupon-card, .topic-card, .dashboard-card, .admin-row')
+      .forEach((node) => node.classList.add('depth-card'));
+  }
+
   function refresh() {
+    markEnhanced();
     reveal();
     counters();
+    magneticButtons();
   }
 
   window.DealNestMotion = { refresh };
   document.addEventListener('DOMContentLoaded', () => {
     refresh();
+    scrollProgress();
     parallax();
   });
 }());

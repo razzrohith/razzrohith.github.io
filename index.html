@@ -164,9 +164,13 @@
             <p class="eyebrow">Community ranked</p>
             <h2>Hot deals feed</h2>
           </div>
-          <span id="resultCount">Loading deals</span>
+          <span id="resultCount">Syncing live deals</span>
         </div>
-        <div class="deal-grid" id="dealFeed"></div>
+        <div class="deal-grid feed-skeleton" id="dealFeed" aria-busy="true">
+          <article></article>
+          <article></article>
+          <article></article>
+        </div>
         <div class="empty-state hidden" id="emptyState">
           <strong>No matching deals yet</strong>
           <p>Try clearing filters or searching for a broader category.</p>

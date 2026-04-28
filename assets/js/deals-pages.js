@@ -254,6 +254,22 @@
     pageShell('Community hub', 'Discussion layer', 'A populated forum preview for deal safety, coupon reports, buying advice, and category-specific conversation.',
       `<section class="community-section community-page"><div><h2>Members make the signal stronger.</h2><p>Use discussion previews to validate deal quality before clicking through. Reputation, moderation, and thread detail pages can plug into this structure later.</p><div class="hero-pills">${topTags.map((tag) => `<button type="button" data-placeholder="${tag} threads will open when forum routing is added.">${tag}</button>`).join('')}</div></div><div class="topic-list">${data.communityTopics.map((topic) => `<article class="topic-card motion-item"><div><strong>${topic.title}</strong><span>${topic.tag} / ${topic.user}</span><p>${data.users.find((user) => user.username === topic.user)?.badge || 'Community member'}</p></div><b>${topic.replies} replies</b></article>`).join('')}</div></section>
       <section class="section-block"><div class="section-heading"><div><p class="eyebrow">Community standards</p><h2>Guidelines that keep deals useful</h2></div></div><div class="trust-strip">${stat('Verify price', '01', 'Post final cart price, shipping, coupon terms, and expiration context.')}${stat('Compare stores', '02', 'Mention warranty, return windows, and marketplace risk where relevant.')}${stat('Respect signal', '03', 'Vote on deal quality and report expired or misleading offers.')}</div></section>`);
+    window.DealNestSEO?.jsonLd('dealnest-community-jsonld', {
+      '@context': 'https://schema.org',
+      '@type': 'ItemList',
+      name: 'DealNest community discussions',
+      itemListElement: data.communityTopics.slice(0, 8).map((topic, index) => ({
+        '@type': 'ListItem',
+        position: index + 1,
+        item: {
+          '@type': 'DiscussionForumPosting',
+          headline: topic.title,
+          author: { '@type': 'Person', name: topic.user },
+          about: topic.tag,
+          commentCount: topic.replies
+        }
+      }))
+    });
   }
 
   function search() {

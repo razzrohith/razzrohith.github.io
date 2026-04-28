@@ -5,7 +5,25 @@
   const Discovery = window.DealNestDiscovery;
   const params = new URLSearchParams(window.location.search);
   const requestedId = params.get('id');
-  const deal = data.deals.find((item) => item.id === requestedId || item.slug === requestedId || item.uuid === requestedId) || data.deals[0];
+  function findDealFromRequest(id) {
+    const direct = data.deals.find((item) => item.id === id || item.slug === id || item.uuid === id);
+    if (direct || !id) return direct;
+    const terms = String(id)
+      .toLowerCase()
+      .replace(/^deal-/, '')
+      .replace(/-\d+$/, '')
+      .split(/[^a-z0-9]+/)
+      .filter((term) => term.length > 2);
+    if (!terms.length) return null;
+    return data.deals.find((item) => {
+      const text = [item.title, item.store, item.category, ...(Array.isArray(item.tags) ? item.tags : [])].join(' ').toLowerCase();
+      return terms.every((term) => text.includes(term));
+    }) || data.deals.find((item) => {
+      const text = [item.title, ...(Array.isArray(item.tags) ? item.tags : [])].join(' ').toLowerCase();
+      return terms.some((term) => text.includes(term));
+    });
+  }
+  const deal = findDealFromRequest(requestedId) || data.deals[0];
   const saved = new Set(JSON.parse(localStorage.getItem('dealnest:saved') || '[]'));
   const voted = new Set(Auth?.user ? JSON.parse(localStorage.getItem('dealnest:voted') || '[]') : []);
 
@@ -18,6 +36,20 @@
   const instructionList = document.getElementById('instructionList');
   const menuToggle = document.getElementById('menuToggle');
   const primaryNav = document.getElementById('primaryNav');
+
+  function absoluteAssetUrl(value) {
+    try {
+      return new URL(value || './assets/img/dealnest-share.svg', window.DealNestSEO?.siteUrl || window.location.origin).href;
+    } catch (error) {
+      return `${window.location.origin}/assets/img/dealnest-share.svg`;
+    }
+  }
+
+  function cleanDealUrl() {
+    const canonical = window.DealNestSEO?.absoluteUrl(`deal.html?id=${encodeURIComponent(deal.id)}`)
+      || `${window.location.origin}${window.location.pathname}?id=${encodeURIComponent(deal.id)}`;
+    return canonical;
+  }
 
   function money(value) {
     return new Intl.NumberFormat('en-US', {
@@ -195,6 +227,40 @@
       : '';
     document.title = `${deal.title} | DealNest`;
     crumbTitle.textContent = deal.title;
+    const canonicalUrl = cleanDealUrl();
+    const metaDescription = `${deal.title} at ${deal.store}: ${money(deal.currentPrice)}${deal.originalPrice ? ` from ${money(deal.originalPrice)}` : ''}. ${deal.description}`.slice(0, 250);
+    window.DealNestSEO?.update({
+      title: `${deal.title} | ${money(deal.currentPrice)} at ${deal.store} | DealNest`,
+      description: metaDescription,
+      canonical: canonicalUrl,
+      image: absoluteAssetUrl(deal.image),
+      type: 'product'
+    });
+    window.DealNestSEO?.jsonLd('dealnest-breadcrumb-jsonld', {
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'DealNest', item: window.DealNestSEO.absoluteUrl('/') },
+        { '@type': 'ListItem', position: 2, name: 'Hot deals', item: window.DealNestSEO.absoluteUrl('/#hot-deals') },
+        { '@type': 'ListItem', position: 3, name: deal.title, item: canonicalUrl }
+      ]
+    });
+    window.DealNestSEO?.jsonLd('dealnest-product-jsonld', {
+      '@context': 'https://schema.org',
+      '@type': 'Product',
+      name: deal.title,
+      description: deal.description,
+      image: absoluteAssetUrl(deal.image),
+      brand: { '@type': 'Brand', name: deal.store },
+      offers: {
+        '@type': 'Offer',
+        url: canonicalUrl,
+        priceCurrency: 'USD',
+        price: Number(deal.currentPrice || 0).toFixed(2),
+        availability: /expired|hidden|rejected|pending/i.test(deal.status) ? 'https://schema.org/OutOfStock' : 'https://schema.org/InStock',
+        seller: { '@type': 'Organization', name: deal.store }
+      }
+    });
 
     detail.innerHTML = `
       <section class="product-gallery motion-item">
@@ -327,8 +393,16 @@
       await toggleSaved();
     }
     if (action === 'share') {
-      const url = window.location.href;
-      navigator.clipboard?.writeText(url).then(() => toast('Deal link copied')).catch(() => toast('Share link ready in the address bar'));
+      const url = cleanDealUrl();
+      const title = `${deal.title} | DealNest`;
+      const text = `${money(deal.currentPrice)} at ${deal.store}. ${deal.description}`;
+      if (navigator.share) {
+        navigator.share({ title, text, url })
+          .then(() => toast('Share sheet opened'))
+          .catch(() => navigator.clipboard?.writeText(url).then(() => toast('Deal link copied')).catch(() => toast('Share link ready in the address bar')));
+      } else {
+        navigator.clipboard?.writeText(url).then(() => toast('Deal link copied')).catch(() => toast('Share link ready in the address bar'));
+      }
     }
     if (action === 'expired') {
       await reportDeal();

@@ -1,3 +1,5 @@
+@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=Playfair+Display:wght@700;800&display=swap");
+
 :root {
   --ink: #14202f;
   --ink-2: #405168;
@@ -3892,5 +3894,542 @@ button {
     opacity: 1 !important;
     filter: none !important;
     transform: none !important;
+  }
+}
+
+/* =========================================================
+   Premium visual system v2
+   A quieter commerce palette, richer typography, stronger
+   surface hierarchy, and mobile polish without backend changes.
+   ========================================================= */
+
+:root {
+  --ink: #111827;
+  --ink-2: #344256;
+  --muted: #667085;
+  --paper: #fbfaf6;
+  --cloud: #f2f0ea;
+  --surface: rgba(255, 254, 249, .9);
+  --surface-elevated: rgba(255, 255, 255, .96);
+  --line: rgba(24, 33, 48, .12);
+  --line-strong: rgba(24, 33, 48, .2);
+  --brand: #174f47;
+  --brand-2: #263f67;
+  --mint: #bfe7da;
+  --gold: #d7b35b;
+  --hot: #b85c46;
+  --pink: #9f5b78;
+  --blue: #476d9d;
+  --green: #286f57;
+  --focus: rgba(191, 231, 218, .88);
+  --shadow: 0 28px 86px rgba(22, 30, 44, .18);
+  --shadow-soft: 0 18px 48px rgba(22, 30, 44, .12);
+  --shadow-tight: 0 10px 28px rgba(22, 30, 44, .1);
+  --display: Manrope, Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --serif: "Playfair Display", Georgia, "Times New Roman", serif;
+}
+
+html {
+  background: #f5f2ea;
+}
+
+body {
+  color: var(--ink);
+  font-family: var(--display);
+  background:
+    radial-gradient(circle at 15% -10%, rgba(191, 231, 218, .52), transparent 30rem),
+    radial-gradient(circle at 90% 2%, rgba(215, 179, 91, .22), transparent 24rem),
+    linear-gradient(180deg, #fbfaf6 0%, #f4f1ea 48%, #fffdf8 100%);
+}
+
+body::before {
+  opacity: .72;
+  background:
+    linear-gradient(115deg, rgba(17, 24, 39, .045), transparent 34%),
+    radial-gradient(circle at 48% 0%, rgba(255, 255, 255, .88), transparent 28rem);
+}
+
+.market-header {
+  min-height: 74px;
+  border: 1px solid rgba(255, 255, 255, .82);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, .9), rgba(247, 244, 236, .74)),
+    rgba(255, 255, 255, .78);
+  box-shadow: 0 18px 60px rgba(17, 24, 39, .13);
+}
+
+.brand strong,
+.primary-nav a,
+.post-button,
+.ghost-button,
+.deal-action,
+.save-btn,
+.copy-btn,
+.heat-button {
+  letter-spacing: -.01em;
+}
+
+.brand-orb {
+  color: #091512;
+  background:
+    radial-gradient(circle at 25% 18%, #fff, transparent 28%),
+    conic-gradient(from 160deg, #c5ece1, #ede3bf, #cbd7ea, #c5ece1);
+  box-shadow: inset 0 -14px 24px rgba(23, 79, 71, .16), 0 16px 34px rgba(23, 79, 71, .18);
+}
+
+.primary-nav {
+  background: rgba(255, 255, 255, .64);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .72);
+}
+
+.primary-nav a {
+  color: #4f5d73;
+}
+
+.primary-nav a:hover,
+.primary-nav a:focus-visible {
+  color: #0f1a2a;
+  background: rgba(191, 231, 218, .42);
+}
+
+.post-button,
+.deal-merchant-button,
+.search-panel button,
+.admin-actions button:first-child {
+  color: #101713;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, .74), transparent 32%),
+    linear-gradient(135deg, #bfe7da 0%, #f0e4b8 100%);
+  border-color: rgba(255, 255, 255, .78);
+  box-shadow: 0 16px 36px rgba(23, 79, 71, .18), inset 0 -10px 18px rgba(23, 79, 71, .08);
+}
+
+.ghost-button,
+.save-btn,
+.copy-btn,
+.heat-button {
+  background: rgba(255, 255, 255, .74);
+  border-color: rgba(17, 24, 39, .1);
+  box-shadow: 0 8px 20px rgba(17, 24, 39, .06);
+}
+
+.cinematic-hero,
+.page-hero,
+.detail-hero {
+  border-color: rgba(255, 255, 255, .84);
+  background:
+    radial-gradient(circle at 82% 12%, rgba(215, 179, 91, .22), transparent 28rem),
+    radial-gradient(circle at 18% 8%, rgba(191, 231, 218, .42), transparent 25rem),
+    linear-gradient(145deg, rgba(255, 255, 255, .94), rgba(246, 242, 233, .72));
+  box-shadow: 0 34px 110px rgba(17, 24, 39, .11);
+}
+
+.cinematic-hero {
+  padding: clamp(74px, 8vw, 104px) clamp(24px, 5vw, 64px) clamp(42px, 5vw, 66px);
+}
+
+.hero h1 {
+  color: #101827;
+  font-family: var(--serif);
+  font-weight: 800;
+  letter-spacing: -.045em;
+}
+
+.page-hero h1,
+.deal-summary h1 {
+  color: #101827;
+  font-family: var(--display);
+  font-weight: 900;
+  letter-spacing: -.055em;
+}
+
+.hero h1 {
+  max-width: 12.4ch;
+  font-size: clamp(3.5rem, 6.9vw, 6.55rem);
+  line-height: .88;
+}
+
+.hero h1 span:nth-child(2) {
+  color: transparent;
+  background: linear-gradient(95deg, #174f47 0%, #476d9d 50%, #9f5b78 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+.hero-text,
+.page-hero p,
+.deal-summary p {
+  color: #3f4d61;
+  font-size: clamp(1.05rem, 1.5vw, 1.24rem);
+}
+
+.eyebrow {
+  color: #174f47;
+  background: rgba(191, 231, 218, .52);
+  border-color: rgba(23, 79, 71, .18);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .74);
+}
+
+.hero-stage::before {
+  background:
+    linear-gradient(160deg, rgba(255, 255, 255, .72), rgba(238, 232, 217, .42)),
+    linear-gradient(135deg, rgba(191, 231, 218, .32), rgba(71, 109, 157, .18));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .76), 0 34px 90px rgba(17, 24, 39, .14);
+}
+
+.floating-deal-card {
+  background: rgba(255, 255, 255, .86);
+  border-color: rgba(255, 255, 255, .82);
+  box-shadow: 0 22px 60px rgba(17, 24, 39, .14);
+}
+
+.search-panel {
+  background: rgba(255, 255, 255, .84);
+  border: 1px solid rgba(255, 255, 255, .86);
+  box-shadow: 0 18px 54px rgba(17, 24, 39, .12);
+}
+
+.hero-pills button,
+.quick-filter,
+.sort-button,
+.filter-panel select {
+  color: #344256;
+  background: rgba(255, 255, 255, .72);
+  border-color: rgba(17, 24, 39, .1);
+}
+
+.hero-pills button:hover,
+.quick-filter.active,
+.sort-button.active {
+  color: #101713;
+  background: linear-gradient(135deg, rgba(191, 231, 218, .7), rgba(247, 235, 194, .66));
+  border-color: rgba(23, 79, 71, .18);
+}
+
+.section-block,
+.feed-panel,
+.filter-panel,
+.split-section,
+.store-section,
+.community-section,
+.games-archive,
+.alert-builder,
+.auth-dialog,
+.deal-form,
+.admin-loading,
+.admin-note {
+  border-color: rgba(255, 255, 255, .82);
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, .93), rgba(247, 244, 236, .76)),
+    rgba(255, 255, 255, .76);
+  box-shadow: var(--shadow-soft);
+}
+
+.deal-card,
+.category-card,
+.store-card,
+.coupon-card,
+.topic-card,
+.editor-item,
+.dashboard-card,
+.admin-row,
+.submitted-list article,
+.comment-card {
+  border: 1px solid rgba(255, 255, 255, .86);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, .98), rgba(250, 247, 240, .84)),
+    rgba(255, 255, 255, .84);
+  box-shadow: 0 16px 44px rgba(17, 24, 39, .1);
+}
+
+.deal-card:hover,
+.category-card:hover,
+.store-card:hover,
+.coupon-card:hover,
+.topic-card:hover,
+.editor-item:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 30px 80px rgba(17, 24, 39, .16);
+}
+
+.deal-card::before {
+  background: linear-gradient(135deg, rgba(191, 231, 218, .34), rgba(71, 109, 157, .14), rgba(215, 179, 91, .22));
+}
+
+.deal-image,
+.gallery-main,
+.spotlight-art {
+  background:
+    radial-gradient(circle at 25% 18%, rgba(255, 255, 255, .82), transparent 26%),
+    linear-gradient(145deg, #f3f0e8, #edf3f0 50%, #f7ecd0);
+}
+
+.deal-card.tone-blue .deal-image,
+.deal-card.tone-sky .deal-image,
+.deal-card.tone-violet .deal-image,
+.deal-card.tone-green .deal-image,
+.deal-card.tone-gold .deal-image,
+.deal-card.tone-rose .deal-image,
+.deal-card.tone-leaf .deal-image {
+  background:
+    radial-gradient(circle at 28% 18%, rgba(255, 255, 255, .88), transparent 24%),
+    linear-gradient(145deg, #f4f1e9, #edf4ef 54%, #e7edf7);
+}
+
+.price,
+.summary-price span {
+  color: #174f47;
+  font-weight: 900;
+}
+
+.discount-badge {
+  background: linear-gradient(135deg, #b85c46, #9f5b78);
+  box-shadow: 0 12px 26px rgba(184, 92, 70, .2);
+}
+
+.status-badge,
+.category-badge,
+.status-pill,
+.admin-badges b {
+  color: #263f67;
+  background: rgba(255, 255, 255, .86);
+  border: 1px solid rgba(38, 63, 103, .12);
+}
+
+.heat-button {
+  color: #174f47;
+  background: rgba(191, 231, 218, .32);
+}
+
+.heat-button.voted,
+.save-btn.saved,
+.store-card button.saved {
+  color: #101713;
+  background: linear-gradient(135deg, #bfe7da, #f6edc9);
+}
+
+.deal-form input,
+.deal-form select,
+.deal-form textarea,
+.alert-builder input,
+.alert-builder select,
+.alert-builder textarea,
+.comment-composer textarea,
+.coupon-workspace select,
+.auth-form input {
+  color: #111827;
+  background: rgba(255, 255, 255, .9);
+  border-color: rgba(17, 24, 39, .12);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .8);
+}
+
+.deal-form label,
+.auth-form label,
+.alert-builder label {
+  color: #263445;
+  font-weight: 800;
+}
+
+.upload-box {
+  border-color: rgba(23, 79, 71, .18);
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, .84), rgba(247, 244, 236, .72)),
+    rgba(255, 255, 255, .72);
+}
+
+.admin-row {
+  border-left: 4px solid rgba(23, 79, 71, .34);
+}
+
+.site-footer {
+  background:
+    radial-gradient(circle at 12% 0%, rgba(191, 231, 218, .12), transparent 20rem),
+    linear-gradient(135deg, #101827, #152033 58%, #172b2a);
+}
+
+.motion-item {
+  transition-duration: .82s;
+  transition-timing-function: cubic-bezier(.2, .8, .2, 1);
+}
+
+.feed-skeleton article {
+  background:
+    linear-gradient(100deg, rgba(255, 255, 255, .74) 20%, rgba(238, 232, 217, .95) 40%, rgba(255, 255, 255, .74) 62%) 0 0 / 220% 100%,
+    rgba(255, 255, 255, .72);
+}
+
+@media (max-width: 1080px) {
+  .hero h1 {
+    max-width: 12ch;
+  }
+
+  .feed-layout,
+  .post-layout,
+  .detail-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  html,
+  body {
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  .site-shell {
+    overflow-x: clip;
+  }
+
+  .market-header {
+    width: calc(100% - 16px);
+    padding: 8px;
+    border-radius: 28px;
+  }
+
+  .cinematic-hero,
+  .page-hero,
+  .section-block,
+  .feed-layout,
+  .split-section,
+  .store-section,
+  .community-section,
+  .games-archive,
+  .site-footer {
+    width: calc(100% - 16px);
+  }
+
+  .cinematic-hero,
+  .page-hero {
+    padding: 28px 20px;
+    border-radius: 26px;
+  }
+
+  .community-section,
+  .games-archive,
+  .site-footer {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .hero h1,
+  .page-hero h1,
+  .deal-summary h1 {
+    font-size: clamp(3rem, 15vw, 4.75rem);
+    line-height: .9;
+  }
+
+  .hero-text,
+  .page-hero p {
+    font-size: 1.04rem;
+  }
+
+  .search-panel {
+    grid-template-columns: 1fr;
+    padding: 12px;
+    border-radius: 26px;
+  }
+
+  .search-panel label,
+  .search-panel input {
+    min-width: 0;
+  }
+
+  .search-panel button,
+  .post-button,
+  .deal-merchant-button {
+    width: 100%;
+  }
+
+  .hero-pills,
+  .quick-filter-row,
+  .sort-controls,
+  .admin-filters {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    scrollbar-width: none;
+  }
+
+  .topic-list,
+  .topic-card {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .topic-card {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .hero-pills::-webkit-scrollbar,
+  .quick-filter-row::-webkit-scrollbar,
+  .sort-controls::-webkit-scrollbar,
+  .admin-filters::-webkit-scrollbar {
+    display: none;
+  }
+
+  .deal-card {
+    border-radius: 24px;
+  }
+
+  .deal-body {
+    padding: 16px;
+  }
+
+  .deal-actions,
+  .coupon-row,
+  .spotlight-actions,
+  .admin-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .deal-actions > *,
+  .coupon-row > *,
+  .spotlight-actions > *,
+  .admin-actions > * {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .form-grid,
+  .deal-form,
+  .post-preview-panel,
+  .submission-panel,
+  .alert-builder,
+  .auth-dialog {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .deal-form input,
+  .deal-form select,
+  .deal-form textarea,
+  .alert-builder input,
+  .alert-builder select,
+  .alert-builder textarea {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .auth-dialog {
+    padding: 24px;
+  }
+
+  .motion-item {
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .deal-card:hover,
+  .category-card:hover,
+  .store-card:hover,
+  .coupon-card:hover,
+  .topic-card:hover,
+  .editor-item:hover {
+    transform: none;
   }
 }

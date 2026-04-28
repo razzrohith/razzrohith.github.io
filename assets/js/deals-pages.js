@@ -336,6 +336,163 @@
       `<section class="section-block"><div class="trust-strip">${stat('followers', compact(store.followers), 'Mock social proof for future follow flows.')}${stat('trust rating', store.rating, 'Community sentiment and moderation signal.')}${stat('coupons', coupons.length, coupons.map((coupon) => coupon.code).join(', ') || 'No codes today.')}</div></section><section class="split-section"><div class="section-block"><div class="section-heading"><div><p class="eyebrow">Active deals</p><h2>${deals.length} current offers</h2></div></div><div class="deal-grid">${deals.map((deal) => dealCard(deal)).join('') || '<div class="empty-state"><strong>No active deals</strong><p>This store will populate when new listings are added.</p></div>'}</div></div><aside class="section-block"><div class="section-heading"><div><p class="eyebrow">Store coupons</p><h2>Codes and terms</h2></div></div><div class="coupon-list">${coupons.map((coupon) => `<article class="coupon-card"><div><strong>${coupon.store}</strong><code>${coupon.code}</code></div><p>${coupon.description}</p><footer><small>${coupon.expires}</small><button class="copy-btn" type="button" data-action="copy" data-code="${coupon.code}">Copy</button></footer></article>`).join('') || '<div class="empty-state"><strong>No current coupons</strong><p>Follow this store for future codes.</p></div>'}</div></aside></section>`);
   }
 
+  function adminDealStore(deal) {
+    return deal.stores?.name || 'Unknown store';
+  }
+
+  function adminDealCategory(deal) {
+    return deal.categories?.name || 'Uncategorized';
+  }
+
+  function adminReporter(report) {
+    return report.profiles?.display_name || report.profiles?.username || 'Member';
+  }
+
+  function adminDate(value) {
+    return value ? new Date(value).toLocaleString() : 'No timestamp';
+  }
+
+  function adminStatus(value) {
+    return String(value || 'unknown').replace(/_/g, ' ');
+  }
+
+  async function fetchAdminData() {
+    const [deals, reports, queue] = await Promise.all([
+      Auth.rest('deals?select=id,slug,title,status,moderation_status,current_price,original_price,discount_percent,shipping_info,coupon_code,created_at,updated_at,stores(name),categories(name),profiles(display_name,username)&order=created_at.desc&limit=200'),
+      Auth.rest('deal_reports?select=id,reason,details,status,created_at,deal_id,deals(title,slug,status,moderation_status),profiles(display_name,username)&order=created_at.desc&limit=100').catch(() => []),
+      Auth.rest('moderation_queue?select=id,entity_type,entity_id,title,reason,priority,status,created_at,updated_at&order=created_at.desc&limit=100').catch(() => [])
+    ]);
+    return { deals, reports, queue };
+  }
+
+  function renderAdminStats(deals, reports) {
+    const countDeals = (predicate) => deals.filter(predicate).length;
+    return `
+      <section class="section-block">
+        <div class="trust-strip admin-stat-grid">
+          ${stat('pending deals', countDeals((deal) => deal.status === 'pending' || deal.moderation_status === 'pending'), 'Waiting for moderator review.')}
+          ${stat('open reports', reports.filter((report) => report.status === 'open' || report.status === 'reviewing').length, 'Community flags needing attention.')}
+          ${stat('approved deals', countDeals((deal) => deal.moderation_status === 'approved' && ['live', 'expiring_soon'].includes(deal.status)), 'Visible in the public feed.')}
+          ${stat('rejected deals', countDeals((deal) => deal.moderation_status === 'rejected'), 'Not visible publicly.')}
+          ${stat('hidden deals', countDeals((deal) => deal.status === 'hidden'), 'Removed from public surfaces.')}
+        </div>
+      </section>
+    `;
+  }
+
+  function renderAdminDealRow(deal) {
+    const needsReview = deal.status === 'pending' || deal.moderation_status === 'pending';
+    return `
+      <article class="admin-row motion-item" data-admin-status="${deal.status}" data-admin-moderation="${deal.moderation_status}">
+        <div>
+          <strong>${deal.title}</strong>
+          <span>${adminDealStore(deal)} / ${adminDealCategory(deal)} / ${money(Number(deal.current_price || 0))}</span>
+          <small>Submitted ${adminDate(deal.created_at)} / updated ${adminDate(deal.updated_at)}</small>
+        </div>
+        <div class="admin-badges">
+          <b>${adminStatus(deal.status)}</b>
+          <b>${adminStatus(deal.moderation_status)}</b>
+        </div>
+        <div class="admin-actions">
+          <button type="button" data-admin-action="approve-deal" data-id="${deal.id}" ${needsReview ? '' : 'disabled'}>Approve</button>
+          <button type="button" data-admin-action="reject-deal" data-id="${deal.id}">Reject</button>
+          <button type="button" data-admin-action="expire-deal" data-id="${deal.id}">Expire</button>
+          <button type="button" data-admin-action="hide-deal" data-id="${deal.id}">Hide</button>
+        </div>
+      </article>
+    `;
+  }
+
+  function renderAdminReportRow(report) {
+    return `
+      <article class="admin-row motion-item" data-admin-status="${report.status}">
+        <div>
+          <strong>${report.deals?.title || 'Reported deal'}</strong>
+          <span>${report.reason} / reported by ${adminReporter(report)}</span>
+          <small>${report.details || 'No extra details'} / ${adminDate(report.created_at)}</small>
+        </div>
+        <div class="admin-badges">
+          <b>${adminStatus(report.status)}</b>
+          <b>report</b>
+        </div>
+        <div class="admin-actions">
+          <button type="button" data-admin-action="review-report" data-id="${report.id}">Reviewing</button>
+          <button type="button" data-admin-action="resolve-report" data-id="${report.id}">Resolve</button>
+          <button type="button" data-admin-action="dismiss-report" data-id="${report.id}">Dismiss</button>
+        </div>
+      </article>
+    `;
+  }
+
+  function renderAdminQueueRow(item) {
+    return `
+      <article class="admin-row motion-item" data-admin-status="${item.status}" data-admin-priority="${item.priority}">
+        <div>
+          <strong>${item.title}</strong>
+          <span>${item.entity_type} / ${item.priority} priority / ${adminStatus(item.status)}</span>
+          <small>${item.reason || 'No note'} / ${adminDate(item.created_at)}</small>
+        </div>
+        <div class="admin-badges">
+          <b>${item.priority}</b>
+          <b>${adminStatus(item.status)}</b>
+        </div>
+        <div class="admin-actions">
+          <button type="button" data-admin-action="queue-reviewing" data-id="${item.id}">Reviewing</button>
+          <button type="button" data-admin-action="queue-resolved" data-id="${item.id}">Resolve</button>
+          <button type="button" data-admin-action="queue-dismissed" data-id="${item.id}">Dismiss</button>
+        </div>
+      </article>
+    `;
+  }
+
+  function renderAdminWorkspace(deals, reports, queue, activeFilter = 'pending') {
+    const pendingDeals = deals.filter((deal) => deal.status === 'pending' || deal.moderation_status === 'pending');
+    const rejectedDeals = deals.filter((deal) => deal.moderation_status === 'rejected');
+    const hiddenDeals = deals.filter((deal) => deal.status === 'hidden');
+    const expiredDeals = deals.filter((deal) => deal.status === 'expired');
+    const reported = reports.filter((report) => report.status !== 'resolved' && report.status !== 'dismissed');
+    const groups = {
+      pending: pendingDeals,
+      reported,
+      rejected: rejectedDeals,
+      hidden: hiddenDeals,
+      expired: expiredDeals,
+      queue
+    };
+    const activeItems = groups[activeFilter] || pendingDeals;
+    const renderMap = {
+      reported: renderAdminReportRow,
+      queue: renderAdminQueueRow
+    };
+    const rowRenderer = renderMap[activeFilter] || renderAdminDealRow;
+    document.getElementById('adminWorkspace').innerHTML = `
+      <div class="admin-toolbar">
+        <div>
+          <p class="eyebrow">Moderation queue</p>
+          <h2>${activeFilter.replace(/\b\w/g, (letter) => letter.toUpperCase())}</h2>
+        </div>
+        <div class="chip-list admin-filters">
+          ${Object.keys(groups).map((key) => `<button type="button" class="${key === activeFilter ? 'active' : ''}" data-admin-filter="${key}">${key} <span>${groups[key].length}</span></button>`).join('')}
+        </div>
+      </div>
+      <div class="admin-list">
+        ${activeItems.map(rowRenderer).join('') || '<div class="empty-state"><strong>No moderation items here</strong><p>Switch filters or wait for new submissions and reports.</p></div>'}
+      </div>
+    `;
+    window.DealNestMotion?.refresh();
+  }
+
+  async function writeModerationAction(action, entityType, entityId, note) {
+    await Auth.rest('moderation_actions', {
+      method: 'POST',
+      body: {
+        moderator_id: Auth.currentUserId(),
+        action,
+        notes: `${entityType}:${entityId}${note ? ` / ${note}` : ''}`
+      }
+    }).catch(() => {});
+  }
+
   async function dashboard() {
     if (!remoteEnabled()) {
       pageShell('Dashboard', 'Member workspace', 'Dashboard data belongs to signed-in members.', accessPanel('Sign in to open your dashboard', 'Guests can browse the full public site, but saved account data and submissions need login.'));
@@ -365,10 +522,34 @@
         `<section class="section-block"><div class="access-panel"><p class="eyebrow">Protected area</p><h2>Moderator role required</h2><p>Only admin and moderator accounts can access the moderation queue.</p><a class="deal-action" href="./">Return home</a></div></section>`);
       return;
     }
-    const pending = data.moderation || [];
-    const reported = pending.filter((item) => /Reported|Expired|Community/.test(item.type));
-    pageShell('Moderation console', 'Admin structure', 'A populated static console for reported deals, pending submissions, coupon checks, and community triage.',
-      `<section class="section-block"><div class="trust-strip">${stat('queue items', pending.length, 'Mock work items ready for review.')}${stat('high priority', pending.filter((item) => item.severity === 'High').length, 'Needs attention first.')}${stat('reported', reported.length, 'Reports and flags from the community.')}</div></section><section class="split-section"><article class="section-block"><div class="section-heading"><div><p class="eyebrow">Moderation queue</p><h2>Review workload</h2></div></div><div class="editor-list">${pending.map((item) => `<article class="editor-item motion-item"><div class="queue-icon">${item.severity.slice(0, 1)}</div><div><h3>${item.title}</h3><p>${item.type} / ${item.owner} / ${item.status}</p></div><strong>${item.severity}</strong></article>`).join('')}</div></article><article class="section-block"><div class="section-heading"><div><p class="eyebrow">Reported deals</p><h2>Time-sensitive checks</h2></div></div><div class="editor-list">${data.deals.filter((deal) => deal.status === 'Expiring Soon').map((deal) => `<article class="editor-item motion-item"><img src="${deal.image}" alt="${deal.title}"><div><h3>${deal.title}</h3><p>${deal.store} / ${deal.expires} / ${deal.comments} comments</p></div><strong>${deal.heat} heat</strong></article>`).join('')}</div><div class="community-actions"><button type="button" data-placeholder="Approve workflow will connect to role auth later.">Approve selected</button><button type="button" data-placeholder="Escalation workflow will connect to backend later.">Escalate</button></div></article></section>`);
+    pageShell('Moderation console', 'Admin structure', 'Review pending deals, reported content, and queue items with role-gated Supabase actions protected by RLS.',
+      `<section class="section-block"><div class="admin-loading" id="adminLoading"><strong>Loading moderation workspace...</strong><p>Only admin and moderator roles can read this data.</p></div></section>`);
+    try {
+      const adminData = await fetchAdminData();
+      document.getElementById('pageContent').innerHTML = `
+        <section class="page-hero section-block motion-item">
+          <p class="eyebrow">Role verified</p>
+          <h1>Moderation console</h1>
+          <p>Approve pending submissions, triage reports, hide unsafe deals, expire stale offers, and leave moderation notes.</p>
+        </section>
+        ${renderAdminStats(adminData.deals, adminData.reports)}
+        <section class="section-block admin-panel" id="adminWorkspace"></section>
+        <section class="section-block admin-note">
+          <p><strong>Security model:</strong> this page uses the browser anon key plus the signed-in moderator/admin session. RLS decides what can be read or changed.</p>
+        </section>
+      `;
+      window.DealNestAdmin = { ...adminData, filter: 'pending' };
+      renderAdminWorkspace(adminData.deals, adminData.reports, adminData.queue, 'pending');
+    } catch (error) {
+      document.getElementById('pageContent').innerHTML = `
+        <section class="page-hero section-block motion-item">
+          <p class="eyebrow">Moderation console</p>
+          <h1>Unable to load admin data</h1>
+          <p>${error.message}</p>
+        </section>
+        <section class="section-block"><div class="access-panel"><h2>Check role and RLS policies</h2><p>Your account must have a row in <code>user_roles</code> with role <code>admin</code> or <code>moderator</code>.</p></div></section>
+      `;
+    }
   }
 
   const renderers = { categories, stores, coupons, community, search, saved: savedPage, alerts, post: postDeal, login, games, category: categoryDetail, store: storeDetail, dashboard, admin };
@@ -484,6 +665,98 @@
       persist('followedStores', followedStores);
       target.classList.toggle('saved', followedStores.has(store));
       target.textContent = followedStores.has(store) ? 'Following' : 'Follow store';
+    }
+  });
+
+  document.body.addEventListener('click', async (event) => {
+    const filterButton = event.target.closest('[data-admin-filter]');
+    if (filterButton && window.DealNestAdmin) {
+      window.DealNestAdmin.filter = filterButton.dataset.adminFilter;
+      renderAdminWorkspace(window.DealNestAdmin.deals, window.DealNestAdmin.reports, window.DealNestAdmin.queue, window.DealNestAdmin.filter);
+      return;
+    }
+
+    const button = event.target.closest('[data-admin-action]');
+    if (!button || !window.DealNestAdmin) return;
+    if (!Auth?.user) {
+      Auth?.openAuth({ mode: 'login', message: 'Sign in with an admin or moderator account to use moderation actions.' });
+      return;
+    }
+    const roles = await Auth.getRoles().catch(() => []);
+    if (!roles.includes('admin') && !roles.includes('moderator')) {
+      toast('Moderator role required');
+      return;
+    }
+
+    const action = button.dataset.adminAction;
+    const id = button.dataset.id;
+    const risky = ['reject-deal', 'hide-deal', 'expire-deal'].includes(action);
+    const note = window.prompt('Add a moderation note or reason:', action.replace(/-/g, ' '));
+    if (note === null) return;
+    if (risky && !window.confirm(`Confirm ${action.replace(/-/g, ' ')}? This item will not appear in the public feed.`)) return;
+
+    button.disabled = true;
+    button.textContent = 'Saving...';
+    try {
+      if (action === 'approve-deal') {
+        await Auth.rest(`deals?id=eq.${encodeURIComponent(id)}`, {
+          method: 'PATCH',
+          body: { status: 'live', moderation_status: 'approved' }
+        });
+        await writeModerationAction('approve_deal', 'deal', id, note);
+        toast('Deal approved');
+      }
+      if (action === 'reject-deal') {
+        await Auth.rest(`deals?id=eq.${encodeURIComponent(id)}`, {
+          method: 'PATCH',
+          body: { moderation_status: 'rejected', status: 'rejected' }
+        });
+        await writeModerationAction('reject_deal', 'deal', id, note);
+        toast('Deal rejected');
+      }
+      if (action === 'hide-deal') {
+        await Auth.rest(`deals?id=eq.${encodeURIComponent(id)}`, {
+          method: 'PATCH',
+          body: { status: 'hidden' }
+        });
+        await writeModerationAction('hide_deal', 'deal', id, note);
+        toast('Deal hidden');
+      }
+      if (action === 'expire-deal') {
+        await Auth.rest(`deals?id=eq.${encodeURIComponent(id)}`, {
+          method: 'PATCH',
+          body: { status: 'expired' }
+        });
+        await writeModerationAction('expire_deal', 'deal', id, note);
+        toast('Deal marked expired');
+      }
+      if (action === 'review-report' || action === 'resolve-report' || action === 'dismiss-report') {
+        const nextStatus = action === 'review-report' ? 'reviewing' : action === 'resolve-report' ? 'resolved' : 'dismissed';
+        await Auth.rest(`deal_reports?id=eq.${encodeURIComponent(id)}`, {
+          method: 'PATCH',
+          body: { status: nextStatus }
+        });
+        await writeModerationAction(action.replace(/-/g, '_'), 'report', id, note);
+        toast(`Report ${nextStatus}`);
+      }
+      if (action.startsWith('queue-')) {
+        const nextStatus = action.replace('queue-', '');
+        await Auth.rest(`moderation_queue?id=eq.${encodeURIComponent(id)}`, {
+          method: 'PATCH',
+          body: { status: nextStatus }
+        });
+        await writeModerationAction(action.replace(/-/g, '_'), 'queue', id, note);
+        toast(`Queue item ${nextStatus}`);
+      }
+      const refreshed = await fetchAdminData();
+      window.DealNestAdmin = { ...refreshed, filter: window.DealNestAdmin.filter };
+      document.querySelector('.admin-stat-grid')?.closest('.section-block')?.remove();
+      document.querySelector('.page-hero')?.insertAdjacentHTML('afterend', renderAdminStats(refreshed.deals, refreshed.reports));
+      renderAdminWorkspace(refreshed.deals, refreshed.reports, refreshed.queue, window.DealNestAdmin.filter);
+    } catch (error) {
+      toast(error.message);
+      button.disabled = false;
+      button.textContent = action.replace(/-/g, ' ');
     }
   });
 

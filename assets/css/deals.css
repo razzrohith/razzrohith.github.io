@@ -2201,6 +2201,133 @@ p {
   font: inherit;
 }
 
+.admin-loading,
+.admin-note {
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, .82);
+  padding: 20px;
+  box-shadow: var(--shadow-soft);
+}
+
+.admin-loading p,
+.admin-note p {
+  margin: 6px 0 0;
+  color: var(--ink-2);
+  line-height: 1.55;
+}
+
+.admin-panel {
+  display: grid;
+  gap: 18px;
+}
+
+.admin-toolbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  align-items: end;
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, .88);
+  box-shadow: var(--shadow-soft);
+  padding: 18px;
+}
+
+.admin-toolbar h2 {
+  margin-bottom: 0;
+  text-transform: capitalize;
+}
+
+.admin-filters {
+  justify-content: end;
+}
+
+.admin-filters button span {
+  display: inline-grid;
+  min-width: 24px;
+  place-items: center;
+  border-radius: 999px;
+  background: rgba(20, 32, 47, .08);
+  padding: 2px 7px;
+}
+
+.admin-list {
+  display: grid;
+  gap: 12px;
+}
+
+.admin-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 16px;
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  background: #fff;
+  box-shadow: 0 12px 28px rgba(27, 43, 65, .07);
+  padding: 16px;
+}
+
+.admin-row strong,
+.admin-row span,
+.admin-row small {
+  display: block;
+}
+
+.admin-row strong {
+  margin-bottom: 6px;
+}
+
+.admin-row span {
+  color: var(--ink-2);
+  font-weight: 760;
+}
+
+.admin-row small {
+  margin-top: 6px;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.admin-badges,
+.admin-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: end;
+}
+
+.admin-badges b {
+  border-radius: 999px;
+  color: var(--brand);
+  background: rgba(168, 244, 222, .3);
+  padding: 7px 10px;
+  font-size: .78rem;
+  text-transform: capitalize;
+}
+
+.admin-actions button {
+  min-height: 38px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--ink);
+  background: var(--cloud);
+  padding: 0 12px;
+  font-weight: 900;
+}
+
+.admin-actions button:first-child {
+  color: #061513;
+  background: linear-gradient(135deg, var(--mint), #effff9 56%, var(--gold));
+  border-color: transparent;
+}
+
+.admin-actions button:disabled {
+  cursor: not-allowed;
+  opacity: .45;
+}
+
 #postPreview .deal-card {
   max-width: 100%;
 }
@@ -2927,6 +3054,21 @@ p {
 
   .dashboard-grid {
     grid-template-columns: 1fr;
+  }
+
+  .admin-toolbar,
+  .admin-row {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-toolbar {
+    align-items: stretch;
+  }
+
+  .admin-filters,
+  .admin-badges,
+  .admin-actions {
+    justify-content: start;
   }
 
   .coupon-page-grid {

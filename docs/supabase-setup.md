@@ -125,6 +125,27 @@ Admins additionally manage:
 - Stores
 - Audit logs
 
+## Admin Moderation Testing
+
+The browser admin panel uses only the anon/publishable key plus the signed-in user's Supabase session. It relies on RLS and the `user_roles` table; no service role key is used in frontend code.
+
+To fully test approval/rejection flows, create or confirm a normal Auth user first, then grant that user's profile an admin or moderator role from the Supabase SQL Editor:
+
+```sql
+insert into public.user_roles (user_id, role)
+values ('REPLACE_WITH_AUTH_USER_ID', 'admin')
+on conflict (user_id, role) do nothing;
+```
+
+Use `moderator` instead of `admin` when testing moderator access. Guests and users without one of these roles should see blocked/access-denied admin states.
+
+The public feed must remain limited to:
+
+```sql
+moderation_status = 'approved'
+and status in ('live', 'expiring_soon')
+```
+
 ## Important Safety Notes
 
 - Do not use the service role key in frontend code.

@@ -55,6 +55,11 @@ Run these in order:
    `supabase/seed.sql`
 7. Run it.
 
+If you are applying later incremental migrations, also run them in timestamp order. For the admin/moderation phase, run:
+
+- `supabase/migrations/20260427020000_add_auth_action_foundation.sql`
+- `supabase/migrations/20260428000000_lock_owner_deal_updates.sql`
+
 ## What The Migration Creates
 
 - Public read tables for deals, stores, categories, coupons, approved comments, and approved community threads.
@@ -145,6 +150,8 @@ The public feed must remain limited to:
 moderation_status = 'approved'
 and status in ('live', 'expiring_soon')
 ```
+
+Normal users must not be able to self-approve their own submissions. The migration `20260428000000_lock_owner_deal_updates.sql` tightens owner deal edits so user-owned rows can remain `pending/pending` only; admin/moderator approval still goes through moderator policies.
 
 ## Important Safety Notes
 

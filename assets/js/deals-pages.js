@@ -358,8 +358,8 @@
 
   async function fetchAdminData() {
     const [deals, reports, queue] = await Promise.all([
-      Auth.rest('deals?select=id,slug,title,status,moderation_status,current_price,original_price,discount_percent,shipping_info,coupon_code,created_at,updated_at,stores(name),categories(name),profiles(display_name,username)&order=created_at.desc&limit=200'),
-      Auth.rest('deal_reports?select=id,reason,details,status,created_at,deal_id,deals(title,slug,status,moderation_status),profiles(display_name,username)&order=created_at.desc&limit=100').catch(() => []),
+      Auth.rest('deals?select=id,slug,title,status,moderation_status,current_price,original_price,discount_percent,shipping_info,coupon_code,created_at,updated_at,stores(name),categories(name)&order=created_at.desc&limit=200'),
+      Auth.rest('deal_reports?select=id,reason,details,status,created_at,deal_id,deals(title,slug,status,moderation_status)&order=created_at.desc&limit=100').catch(() => []),
       Auth.rest('moderation_queue?select=id,entity_type,entity_id,title,reason,priority,status,created_at,updated_at&order=created_at.desc&limit=100').catch(() => [])
     ]);
     return { deals, reports, queue };

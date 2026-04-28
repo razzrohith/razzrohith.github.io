@@ -203,6 +203,10 @@
     return (data.categories.find((item) => item.name === category)?.tone || 'mint').toLowerCase();
   }
 
+  function outboundLink(deal, source) {
+    return window.DealNestOutbound?.linkFor(deal, source) || deal.dealUrl;
+  }
+
   function cardTemplate(deal, compact = false) {
     const saved = state.saved.has(deal.id);
     const voted = state.voted.has(deal.id);
@@ -240,6 +244,7 @@
           <div class="deal-actions">
             <button class="save-btn ${saved ? 'saved' : ''}" type="button" data-action="save" data-id="${deal.id}" aria-label="${saved ? 'Unsave' : 'Save'} ${deal.title}">${saved ? 'Saved' : 'Save'}</button>
             <a class="deal-action" href="${deal.dealUrl}">View deal</a>
+            <a class="deal-action outbound-action" href="${outboundLink(deal, compact ? 'compact-card' : 'hot-feed')}" data-outbound-link>Get deal -></a>
           </div>
         </div>
       </article>
@@ -292,6 +297,7 @@
           </div>
           <div class="spotlight-actions">
             <a class="deal-merchant-button" href="${deal.dealUrl}">Inspect deal</a>
+            <a class="deal-action outbound-action" href="${outboundLink(deal, 'spotlight')}" data-outbound-link>Get deal -></a>
             <button class="ghost-button" type="button" data-action="save" data-id="${deal.id}">Save deal</button>
           </div>
         </div>

@@ -136,10 +136,14 @@
       uuid: row.id,
       slug: row.slug,
       id,
+      storeId: row.store_id || store.id || null,
+      categoryId: row.category_id || category.id || null,
       title: row.title,
       description: row.description || 'Community-submitted deal.',
       instructions: row.instructions || '',
       merchantUrl: row.deal_url || '#',
+      outboundUrl: row.outbound_url || '',
+      affiliateUrl: row.affiliate_url || '',
       image: row.image_url || './assets/img/deals/monitor.svg',
       currentPrice: Number(row.current_price || 0),
       originalPrice: Number(row.original_price || row.current_price || 0),
@@ -189,7 +193,7 @@
     const [categoriesRows, storesRows, dealsRows, couponsRows] = await Promise.all([
       request('categories', 'select=id,name,slug,icon,tone,description,is_active&is_active=eq.true&order=sort_order.asc'),
       request('stores', 'select=id,name,slug,initials,description,followers_count,rating,trust_label,is_active&is_active=eq.true&order=name.asc'),
-      request('deals', 'select=id,slug,title,description,instructions,deal_url,image_url,current_price,original_price,discount_percent,shipping_info,coupon_code,status,moderation_status,featured,trending,heat_score,vote_count,comment_count,tags,expires_at,created_at,stores(name,initials),categories(name,icon,tone)&moderation_status=eq.approved&status=in.(live,expiring_soon)&order=heat_score.desc'),
+      request('deals', 'select=id,slug,title,description,instructions,deal_url,image_url,current_price,original_price,discount_percent,store_id,category_id,shipping_info,coupon_code,status,moderation_status,featured,trending,heat_score,vote_count,comment_count,tags,expires_at,created_at,stores(id,name,initials),categories(id,name,icon,tone)&moderation_status=eq.approved&status=in.(live,expiring_soon)&order=heat_score.desc'),
       request('coupons', 'select=id,code,description,category,verified,status,expires_at,stores(name,initials)&status=eq.active&order=created_at.desc')
     ]);
 

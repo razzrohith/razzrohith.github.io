@@ -49,6 +49,10 @@
     return data.deals.find((deal) => deal.id === id || deal.slug === id || deal.uuid === id);
   }
 
+  function outboundLink(deal, source) {
+    return window.DealNestOutbound?.linkFor(deal, source) || deal.dealUrl;
+  }
+
   function remoteEnabled() {
     return Boolean(Auth?.isConfigured && Auth?.user);
   }
@@ -177,6 +181,7 @@
           <div class="deal-actions">
             <button class="save-btn ${isSaved ? 'saved' : ''}" type="button" data-action="save" data-id="${deal.id}">${isSaved ? 'Saved' : 'Save'}</button>
             <a class="deal-action" href="${deal.dealUrl}">View deal</a>
+            <a class="deal-action outbound-action" href="${outboundLink(deal, compactCard ? `${page || 'page'}-compact` : page || 'page')}" data-outbound-link>Get deal -></a>
           </div>
         </div>
       </article>
@@ -404,15 +409,16 @@
   }
 
   async function fetchAdminData() {
-    const [deals, reports, queue] = await Promise.all([
+    const [deals, reports, queue, clicks] = await Promise.all([
       Auth.rest('deals?select=id,slug,title,description,instructions,deal_url,image_url,status,moderation_status,current_price,original_price,discount_percent,shipping_info,coupon_code,posted_by,created_at,updated_at,stores(name),categories(name)&order=created_at.desc&limit=200'),
       Auth.rest('deal_reports?select=id,reason,details,status,created_at,deal_id,deals(title,slug,status,moderation_status)&order=created_at.desc&limit=100').catch(() => []),
-      Auth.rest('moderation_queue?select=id,entity_type,entity_id,title,reason,priority,status,created_at,updated_at&order=created_at.desc&limit=100').catch(() => [])
+      Auth.rest('moderation_queue?select=id,entity_type,entity_id,title,reason,priority,status,created_at,updated_at&order=created_at.desc&limit=100').catch(() => []),
+      Auth.rest('click_events?select=id,deal_id,store_id,user_id,clicked_at,source_page,destination_host,deals(title,slug),stores(name)&order=clicked_at.desc&limit=100').catch(() => [])
     ]);
-    return { deals, reports, queue };
+    return { deals, reports, queue, clicks };
   }
 
-  function renderAdminStats(deals, reports) {
+  function renderAdminStats(deals, reports, clicks = []) {
     const countDeals = (predicate) => deals.filter(predicate).length;
     return `
       <section class="section-block">
@@ -422,8 +428,41 @@
           ${stat('approved deals', countDeals((deal) => deal.moderation_status === 'approved' && ['live', 'expiring_soon'].includes(deal.status)), 'Visible in the public feed.')}
           ${stat('rejected deals', countDeals((deal) => deal.moderation_status === 'rejected'), 'Not visible publicly.')}
           ${stat('hidden deals', countDeals((deal) => deal.status === 'hidden'), 'Removed from public surfaces.')}
+          ${stat('tracked clicks', clicks.length, 'Recent outbound click events visible to moderators.')}
         </div>
       </section>
+    `;
+  }
+
+  function renderAdminAnalytics(clicks = []) {
+    const root = document.getElementById('adminAnalytics');
+    if (!root) return;
+    const countBy = (keyFn) => clicks.reduce((map, click) => {
+      const key = keyFn(click) || 'Unknown';
+      map.set(key, (map.get(key) || 0) + 1);
+      return map;
+    }, new Map());
+    const topDeals = [...countBy((click) => click.deals?.title || click.deal_id).entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5);
+    const topStores = [...countBy((click) => click.stores?.name || click.destination_host).entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5);
+    root.innerHTML = `
+      <div class="admin-toolbar">
+        <div>
+          <p class="eyebrow">Outbound analytics</p>
+          <h2>Affiliate-ready click signal</h2>
+          <p class="admin-subcopy">Privacy-safe click events only. Raw analytics are readable by admin and moderator roles through RLS.</p>
+        </div>
+      </div>
+      ${clicks.length ? `
+        <div class="analytics-grid">
+          <article class="analytics-card"><h3>Top clicked deals</h3>${topDeals.map(([name, count]) => `<p><span>${name}</span><strong>${count}</strong></p>`).join('')}</article>
+          <article class="analytics-card"><h3>Top stores</h3>${topStores.map(([name, count]) => `<p><span>${name}</span><strong>${count}</strong></p>`).join('')}</article>
+          <article class="analytics-card wide-analytics-card"><h3>Recent events</h3>${clicks.slice(0, 8).map((click) => `<p><span>${click.deals?.title || click.deal_id} / ${click.source_page || 'site'} / ${click.destination_host || 'unknown host'}</span><strong>${adminDate(click.clicked_at)}</strong></p>`).join('')}</article>
+        </div>
+      ` : '<div class="empty-state"><strong>No click analytics yet</strong><p>Run the click tracking migration, then click a Get Deal button to populate this admin-only preview.</p></div>'}
     `;
   }
 
@@ -586,14 +625,16 @@
           <h1>Moderation console</h1>
           <p>Approve pending submissions, triage reports, hide unsafe deals, expire stale offers, and leave moderation notes.</p>
         </section>
-        ${renderAdminStats(adminData.deals, adminData.reports)}
+        ${renderAdminStats(adminData.deals, adminData.reports, adminData.clicks)}
         <section class="section-block admin-panel" id="adminWorkspace"></section>
+        <section class="section-block admin-panel" id="adminAnalytics"></section>
         <section class="section-block admin-note">
           <p><strong>Security model:</strong> this page uses the browser anon key plus the signed-in moderator/admin session. RLS decides what can be read or changed.</p>
         </section>
       `;
       window.DealNestAdmin = { ...adminData, filter: 'pending' };
       renderAdminWorkspace(adminData.deals, adminData.reports, adminData.queue, 'pending');
+      renderAdminAnalytics(adminData.clicks);
     } catch (error) {
       document.getElementById('pageContent').innerHTML = `
         <section class="page-hero section-block motion-item">
@@ -857,8 +898,9 @@
       const refreshed = await fetchAdminData();
       window.DealNestAdmin = { ...refreshed, filter: window.DealNestAdmin.filter };
       document.querySelector('.admin-stat-grid')?.closest('.section-block')?.remove();
-      document.querySelector('.page-hero')?.insertAdjacentHTML('afterend', renderAdminStats(refreshed.deals, refreshed.reports));
+      document.querySelector('.page-hero')?.insertAdjacentHTML('afterend', renderAdminStats(refreshed.deals, refreshed.reports, refreshed.clicks));
       renderAdminWorkspace(refreshed.deals, refreshed.reports, refreshed.queue, window.DealNestAdmin.filter);
+      renderAdminAnalytics(refreshed.clicks);
     } catch (error) {
       toast(error.message);
       button.disabled = false;

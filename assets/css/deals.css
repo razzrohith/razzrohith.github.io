@@ -1500,8 +1500,12 @@ p {
 
 .deal-actions {
   display: grid;
-  grid-template-columns: minmax(64px, .34fr) 1fr;
+  grid-template-columns: minmax(64px, .34fr) 1fr 1fr;
   gap: 9px;
+}
+
+.deal-actions.single-action {
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
 }
 
 .save-btn {
@@ -1529,6 +1533,28 @@ p {
   border-radius: 14px;
   color: #fff;
   background: linear-gradient(135deg, var(--ink), #24415f);
+}
+
+.outbound-action {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, var(--brand), var(--brand-2));
+  box-shadow: 0 16px 28px rgba(15, 118, 110, .16);
+}
+
+.outbound-action::after {
+  content: "";
+  width: 7px;
+  height: 7px;
+  margin-left: 8px;
+  border-top: 2px solid currentColor;
+  border-right: 2px solid currentColor;
+  transform: rotate(45deg);
+}
+
+.outbound-action.is-loading {
+  pointer-events: none;
+  opacity: .78;
 }
 
 .deal-action:hover,
@@ -2431,6 +2457,59 @@ p {
 .admin-actions button:disabled {
   cursor: not-allowed;
   opacity: .45;
+}
+
+.admin-subcopy {
+  margin: 6px 0 0;
+  color: var(--muted);
+  max-width: 680px;
+  line-height: 1.55;
+}
+
+.analytics-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.analytics-card {
+  display: grid;
+  gap: 10px;
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, .9);
+  box-shadow: 0 14px 32px rgba(27, 43, 65, .07);
+  padding: 16px;
+}
+
+.wide-analytics-card {
+  grid-column: 1 / -1;
+}
+
+.analytics-card h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.analytics-card p {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  margin: 0;
+  color: var(--ink-2);
+}
+
+.analytics-card span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.analytics-card strong {
+  color: var(--ink);
+  font-size: .9rem;
 }
 
 #postPreview .deal-card {
@@ -3808,6 +3887,10 @@ body::before {
   .spotlight-actions,
   .admin-actions {
     display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .analytics-grid {
     grid-template-columns: 1fr;
   }
 

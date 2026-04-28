@@ -51,6 +51,10 @@
     return canonical;
   }
 
+  function outboundLink(item, source) {
+    return window.DealNestOutbound?.linkFor(item, source) || item.dealUrl;
+  }
+
   function money(value) {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -209,6 +213,7 @@
           </div>
           <div class="deal-actions single-action">
             <a class="deal-action" href="${item.dealUrl}">View deal</a>
+            <a class="deal-action outbound-action" href="${outboundLink(item, 'related-deal')}" data-outbound-link>Get deal -></a>
           </div>
         </div>
       </article>
@@ -222,6 +227,7 @@
     const storeUrl = `./store.html?name=${encodeURIComponent(deal.store)}`;
     const categoryUrl = `./category.html?name=${encodeURIComponent(deal.category)}`;
     const merchantUrl = deal.merchantUrl && deal.merchantUrl !== '#' ? deal.merchantUrl : storeUrl;
+    const outboundUrl = outboundLink(deal, 'deal-detail');
     const statusNote = /expired|hidden|rejected|pending/i.test(deal.status)
       ? `<div class="detail-state-note"><strong>${deal.status}</strong><span>This deal may be limited, under review, or unavailable from the main public feed.</span></div>`
       : '';
@@ -313,7 +319,7 @@
           <button type="button" class="ghost-button" data-action="expired">Report expired</button>
         </div>
 
-        <a class="deal-merchant-button" href="${merchantUrl}" target="_blank" rel="noopener">Get deal at ${deal.store}</a>
+        <a class="deal-merchant-button outbound-action" href="${outboundUrl}" data-outbound-link rel="noopener noreferrer">Get deal at ${deal.store} -></a>
       </section>
     `;
     requestAnimationFrame(() => window.DealNestMotion?.refresh());

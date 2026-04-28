@@ -70,6 +70,109 @@
     return Auth.rest(path).catch(() => fallback);
   }
 
+  function categoryNameById(id) {
+    return data.categories.find((category) => category.id === id)?.name || '';
+  }
+
+  function storeNameById(id) {
+    return data.stores.find((store) => store.id === id)?.name || '';
+  }
+
+  function alertCategoryName(alert) {
+    return alert.category || categoryNameById(alert.category_id) || 'Any category';
+  }
+
+  function alertStoreName(alert) {
+    return alert.store || storeNameById(alert.store_id) || 'Any store';
+  }
+
+  async function fetchAlertRows(userId) {
+    const base = `user_id=eq.${encodeURIComponent(userId)}&order=created_at.desc`;
+    const extended = `deal_alerts?select=id,keyword,category_id,store_id,max_price,min_discount_percent,notify_email,notify_browser,notify_dashboard,is_active,created_at,updated_at,require_free_shipping,require_coupon,require_expiring_soon&${base}`;
+    const fallback = `deal_alerts?select=id,keyword,category_id,store_id,max_price,min_discount_percent,notify_email,notify_browser,notify_dashboard,is_active,created_at,updated_at&${base}`;
+    const rows = await fetchRows(extended, null);
+    return rows || fetchRows(fallback);
+  }
+
+  function alertCriteriaFromForm(form) {
+    const values = Object.fromEntries(new FormData(form).entries());
+    return {
+      id: values.alertId || '',
+      keyword: String(values.keyword || '').trim(),
+      category: String(values.category || 'Any category'),
+      store: String(values.store || 'Any store'),
+      max_price: values.price ? Number(values.price) : null,
+      min_discount_percent: values.discount ? Number(values.discount) : null,
+      require_free_shipping: Boolean(values.freeShipping),
+      require_coupon: Boolean(values.couponAvailable),
+      require_expiring_soon: Boolean(values.expiringSoon),
+      notify_email: Boolean(form.querySelector('[data-channel="Email"]')?.classList.contains('active')),
+      notify_browser: Boolean(form.querySelector('[data-channel="Browser"]')?.classList.contains('active')),
+      notify_dashboard: true,
+      is_active: true
+    };
+  }
+
+  function alertValidation(criteria) {
+    const errors = [];
+    if (!criteria.keyword && criteria.category === 'Any category' && criteria.store === 'Any store') {
+      errors.push('Add a keyword, category, or store so the alert has a clear signal.');
+    }
+    if (criteria.max_price !== null && (!Number.isFinite(criteria.max_price) || criteria.max_price < 0)) errors.push('Max price must be a valid positive number.');
+    if (criteria.min_discount_percent !== null && (!Number.isFinite(criteria.min_discount_percent) || criteria.min_discount_percent < 0 || criteria.min_discount_percent > 100)) errors.push('Minimum discount must be between 0 and 100.');
+    return errors;
+  }
+
+  function freeShippingDeal(deal) {
+    return /free/i.test(deal.shipping || '') || (deal.tags || []).some((tag) => /free shipping/i.test(tag));
+  }
+
+  function expiringDeal(deal) {
+    return /expiring/i.test(deal.status || '') || (deal.tags || []).some((tag) => /expiring/i.test(tag));
+  }
+
+  function alertMatchReasons(alert, deal) {
+    const reasons = [];
+    const keyword = String(alert.keyword || '').trim().toLowerCase();
+    const haystack = [deal.title, deal.description, deal.store, deal.category, deal.couponCode, deal.shipping, ...(deal.tags || [])].join(' ').toLowerCase();
+    if (keyword && keyword.split(/\s+/).filter(Boolean).some((term) => haystack.includes(term))) reasons.push(`keyword "${alert.keyword}"`);
+    const category = alertCategoryName(alert);
+    if (category !== 'Any category' && deal.category === category) reasons.push(category);
+    const store = alertStoreName(alert);
+    if (store !== 'Any store' && deal.store === store) reasons.push(store);
+    if (alert.max_price !== null && Number(deal.currentPrice) <= Number(alert.max_price)) reasons.push(`under ${money(Number(alert.max_price))}`);
+    if (alert.min_discount_percent !== null && Number(deal.discount) >= Number(alert.min_discount_percent)) reasons.push(`${alert.min_discount_percent}%+ off`);
+    if (alert.require_free_shipping && freeShippingDeal(deal)) reasons.push('free shipping');
+    if (alert.require_coupon && deal.couponCode) reasons.push('coupon available');
+    if (alert.require_expiring_soon && expiringDeal(deal)) reasons.push('expiring soon');
+    return reasons;
+  }
+
+  function matchesAlert(alert, deal) {
+    const keyword = String(alert.keyword || '').trim().toLowerCase();
+    if (keyword) {
+      const haystack = [deal.title, deal.description, deal.store, deal.category, deal.couponCode, deal.shipping, ...(deal.tags || [])].join(' ').toLowerCase();
+      if (!keyword.split(/\s+/).filter(Boolean).some((term) => haystack.includes(term))) return false;
+    }
+    const category = alertCategoryName(alert);
+    if (category !== 'Any category' && deal.category !== category) return false;
+    const store = alertStoreName(alert);
+    if (store !== 'Any store' && deal.store !== store) return false;
+    if (alert.max_price !== null && alert.max_price !== undefined && Number(deal.currentPrice) > Number(alert.max_price)) return false;
+    if (alert.min_discount_percent !== null && alert.min_discount_percent !== undefined && Number(deal.discount) < Number(alert.min_discount_percent)) return false;
+    if (alert.require_free_shipping && !freeShippingDeal(deal)) return false;
+    if (alert.require_coupon && !deal.couponCode) return false;
+    if (alert.require_expiring_soon && !expiringDeal(deal)) return false;
+    return true;
+  }
+
+  function matchingDealsForAlert(alert) {
+    return data.deals
+      .filter((deal) => matchesAlert(alert, deal))
+      .map((deal) => ({ deal, reasons: alertMatchReasons(alert, deal) }))
+      .sort((a, b) => b.deal.heat - a.deal.heat || b.deal.discount - a.deal.discount);
+  }
+
   async function toggleAccountSave(id, target) {
     const deal = dealById(id);
     if (!deal) return;
@@ -299,11 +402,115 @@
       `<section class="section-block"><div class="feed-toolbar"><div><p class="eyebrow">${results.length} saved</p><h2>Deals you are watching</h2></div><div class="community-actions"><a class="text-link" href="./#hot-deals">Find more</a>${remoteEnabled() ? '' : '<button class="ghost-button" type="button" data-auth-action="signup">Sync saves</button>'}</div></div><div class="deal-grid">${results.map((deal) => dealCard(deal)).join('') || '<div class="empty-state"><strong>No saved deals yet</strong><p>Save deals from the homepage or detail pages to fill this view.</p></div>'}</div></section>`);
   }
 
-  function alerts() {
+  async function alerts() {
+    const alertRows = remoteEnabled() ? await fetchAlertRows(Auth.currentUserId()) : [];
+    const totalMatches = alertRows.reduce((sum, alert) => sum + (alert.is_active === false ? 0 : matchingDealsForAlert(alert).length), 0);
     const locked = !remoteEnabled() ? accessPanel('Sign in to create alerts', 'Guests can browse deals freely, but alert rules belong to your account so they can sync across devices.') : '';
     pageShell('Deal alerts', 'Watchlist builder', 'Build account-backed alert rules with keyword, category, store, max price, discount target, and notification options.',
-      `<section class="alert-section section-block"><div class="alert-copy"><h2>Your next price drop radar.</h2><p>This static MVP validates alert UX before accounts and delivery channels are wired up.</p><div class="trust-strip mini-stats">${stat('keywords', data.trendingSearches.length, 'Popular searches can seed alerts.')}${stat('stores', data.stores.length, 'Store follows can become triggers.')}</div></div><form class="alert-builder motion-item" id="alertForm"><label>Keyword<input name="keyword" value="gaming monitor"></label><label>Category<select name="category">${data.categories.map((category) => `<option>${category.name}</option>`).join('')}</select></label><label>Store<select name="store"><option>Any store</option>${data.stores.map((store) => `<option>${store.name}</option>`).join('')}</select></label><label>Max price<input name="price" value="250"></label><label>Minimum discount %<input name="discount" value="35"></label><div><button type="button" data-channel="Email">Email</button><button type="button" data-channel="Browser">Browser</button><button type="button" data-channel="Dashboard">Dashboard</button></div><button class="post-button" type="submit">Preview alert</button><output id="alertOutput">Alert preview will appear here.</output></form></section>`);
-    document.getElementById('pageContent').insertAdjacentHTML('beforeend', locked);
+      `${locked}<section class="alert-section section-block"><div class="alert-copy"><h2>Your next price drop radar.</h2><p>Build precise alert rules, preview matching public deals instantly, and keep delivery preferences ready for future notifications.</p><div class="trust-strip mini-stats">${stat('alerts', alertRows.length, 'Account-backed rules saved for this member.')}${stat('matches', totalMatches, 'Current public deals matching active alerts.')}</div></div><form class="alert-builder motion-item" id="alertForm" novalidate><input type="hidden" name="alertId"><label>Keyword<input name="keyword" value="gaming monitor" placeholder="monitor, coffee, backpack"></label><label>Category<select name="category"><option>Any category</option>${data.categories.map((category) => `<option>${category.name}</option>`).join('')}</select></label><label>Store<select name="store"><option>Any store</option>${data.stores.map((store) => `<option>${store.name}</option>`).join('')}</select></label><label>Max price<input name="price" inputmode="decimal" value="250"></label><label>Minimum discount %<input name="discount" inputmode="numeric" value="35"></label><div class="alert-checks"><label><input name="freeShipping" type="checkbox"> Free shipping</label><label><input name="couponAvailable" type="checkbox"> Coupon available</label><label><input name="expiringSoon" type="checkbox"> Expiring soon</label></div><div class="alert-channels"><button type="button" class="active" data-channel="Dashboard">Dashboard</button><button type="button" data-channel="Email">Email placeholder</button><button type="button" data-channel="Browser">Browser placeholder</button></div><div class="alert-form-actions"><button class="post-button" type="submit">${remoteEnabled() ? 'Save alert' : 'Sign in to save'}</button><button class="ghost-button" type="button" data-action="reset-alert-form">Reset</button></div><output id="alertOutput">Alert preview will appear here.</output></form></section><section class="section-block alert-preview-panel"><div class="section-heading"><div><p class="eyebrow">Live preview</p><h2>Matches before you save</h2></div></div><div id="alertPreviewResults"></div></section><section class="section-block alert-saved-panel"><div class="section-heading"><div><p class="eyebrow">Saved alerts</p><h2>Your active radar</h2></div></div><div id="savedAlertList"></div></section>`);
+    renderAlertPreview();
+    renderSavedAlerts(alertRows);
+  }
+
+  function renderAlertPreview(criteria = null) {
+    const root = document.getElementById('alertPreviewResults');
+    const form = document.getElementById('alertForm');
+    if (!root || !form) return;
+    const alert = criteria || alertCriteriaFromForm(form);
+    const errors = alertValidation(alert);
+    if (errors.length) {
+      root.innerHTML = `<div class="empty-state"><strong>Alert needs a signal</strong><p>${errors.join(' ')}</p></div>`;
+      return;
+    }
+    const matches = matchingDealsForAlert(alert).slice(0, 6);
+    root.innerHTML = matches.length
+      ? `<div class="alert-match-grid">${matches.map(({ deal, reasons }) => `<article class="alert-match-card"><img src="${deal.image}" alt=""><div><strong><a href="${deal.dealUrl}">${deal.title}</a></strong><span>${deal.store} / ${money(deal.currentPrice)} / ${deal.discount}% off</span><small>Matched by ${reasons.join(', ') || 'current alert rule'}</small></div><a class="deal-action outbound-action" href="${outboundLink(deal, 'alert-preview')}" data-outbound-link>Get deal -></a></article>`).join('')}</div>`
+      : '<div class="empty-state"><strong>No current matches</strong><p>Try widening the price, discount, store, or keyword fields.</p></div>';
+    window.DealNestMotion?.refresh();
+  }
+
+  function renderSavedAlerts(alertRows = []) {
+    const root = document.getElementById('savedAlertList');
+    if (!root) return;
+    window.DealNestAlerts = alertRows;
+    if (!remoteEnabled()) {
+      root.innerHTML = '<div class="empty-state"><strong>Login required</strong><p>Alert rules are private account data. Sign in to create and manage them.</p></div>';
+      return;
+    }
+    root.innerHTML = alertRows.length
+      ? `<div class="saved-alert-list">${alertRows.map((alert) => {
+        const matches = alert.is_active === false ? [] : matchingDealsForAlert(alert);
+        const criteria = [
+          alert.keyword ? `"${alert.keyword}"` : '',
+          alertCategoryName(alert) !== 'Any category' ? alertCategoryName(alert) : '',
+          alertStoreName(alert) !== 'Any store' ? alertStoreName(alert) : '',
+          alert.max_price ? `under ${money(Number(alert.max_price))}` : '',
+          alert.min_discount_percent ? `${alert.min_discount_percent}%+ off` : '',
+          alert.require_free_shipping ? 'free shipping' : '',
+          alert.require_coupon ? 'coupon' : '',
+          alert.require_expiring_soon ? 'expiring soon' : ''
+        ].filter(Boolean).join(' / ') || 'Any public deal';
+        return `<article class="saved-alert-card" data-alert-id="${alert.id}"><div><span class="status-pill">${alert.is_active === false ? 'inactive' : 'active'}</span><strong>${criteria}</strong><p>${matches.length} matching public deal${matches.length === 1 ? '' : 's'} now.</p>${matches[0] ? `<small>Top match: ${matches[0].deal.title} / ${matches[0].reasons.join(', ')}</small>` : '<small>No current matches. We will keep watching.</small>'}</div><div class="alert-card-actions"><button type="button" data-action="edit-alert" data-id="${alert.id}">Edit</button><button type="button" data-action="toggle-alert" data-id="${alert.id}" data-active="${alert.is_active === false ? 'false' : 'true'}">${alert.is_active === false ? 'Activate' : 'Pause'}</button><button type="button" data-action="delete-alert" data-id="${alert.id}">Delete</button></div></article>`;
+      }).join('')}</div>`
+      : '<div class="empty-state"><strong>No saved alerts yet</strong><p>Create your first alert above to start watching current public deals.</p></div>';
+  }
+
+  function fillAlertForm(alert) {
+    const form = document.getElementById('alertForm');
+    if (!form || !alert) return;
+    form.elements.alertId.value = alert.id || '';
+    form.elements.keyword.value = alert.keyword || '';
+    form.elements.category.value = alertCategoryName(alert);
+    form.elements.store.value = alertStoreName(alert);
+    form.elements.price.value = alert.max_price || '';
+    form.elements.discount.value = alert.min_discount_percent || '';
+    form.elements.freeShipping.checked = Boolean(alert.require_free_shipping);
+    form.elements.couponAvailable.checked = Boolean(alert.require_coupon);
+    form.elements.expiringSoon.checked = Boolean(alert.require_expiring_soon);
+    form.querySelectorAll('[data-channel]').forEach((button) => {
+      const name = button.dataset.channel;
+      const active = name === 'Email' ? alert.notify_email : name === 'Browser' ? alert.notify_browser : alert.notify_dashboard !== false;
+      button.classList.toggle('active', Boolean(active));
+    });
+    document.getElementById('alertOutput').textContent = 'Editing alert. Save to update this rule.';
+    renderAlertPreview();
+    form.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  async function refreshAlerts() {
+    if (!remoteEnabled() || page !== 'alerts') return;
+    const rows = await fetchAlertRows(Auth.currentUserId());
+    renderSavedAlerts(rows);
+  }
+
+  async function saveAlert(criteria) {
+    const body = {
+      user_id: Auth.currentUserId(),
+      keyword: criteria.keyword || null,
+      category_id: criteria.category === 'Any category' ? null : categoryId(criteria.category),
+      store_id: criteria.store === 'Any store' ? null : storeId(criteria.store),
+      max_price: criteria.max_price,
+      min_discount_percent: criteria.min_discount_percent,
+      notify_email: criteria.notify_email,
+      notify_browser: criteria.notify_browser,
+      notify_dashboard: criteria.notify_dashboard,
+      is_active: criteria.is_active,
+      require_free_shipping: criteria.require_free_shipping,
+      require_coupon: criteria.require_coupon,
+      require_expiring_soon: criteria.require_expiring_soon
+    };
+    const fallbackBody = { ...body };
+    delete fallbackBody.require_free_shipping;
+    delete fallbackBody.require_coupon;
+    delete fallbackBody.require_expiring_soon;
+    const method = criteria.id ? 'PATCH' : 'POST';
+    const path = criteria.id ? `deal_alerts?id=eq.${encodeURIComponent(criteria.id)}&user_id=eq.${encodeURIComponent(Auth.currentUserId())}` : 'deal_alerts';
+    try {
+      return await Auth.rest(path, { method, body });
+    } catch (error) {
+      if (!/column|schema|require_/i.test(error.message)) throw error;
+      return Auth.rest(path, { method, body: fallbackBody });
+    }
   }
 
   function postDeal() {
@@ -595,13 +802,15 @@
       fetchRows(`saved_deals?select=deal_id,created_at&user_id=eq.${encodeURIComponent(userId)}&order=created_at.desc`),
       fetchRows(`deals?select=id,slug,title,status,moderation_status,image_url,current_price,original_price,discount_percent,created_at,updated_at&posted_by=eq.${encodeURIComponent(userId)}&order=created_at.desc`),
       fetchRows(`deal_comments?select=id,body,created_at,deal_id&user_id=eq.${encodeURIComponent(userId)}&order=created_at.desc`),
-      fetchRows(`deal_alerts?select=id,keyword,max_price,min_discount_percent,is_active,created_at&user_id=eq.${encodeURIComponent(userId)}&order=created_at.desc`)
+      fetchAlertRows(userId)
     ]);
     const savedDeals = savedRows.map((row) => dealById(row.deal_id)).filter(Boolean);
     const memberName = Auth.user?.user_metadata?.display_name || Auth.user?.email?.split('@')[0] || 'DealNest member';
     const postedCount = (status, moderation) => postedRows.filter((deal) => (!status || deal.status === status) && (!moderation || deal.moderation_status === moderation)).length;
+    const activeAlertRows = alertRows.filter((alert) => alert.is_active !== false);
+    const alertMatches = activeAlertRows.flatMap((alert) => matchingDealsForAlert(alert).slice(0, 3).map((match) => ({ alert, ...match })));
     pageShell('Your dashboard', 'Member workspace', 'A private hub for your saved deals, posted deals, comments, alerts, and account profile.',
-      `<section class="section-block"><div class="trust-strip">${stat('saved', savedDeals.length, 'Deals synced to your account.')}${stat('pending', postedCount('pending', 'pending'), 'Waiting for moderator review.')}${stat('approved', postedRows.filter((deal) => deal.moderation_status === 'approved').length, 'Approved or previously approved submissions.')}${stat('rejected', postedRows.filter((deal) => deal.moderation_status === 'rejected').length, 'Needs a better price, source, or details.')}${stat('alerts', alertRows.length, 'Account alert rules.')}</div></section><section class="dashboard-grid"><article class="dashboard-card"><h3>Profile</h3><div class="profile-line"><strong>${memberName}</strong><span>${Auth.user?.email || ''}</span></div><a class="deal-action" href="./post-deal.html">Post a deal</a></article><article class="dashboard-card"><h3>Saved deals</h3><div class="dashboard-list">${savedDeals.map((deal) => `<article><strong><a href="${deal.dealUrl}">${deal.title}</a></strong><span>${deal.store} / ${money(deal.currentPrice)}</span></article>`).join('') || '<p>No account saves yet.</p>'}</div></article><article class="dashboard-card wide-dashboard-card"><h3>Submitted deals</h3><div class="dashboard-list submitted-list">${postedRows.map((deal) => `<article><img src="${deal.image_url || './assets/img/deals/monitor.svg'}" alt=""><div><strong>${deal.title}</strong><span class="status-pill">${deal.status} / ${deal.moderation_status}</span><span>${money(Number(deal.current_price || 0))}${deal.original_price ? ` from ${money(Number(deal.original_price))}` : ''} / ${deal.discount_percent || 0}% off</span><small>Submitted ${adminDate(deal.created_at)} / updated ${adminDate(deal.updated_at)}</small></div></article>`).join('') || '<p>No submissions yet.</p>'}</div></article><article class="dashboard-card"><h3>Comments</h3><div class="dashboard-list">${commentRows.slice(0, 6).map((comment) => `<article><strong>${new Date(comment.created_at).toLocaleDateString()}</strong><p>${comment.body}</p></article>`).join('') || '<p>No comments yet.</p>'}</div></article><article class="dashboard-card"><h3>Deal alerts</h3><div class="dashboard-list">${alertRows.map((alert) => `<article><strong>${alert.keyword || 'Any keyword'}</strong><span>Under ${alert.max_price ? money(Number(alert.max_price)) : 'any price'} / ${alert.min_discount_percent || 0}%+ off</span></article>`).join('') || '<p>No alerts yet.</p>'}</div></article></section>`);
+      `<section class="section-block"><div class="trust-strip">${stat('saved', savedDeals.length, 'Deals synced to your account.')}${stat('pending', postedCount('pending', 'pending'), 'Waiting for moderator review.')}${stat('approved', postedRows.filter((deal) => deal.moderation_status === 'approved').length, 'Approved or previously approved submissions.')}${stat('alerts', activeAlertRows.length, 'Active account alert rules.')}${stat('matches', alertMatches.length, 'Recent in-app alert matches.')}</div></section><section class="dashboard-grid"><article class="dashboard-card"><h3>Profile</h3><div class="profile-line"><strong>${memberName}</strong><span>${Auth.user?.email || ''}</span></div><a class="deal-action" href="./post-deal.html">Post a deal</a><a class="ghost-button link-button" href="./alerts.html">Manage alerts</a></article><article class="dashboard-card"><h3>Saved deals</h3><div class="dashboard-list">${savedDeals.map((deal) => `<article><strong><a href="${deal.dealUrl}">${deal.title}</a></strong><span>${deal.store} / ${money(deal.currentPrice)}</span></article>`).join('') || '<p>No account saves yet.</p>'}</div></article><article class="dashboard-card wide-dashboard-card"><h3>Recent alert matches</h3><div class="dashboard-list alert-dashboard-list">${alertMatches.slice(0, 8).map(({ alert, deal, reasons }) => `<article><img src="${deal.image}" alt=""><div><strong><a href="${deal.dealUrl}">${deal.title}</a></strong><span>${deal.store} / ${money(deal.currentPrice)} / ${deal.discount}% off</span><small>${alert.keyword || alertCategoryName(alert) || 'Alert'} matched by ${reasons.join(', ') || 'current rule'}</small></div><a class="deal-action outbound-action" href="${outboundLink(deal, 'dashboard-alert')}" data-outbound-link>Get deal -></a></article>`).join('') || '<p>No alert matches yet. Create or broaden an alert to see matches here.</p>'}</div></article><article class="dashboard-card wide-dashboard-card"><h3>Submitted deals</h3><div class="dashboard-list submitted-list">${postedRows.map((deal) => `<article><img src="${deal.image_url || './assets/img/deals/monitor.svg'}" alt=""><div><strong>${deal.title}</strong><span class="status-pill">${deal.status} / ${deal.moderation_status}</span><span>${money(Number(deal.current_price || 0))}${deal.original_price ? ` from ${money(Number(deal.original_price))}` : ''} / ${deal.discount_percent || 0}% off</span><small>Submitted ${adminDate(deal.created_at)} / updated ${adminDate(deal.updated_at)}</small></div></article>`).join('') || '<p>No submissions yet.</p>'}</div></article><article class="dashboard-card"><h3>Comments</h3><div class="dashboard-list">${commentRows.slice(0, 6).map((comment) => `<article><strong>${new Date(comment.created_at).toLocaleDateString()}</strong><p>${comment.body}</p></article>`).join('') || '<p>No comments yet.</p>'}</div></article><article class="dashboard-card"><h3>Deal alerts</h3><div class="dashboard-list">${alertRows.map((alert) => `<article><strong>${alert.keyword || alertCategoryName(alert)}</strong><span>${alertStoreName(alert)} / ${alert.max_price ? `under ${money(Number(alert.max_price))}` : 'any price'} / ${alert.min_discount_percent || 0}%+ off</span><small>${matchingDealsForAlert(alert).length} current matches / ${alert.is_active === false ? 'paused' : 'active'}</small></article>`).join('') || '<p>No alerts yet.</p>'}</div></article></section>`);
   }
 
   async function admin() {
@@ -652,6 +861,7 @@
 
   document.body.addEventListener('input', (event) => {
     if (event.target.closest('#postDealForm')) renderPostPreview();
+    if (event.target.closest('#alertForm')) renderAlertPreview();
   });
 
   document.body.addEventListener('submit', async (event) => {
@@ -760,28 +970,35 @@
     if (event.target.id === 'alertForm') {
       event.preventDefault();
       if (!requireMember('deal-alert', 'Sign in to create account-backed deal alerts.')) return;
-      const values = Object.fromEntries(new FormData(event.target).entries());
+      const form = event.target;
+      const criteria = alertCriteriaFromForm(form);
       const output = document.getElementById('alertOutput');
-      output.textContent = 'Saving alert...';
+      const submitButton = form.querySelector('button[type="submit"]');
+      const errors = alertValidation(criteria);
+      if (errors.length) {
+        output.textContent = errors.join(' ');
+        toast('Alert needs a clearer rule');
+        renderAlertPreview(criteria);
+        return;
+      }
+      output.textContent = criteria.id ? 'Updating alert...' : 'Saving alert...';
+      submitButton.disabled = true;
+      submitButton.textContent = criteria.id ? 'Updating...' : 'Saving...';
       try {
-        await Auth.rest('deal_alerts', {
-          method: 'POST',
-          body: {
-            user_id: Auth.currentUserId(),
-            keyword: values.keyword || null,
-            category_id: categoryId(values.category),
-            store_id: values.store === 'Any store' ? null : storeId(values.store),
-            max_price: Number(values.price) || null,
-            min_discount_percent: Number(values.discount) || null,
-            notify_email: Boolean(document.querySelector('[data-channel="Email"]')?.classList.contains('active')),
-            notify_browser: Boolean(document.querySelector('[data-channel="Browser"]')?.classList.contains('active')),
-            notify_dashboard: true
-          }
-        });
-        output.textContent = `${values.keyword} in ${values.category}, ${values.store}, under $${values.price}, ${values.discount}%+ off. Saved to your account.`;
-        toast('Alert saved');
+        await saveAlert(criteria);
+        const count = matchingDealsForAlert(criteria).length;
+        output.textContent = `${criteria.keyword || 'Alert'} saved. ${count} current public deal${count === 1 ? '' : 's'} match.`;
+        toast(criteria.id ? 'Alert updated' : 'Alert saved');
+        form.reset();
+        form.elements.alertId.value = '';
+        form.querySelector('[data-channel="Dashboard"]')?.classList.add('active');
+        renderAlertPreview();
+        await refreshAlerts();
       } catch (error) {
         output.textContent = error.message;
+      } finally {
+        submitButton.disabled = false;
+        submitButton.textContent = 'Save alert';
       }
     }
   });
@@ -801,6 +1018,41 @@
     }
     if (action === 'copy') navigator.clipboard?.writeText(code).then(() => toast(`Copied ${code}`)).catch(() => toast(`Coupon: ${code}`));
     if (action === 'save') toggleAccountSave(target.dataset.id, target);
+    if (action === 'reset-alert-form') {
+      const form = document.getElementById('alertForm');
+      form?.reset();
+      if (form?.elements.alertId) form.elements.alertId.value = '';
+      form?.querySelector('[data-channel="Dashboard"]')?.classList.add('active');
+      document.getElementById('alertOutput').textContent = 'Alert preview will appear here.';
+      renderAlertPreview();
+    }
+    if (action === 'edit-alert') {
+      const alert = (window.DealNestAlerts || []).find((item) => item.id === target.dataset.id);
+      fillAlertForm(alert);
+    }
+    if (action === 'toggle-alert') {
+      if (!requireMember('deal-alert', 'Sign in to manage account-backed deal alerts.')) return;
+      target.disabled = true;
+      Auth.rest(`deal_alerts?id=eq.${encodeURIComponent(target.dataset.id)}&user_id=eq.${encodeURIComponent(Auth.currentUserId())}`, {
+        method: 'PATCH',
+        body: { is_active: target.dataset.active !== 'true' }
+      }).then(() => {
+        toast(target.dataset.active === 'true' ? 'Alert paused' : 'Alert activated');
+        refreshAlerts();
+      }).catch((error) => toast(error.message)).finally(() => { target.disabled = false; });
+    }
+    if (action === 'delete-alert') {
+      if (!requireMember('deal-alert', 'Sign in to manage account-backed deal alerts.')) return;
+      if (!window.confirm('Delete this deal alert?')) return;
+      target.disabled = true;
+      Auth.rest(`deal_alerts?id=eq.${encodeURIComponent(target.dataset.id)}&user_id=eq.${encodeURIComponent(Auth.currentUserId())}`, {
+        method: 'DELETE',
+        prefer: 'return=minimal'
+      }).then(() => {
+        toast('Alert deleted');
+        refreshAlerts();
+      }).catch((error) => toast(error.message)).finally(() => { target.disabled = false; });
+    }
     if (action === 'follow-store') {
       if (followedStores.has(store)) {
         followedStores.delete(store);
@@ -910,6 +1162,7 @@
 
   document.body.addEventListener('change', (event) => {
     if (event.target.id === 'couponStoreFilter') renderCouponResults();
+    if (event.target.closest('#alertForm')) renderAlertPreview();
   });
 
   const menuToggle = document.getElementById('menuToggle');

@@ -60,6 +60,9 @@ If you are applying later incremental migrations, also run them in timestamp ord
 - `supabase/migrations/20260427020000_add_auth_action_foundation.sql`
 - `supabase/migrations/20260428000000_lock_owner_deal_updates.sql`
 - `supabase/migrations/20260428010000_tighten_deal_image_storage.sql`
+- `supabase/migrations/20260428020000_add_click_tracking_foundation.sql`
+- `supabase/migrations/20260428030000_fix_click_tracking_public_insert.sql`
+- `supabase/migrations/20260428040000_add_alert_notification_foundation.sql`
 
 ## What The Migration Creates
 

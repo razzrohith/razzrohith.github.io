@@ -2,6 +2,7 @@
   await Promise.all([window.DealNestDataReady, window.DealNestAuthReady].filter(Boolean));
   const data = window.DealScoutData;
   const Auth = window.DealNestAuth;
+  const Discovery = window.DealNestDiscovery;
   const params = new URLSearchParams(window.location.search);
   const requestedId = params.get('id');
   const deal = data.deals.find((item) => item.id === requestedId || item.slug === requestedId || item.uuid === requestedId) || data.deals[0];
@@ -297,10 +298,8 @@
   }
 
   function renderRelated() {
-    const related = data.deals
-      .filter((item) => item.id !== deal.id && (item.category === deal.category || item.tags.some((tag) => deal.tags.includes(tag))))
-      .slice(0, 4);
-    relatedDeals.innerHTML = (related.length ? related : data.deals.filter((item) => item.id !== deal.id).slice(0, 4))
+    const related = Discovery.relatedDeals(deal, data.deals, 4);
+    relatedDeals.innerHTML = (related.length ? related : Discovery.sortDeals(data.deals.filter((item) => item.id !== deal.id), 'trending').slice(0, 4))
       .map(relatedCard)
       .join('');
   }

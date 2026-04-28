@@ -113,19 +113,25 @@
     </section>
 
     <section class="feed-layout" id="hot-deals">
-      <aside class="filter-panel motion-item" aria-label="Deal filters">
+      <button class="filter-drawer-toggle" id="filterDrawerToggle" type="button" aria-expanded="false" aria-controls="dealFilters">Filters and sorting</button>
+      <aside class="filter-panel motion-item" id="dealFilters" aria-label="Deal filters">
         <div class="panel-title">
           <span>Refine feed</span>
-          <button type="button" id="clearFilters">Clear</button>
+          <div>
+            <button type="button" id="clearFilters">Clear</button>
+            <button class="filter-drawer-close" type="button" id="closeFilters" aria-label="Close filters">Close</button>
+          </div>
         </div>
 
         <div class="filter-group">
           <strong>Sort</strong>
           <div class="segmented" id="sortControls">
-            <button type="button" class="active" data-sort="trending">Trending</button>
-            <button type="button" data-sort="new">New</button>
-            <button type="button" data-sort="popular">Popular</button>
+            <button type="button" class="active" data-sort="trending">Hottest</button>
+            <button type="button" data-sort="newest">Newest</button>
+            <button type="button" data-sort="discount">Highest Discount</button>
+            <button type="button" data-sort="price-low">Lowest Price</button>
             <button type="button" data-sort="expiring">Expiring Soon</button>
+            <button type="button" data-sort="comments">Most Commented</button>
           </div>
         </div>
 
@@ -141,6 +147,10 @@
             <button type="button" data-filter="Outdoors">Outdoors</button>
             <button type="button" data-filter="Wellness">Wellness</button>
             <button type="button" data-filter="Pets">Pets</button>
+            <button type="button" data-filter="Coupon Available">Coupon Available</button>
+            <button type="button" data-filter="30%+ Off">30%+ Off</button>
+            <button type="button" data-filter="50%+ Off">50%+ Off</button>
+            <button type="button" data-filter="Expiring Soon">Expiring Soon</button>
           </div>
         </div>
 
@@ -155,6 +165,12 @@
           Max price
           <input id="priceFilter" type="range" min="25" max="2500" value="2500" step="25">
           <span id="priceValue">Loading price range</span>
+        </label>
+
+        <label class="field">
+          Minimum discount
+          <input id="discountFilter" type="range" min="0" max="70" value="0" step="5">
+          <span id="discountValue">Any discount</span>
         </label>
       </aside>
 
@@ -296,7 +312,8 @@
 
   <script src="./assets/js/deals-data.js"></script><script src="./assets/js/runtime-config.js"></script><script src="./assets/js/deals-supabase.js"></script><script src="./assets/js/deals-auth.js?v=ui-refine-20260428"></script>
   <script src="./assets/js/deals-motion.js?v=ui-refine-20260428"></script>
-  <script src="./assets/js/deals-app.js?v=ui-refine-20260428"></script>
+  <script src="./assets/js/deals-discovery.js?v=discovery-20260428"></script>
+  <script src="./assets/js/deals-app.js?v=discovery-20260428"></script>
 </body>
 
 </html>

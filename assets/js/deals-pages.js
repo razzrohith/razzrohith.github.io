@@ -2,6 +2,7 @@
   await Promise.all([window.DealNestDataReady, window.DealNestAuthReady].filter(Boolean));
   const data = window.DealScoutData;
   const Auth = window.DealNestAuth;
+  const Discovery = window.DealNestDiscovery;
   const page = document.body.dataset.page;
   const params = new URLSearchParams(window.location.search);
   const saved = new Set(JSON.parse(localStorage.getItem('dealnest:saved') || '[]'));
@@ -205,7 +206,7 @@
       `<section class="section-block"><div class="trust-strip">${stat('categories', data.categories.length, 'Balanced shopping lanes with real mock inventory.')}${stat('active deals', totalDeals, 'Every card links into a filtered category route.')}${stat('top heat', Math.max(...data.deals.map((deal) => deal.heat)), 'Community momentum helps prioritize the feed.')}</div></section>
       <section class="section-block"><div class="category-card-grid">${data.categories.map((category) => {
         const deals = categoryDeals(category.name);
-        const top = [...deals].sort((a, b) => b.heat - a.heat)[0];
+        const top = Discovery.sortDeals(deals, 'trending')[0];
         const stores = [...new Set(deals.map((deal) => deal.store))].slice(0, 3).join(', ') || 'Stores coming soon';
         return `<a class="category-card tone-${category.tone} motion-item rich-category-card" href="./category.html?name=${encodeURIComponent(category.name)}"><span>${category.icon}</span><strong>${category.name}</strong><p>${category.description}</p><small>${deals.length} active deals / ${stores}</small>${top ? `<em>Top: ${top.title}</em>` : '<em>New deals arriving soon</em>'}</a>`;
       }).join('')}</div></section>`);
@@ -256,15 +257,11 @@
   }
 
   function search() {
-    const query = (params.get('q') || params.get('filter') || '').toLowerCase();
+    const query = params.get('q') || params.get('filter') || '';
     const sort = params.get('sort') || 'trending';
-    const results = data.deals.filter((deal) => !query || [deal.title, deal.description, deal.store, deal.category, deal.shipping, deal.couponCode, ...deal.tags].join(' ').toLowerCase().includes(query));
-    if (sort === 'new') results.reverse();
-    if (sort === 'popular') results.sort((a, b) => b.comments + b.votes - (a.comments + a.votes));
-    if (sort === 'expiring') results.sort((a, b) => Number(b.status === 'Expiring Soon') - Number(a.status === 'Expiring Soon') || b.heat - a.heat);
-    if (sort === 'trending') results.sort((a, b) => b.heat - a.heat);
-    pageShell('Search results', 'Find faster', query ? `Showing static MVP results for "${query}".` : 'Showing all deals sorted by community heat.',
-      `<section class="section-block"><div class="feed-toolbar"><div><p class="eyebrow">${results.length} matches</p><h2>Deals matching your intent</h2></div><a class="text-link" href="./">Refine on homepage</a></div><div class="deal-grid">${results.map((deal) => dealCard(deal)).join('') || '<div class="empty-state"><strong>No matching deals yet</strong><p>Try another keyword from the homepage.</p></div>'}</div></section>`);
+    const results = Discovery.filterAndSort(data.deals, { query, sort, filters: new Set(), savedSet: saved });
+    pageShell('Search results', 'Find faster', query ? `Ranked matches for "${query}" across title, store, category, coupon, shipping, description, and keywords.` : 'Showing all deals sorted by community heat, value, recency, and urgency.',
+      `<section class="section-block"><div class="feed-toolbar"><div><p class="eyebrow">${results.length} matches</p><h2>Deals matching your intent</h2></div><div class="community-actions"><a class="text-link" href="./">Refine on homepage</a><a class="text-link" href="./search.html?sort=discount">Highest discount</a><a class="text-link" href="./search.html?sort=comments">Most discussed</a></div></div><div class="deal-grid">${results.map((deal) => dealCard(deal)).join('') || `<div class="empty-state">${Discovery.emptyStateHtml({ query }, data)}</div>`}</div></section>`);
   }
 
   async function savedPage() {
@@ -350,8 +347,8 @@
       pageShell('Category not found', 'Category page', 'The requested category does not exist in this dataset.', `<section class="section-block"><div class="empty-state"><strong>Unknown category</strong><p>Return to categories and choose another lane.</p></div></section>`);
       return;
     }
-    const deals = categoryDeals(category.name);
-    const top = [...deals].sort((a, b) => b.heat - a.heat)[0];
+    const deals = Discovery.sortDeals(categoryDeals(category.name), 'trending');
+    const top = deals[0];
     const stores = [...new Set(deals.map((deal) => deal.store))];
     pageShell(`${category.name} deals`, 'Category detail', `${category.description} Compare the best current offers, active stores, and community heat in this lane.`,
       `<section class="section-block"><div class="trust-strip">${stat('active deals', deals.length, 'Current offers in this category.')}${stat('top stores', stores.length, stores.slice(0, 4).join(', ') || 'New stores soon.')}${stat('best heat', top ? top.heat : 0, top ? top.title : 'No top deal yet.')}</div></section><section class="section-block"><div class="deal-grid">${deals.map((deal) => dealCard(deal)).join('') || '<div class="empty-state"><strong>No active deals</strong><p>Check back as the feed grows.</p></div>'}</div></section>`);
@@ -364,7 +361,7 @@
       pageShell('Store not found', 'Store profile', 'The requested store does not exist in this dataset.', `<section class="section-block"><div class="empty-state"><strong>Unknown store</strong><p>Return to stores and choose another listing.</p></div></section>`);
       return;
     }
-    const deals = data.deals.filter((deal) => deal.store === store.name);
+    const deals = Discovery.sortDeals(data.deals.filter((deal) => deal.store === store.name), 'trending');
     const coupons = couponsForStore(store.name);
     pageShell(store.name, 'Store profile', `Track active deals, coupons, trust rating, followers, and category footprint for ${store.name}.`,
       `<section class="section-block"><div class="trust-strip">${stat('followers', compact(store.followers), 'Mock social proof for future follow flows.')}${stat('trust rating', store.rating, 'Community sentiment and moderation signal.')}${stat('coupons', coupons.length, coupons.map((coupon) => coupon.code).join(', ') || 'No codes today.')}</div></section><section class="split-section"><div class="section-block"><div class="section-heading"><div><p class="eyebrow">Active deals</p><h2>${deals.length} current offers</h2></div></div><div class="deal-grid">${deals.map((deal) => dealCard(deal)).join('') || '<div class="empty-state"><strong>No active deals</strong><p>This store will populate when new listings are added.</p></div>'}</div></div><aside class="section-block"><div class="section-heading"><div><p class="eyebrow">Store coupons</p><h2>Codes and terms</h2></div></div><div class="coupon-list">${coupons.map((coupon) => `<article class="coupon-card"><div><strong>${coupon.store}</strong><code>${coupon.code}</code></div><p>${coupon.description}</p><footer><small>${coupon.expires}</small><button class="copy-btn" type="button" data-action="copy" data-code="${coupon.code}">Copy</button></footer></article>`).join('') || '<div class="empty-state"><strong>No current coupons</strong><p>Follow this store for future codes.</p></div>'}</div></aside></section>`);

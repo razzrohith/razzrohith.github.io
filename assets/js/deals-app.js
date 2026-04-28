@@ -2,6 +2,7 @@
   await Promise.all([window.DealNestDataReady, window.DealNestAuthReady].filter(Boolean));
   const data = window.DealScoutData;
   const Auth = window.DealNestAuth;
+  const Discovery = window.DealNestDiscovery;
   const storeNames = data.stores.map((store) => store.name);
   const initialMaxPrice = Math.max(100, Math.ceil(Math.max(...data.deals.map((deal) => Number(deal.currentPrice) || 0), 900) / 25) * 25);
   const state = {
@@ -10,6 +11,7 @@
     filters: new Set(),
     store: '',
     maxPrice: initialMaxPrice,
+    minDiscount: 0,
     hasInteracted: Boolean(new URLSearchParams(window.location.search).get('q')),
     saved: new Set(JSON.parse(localStorage.getItem('dealnest:saved') || '[]')),
     voted: new Set(Auth?.user ? JSON.parse(localStorage.getItem('dealnest:voted') || '[]') : []),
@@ -36,7 +38,11 @@
     storeFilter: document.getElementById('storeFilter'),
     priceFilter: document.getElementById('priceFilter'),
     priceValue: document.getElementById('priceValue'),
+    discountFilter: document.getElementById('discountFilter'),
+    discountValue: document.getElementById('discountValue'),
     clearFilters: document.getElementById('clearFilters'),
+    filterDrawerToggle: document.getElementById('filterDrawerToggle'),
+    closeFilters: document.getElementById('closeFilters'),
     sortControls: document.getElementById('sortControls'),
     quickFilters: document.getElementById('quickFilters'),
     menuToggle: document.getElementById('menuToggle'),
@@ -177,36 +183,16 @@
     }
   }
 
-  function dealTokens(deal) {
-    const tags = Array.isArray(deal.tags) ? deal.tags : [];
-    const values = [deal.category, deal.status, deal.store, deal.shipping, ...tags].filter(Boolean);
-    return values.flatMap((value) => [String(value), String(value).toLowerCase()]);
-  }
-
-  function matchesDeal(deal) {
-    const query = state.query.trim().toLowerCase();
-    const tags = Array.isArray(deal.tags) ? deal.tags : [];
-    const haystack = [deal.title, deal.description, deal.store, deal.category, deal.shipping, deal.couponCode, ...tags]
-      .filter(Boolean)
-      .join(' ')
-      .toLowerCase();
-    if (query && !haystack.includes(query)) return false;
-    if (state.store && deal.store !== state.store) return false;
-    if (Number(deal.currentPrice) > state.maxPrice) return false;
-    if (state.filters.size > 0) {
-      const tokens = new Set(dealTokens(deal));
-      const hasEveryFilter = [...state.filters].every((filter) => tokens.has(filter) || tokens.has(filter.toLowerCase()));
-      if (!hasEveryFilter) return false;
-    }
-    return true;
-  }
-
-  function sortDeals(deals) {
-    const sorted = [...deals];
-    if (state.sort === 'new') return sorted.reverse();
-    if (state.sort === 'popular') return sorted.sort((a, b) => b.comments + b.votes - (a.comments + a.votes));
-    if (state.sort === 'expiring') return sorted.sort((a, b) => Number(b.status === 'Expiring Soon') - Number(a.status === 'Expiring Soon') || b.heat - a.heat);
-    return sorted.sort((a, b) => b.heat - a.heat);
+  function discoveryOptions() {
+    return {
+      query: state.query,
+      sort: state.sort,
+      filters: state.filters,
+      store: state.store,
+      maxPrice: state.maxPrice,
+      minDiscount: state.minDiscount,
+      savedSet: state.saved
+    };
   }
 
   function findStore(name) {
@@ -266,14 +252,17 @@
   }
 
   function renderFeed() {
-    const filtered = sortDeals(data.deals.filter(matchesDeal));
+    const options = discoveryOptions();
+    const filtered = Discovery.filterAndSort(data.deals, options);
     els.dealFeed.classList.remove('feed-skeleton');
     els.dealFeed.removeAttribute('aria-busy');
     renderCards(els.dealFeed, filtered, false);
-    els.resultCount.textContent = `${filtered.length} deal${filtered.length === 1 ? '' : 's'}`;
+    const activeLabels = Discovery.activeFilterLabels(options)
+      .filter((label) => !label.startsWith('Under $') || state.maxPrice !== initialMaxPrice);
+    els.resultCount.textContent = `${filtered.length} deal${filtered.length === 1 ? '' : 's'}${activeLabels.length ? ` / ${activeLabels.length} active filter${activeLabels.length === 1 ? '' : 's'}` : ''}`;
     const showEmpty = filtered.length === 0 && state.hasInteracted;
     els.emptyState.innerHTML = showEmpty
-      ? '<strong>No matching deals</strong><p>Try clearing filters, raising the price limit, or searching a broader keyword.</p>'
+      ? Discovery.emptyStateHtml(options, data)
       : '';
     els.emptyState.classList.toggle('hidden', !showEmpty);
     window.DealNestMotion?.refresh();
@@ -329,7 +318,7 @@
   function renderCategories() {
     els.categoryGrid.innerHTML = data.categories.map((category) => {
       const deals = data.deals.filter((deal) => deal.category === category.name);
-      const best = deals.reduce((top, deal) => deal.heat > (top?.heat || 0) ? deal : top, null);
+      const best = Discovery.sortDeals(deals, 'trending')[0];
       return `
         <button class="category-card tone-${category.tone} motion-item" type="button" data-filter-shortcut="${category.name}">
           <span>${category.icon}</span>
@@ -375,8 +364,8 @@
   }
 
   function renderStaticSections() {
-    renderCards(els.trendingDeals, data.deals.filter((deal) => deal.trending).sort((a, b) => b.heat - a.heat).slice(0, 6), true);
-    renderCards(els.newDeals, [...data.deals].reverse().slice(0, 6), true);
+    renderCards(els.trendingDeals, Discovery.sortDeals(data.deals.filter((deal) => deal.trending), 'trending', { savedSet: state.saved }).slice(0, 6), true);
+    renderCards(els.newDeals, Discovery.sortDeals(data.deals, 'newest').slice(0, 6), true);
     renderSpotlight();
     renderPulse();
     renderCategories();
@@ -424,6 +413,7 @@
       button.classList.toggle('active', button.dataset.sort === state.sort);
     });
     els.priceValue.textContent = `$${state.maxPrice} and under`;
+    els.discountValue.textContent = state.minDiscount > 0 ? `${state.minDiscount}% off and up` : 'Any discount';
   }
 
   function updateShortcutButtons() {
@@ -437,7 +427,7 @@
     state.hasInteracted = true;
     state.filters.clear();
     state.query = '';
-    if (category || ['Free Shipping', 'Expiring Soon', 'Popular', 'Gaming', 'Travel', 'Home', 'Fashion', 'Electronics', 'Kitchen', 'Audio', 'Outdoors', 'Wellness', 'Pets'].includes(value)) {
+    if (category || ['Free Shipping', 'Coupon Available', 'Expiring Soon', '30%+ Off', '50%+ Off', 'Popular', 'Gaming', 'Travel', 'Home', 'Fashion', 'Electronics', 'Kitchen', 'Audio', 'Outdoors', 'Wellness', 'Pets'].includes(value)) {
       state.filters.add(value);
     } else {
       state.query = value;
@@ -478,6 +468,32 @@
       persist('followedStores', state.followedStores);
       renderStores();
     }
+    if (action === 'clear-filters') {
+      resetFilters();
+    }
+  }
+
+  function closeFilterDrawer() {
+    document.body.classList.remove('filters-open');
+    els.filterDrawerToggle?.setAttribute('aria-expanded', 'false');
+  }
+
+  function resetFilters() {
+    state.query = '';
+    state.sort = 'trending';
+    state.filters.clear();
+    state.store = '';
+    state.maxPrice = initialMaxPrice;
+    state.minDiscount = 0;
+    state.hasInteracted = false;
+    els.search.value = '';
+    els.storeFilter.value = '';
+    els.priceFilter.value = String(initialMaxPrice);
+    els.discountFilter.value = '0';
+    closeFilterDrawer();
+    updateFilterButtons();
+    updateShortcutButtons();
+    renderFeed();
   }
 
   function bindEvents() {
@@ -533,20 +549,18 @@
       updateFilterButtons();
       renderFeed();
     });
-    els.clearFilters.addEventListener('click', () => {
-      state.query = '';
-      state.sort = 'trending';
-      state.filters.clear();
-      state.store = '';
-      state.maxPrice = initialMaxPrice;
-      state.hasInteracted = false;
-      els.search.value = '';
-      els.storeFilter.value = '';
-      els.priceFilter.value = String(initialMaxPrice);
+    els.discountFilter.addEventListener('input', () => {
+      state.hasInteracted = true;
+      state.minDiscount = Number(els.discountFilter.value);
       updateFilterButtons();
-      updateShortcutButtons();
       renderFeed();
     });
+    els.clearFilters.addEventListener('click', resetFilters);
+    els.filterDrawerToggle?.addEventListener('click', () => {
+      const isOpen = document.body.classList.toggle('filters-open');
+      els.filterDrawerToggle.setAttribute('aria-expanded', String(isOpen));
+    });
+    els.closeFilters?.addEventListener('click', closeFilterDrawer);
     els.menuToggle.addEventListener('click', () => {
       const header = document.querySelector('.market-header');
       const isOpen = header.classList.toggle('menu-open');
@@ -572,6 +586,7 @@
 
   els.priceFilter.max = String(initialMaxPrice);
   els.priceFilter.value = String(initialMaxPrice);
+  els.discountFilter.value = String(state.minDiscount);
   await syncMemberState();
   populateStores();
   renderStaticSections();

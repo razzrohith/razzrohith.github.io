@@ -6444,3 +6444,304 @@ body[data-page="admin"] .empty-state {
     min-height: 320px;
   }
 }
+
+/* =========================================================
+   Premium micro-illustrations and compact overflow fixes v1
+   Empty states, workflow cues, and text-safe status geometry.
+   ========================================================= */
+
+.trust-strip span,
+.trend-list b,
+.queue-icon,
+.status-pill,
+.status-badge,
+.category-badge,
+.discount-badge,
+.admin-badges b,
+.store-badges b,
+.deal-meta span,
+.chip,
+.tag,
+.coupon-card code,
+.coupon-row code,
+.saved-alert-card .status-pill,
+.alert-checks label,
+.alert-channels button,
+.admin-filters button span {
+  max-width: 100%;
+  min-width: max-content;
+  min-height: 32px;
+  width: auto;
+  height: auto;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.05;
+  align-items: center;
+  justify-content: center;
+}
+
+.trust-strip span,
+.queue-icon,
+.trend-list b {
+  display: inline-flex;
+  min-width: 46px;
+  padding: 0 12px;
+  border-radius: 15px;
+}
+
+.trust-strip span {
+  min-height: 42px;
+}
+
+.trend-list b,
+.queue-icon {
+  aspect-ratio: auto;
+}
+
+.admin-badges b,
+.store-badges b,
+.deal-meta span,
+.status-pill,
+.status-badge,
+.category-badge {
+  display: inline-flex;
+  gap: 6px;
+  padding-inline: 11px;
+  vertical-align: middle;
+}
+
+.discount-badge {
+  min-width: fit-content;
+  padding-inline: 12px;
+}
+
+.admin-filters button,
+.alert-card-actions button,
+.admin-actions button,
+.deal-actions button,
+.deal-actions a,
+.detail-actions button,
+.redirect-actions a,
+.alert-form-actions button {
+  min-width: max-content;
+  white-space: nowrap;
+}
+
+.saved-alert-card strong,
+.dashboard-list strong,
+.admin-row strong,
+.topic-card strong,
+.coupon-card strong,
+.store-card h3,
+.deal-title {
+  overflow-wrap: anywhere;
+}
+
+.empty-state {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  min-height: 280px;
+  padding: clamp(26px, 5vw, 44px);
+  border-style: solid;
+  background:
+    radial-gradient(circle at 14% 0%, var(--page-accent-a, rgba(191, 231, 218, .28)), transparent 16rem),
+    linear-gradient(145deg, rgba(255, 255, 255, .86), rgba(247, 244, 236, .76));
+}
+
+.empty-state::before {
+  content: "";
+  width: clamp(86px, 13vw, 136px);
+  height: clamp(86px, 13vw, 136px);
+  margin-bottom: 16px;
+  background: url("../icons/empty-state-glyph.svg") center / contain no-repeat;
+  filter: drop-shadow(0 18px 24px rgba(22, 30, 44, .12));
+}
+
+.empty-state::after {
+  content: "";
+  position: absolute;
+  inset: auto -52px -72px auto;
+  z-index: -1;
+  width: 210px;
+  height: 210px;
+  background: url("../backgrounds/card-art-grid.svg") center / cover no-repeat;
+  opacity: .2;
+  transform: rotate(-12deg);
+}
+
+.empty-state strong {
+  font-size: clamp(1.2rem, 2vw, 1.65rem);
+  letter-spacing: -.03em;
+}
+
+.empty-state p {
+  max-width: 52ch;
+  margin-inline: auto;
+  color: var(--control-muted);
+  line-height: 1.6;
+}
+
+.access-panel::before,
+.alert-preview-panel::before,
+.alert-saved-panel::before,
+.image-input-panel::before,
+.upload-box::before,
+.post-preview-panel .review-note::before,
+.redirect-shell .access-panel::before,
+.admin-note::before,
+.admin-loading::before {
+  content: "";
+  display: block;
+  width: 58px;
+  height: 58px;
+  margin-bottom: 12px;
+  border-radius: 20px;
+  background:
+    url("../icons/workflow-spark.svg") center / 82% no-repeat,
+    linear-gradient(135deg, rgba(191, 231, 218, .46), rgba(215, 179, 91, .28));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .58), 0 14px 26px rgba(22, 30, 44, .1);
+}
+
+.admin-note::before,
+.admin-loading::before,
+body[data-page="admin"] .page-hero::after {
+  background:
+    url("../icons/moderation-mark.svg") center / 82% no-repeat,
+    linear-gradient(135deg, rgba(184, 92, 70, .14), rgba(71, 109, 157, .16));
+}
+
+.image-input-panel,
+.upload-box,
+.post-preview-panel .review-note,
+.redirect-shell .access-panel,
+.admin-note,
+.admin-loading,
+.deal-message,
+.form-errors,
+.toast {
+  position: relative;
+  isolation: isolate;
+}
+
+.image-input-panel {
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+}
+
+.image-input-panel::before {
+  margin: 0;
+}
+
+.image-input-panel label,
+.image-input-panel span {
+  min-width: 0;
+}
+
+.form-errors,
+.deal-message,
+.auth-form output,
+.access-panel output {
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, .5);
+  padding: 10px 12px;
+  line-height: 1.45;
+}
+
+.toast {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  max-width: min(520px, calc(100vw - 28px));
+  white-space: normal;
+  border: 1px solid rgba(255, 255, 255, .18);
+}
+
+.toast::before {
+  content: "";
+  flex: 0 0 auto;
+  width: 24px;
+  height: 24px;
+  border-radius: 10px;
+  background: url("../icons/workflow-spark.svg") center / contain no-repeat;
+}
+
+body[data-page="search"] .empty-state::before {
+  background-image: url("../icons/empty-state-glyph.svg");
+}
+
+body[data-page="coupons"] .empty-state::before,
+.coupon-card.copied::before {
+  background-image: url("../icons/coupon-ticket.svg");
+}
+
+body[data-page="alerts"] .empty-state::before,
+body[data-page="saved"] .empty-state::before,
+body[data-page="dashboard"] .empty-state::before {
+  background-image: url("../icons/workflow-spark.svg");
+}
+
+body[data-page="admin"] .empty-state::before {
+  background-image: url("../icons/moderation-mark.svg");
+}
+
+:root[data-theme="dark"] .empty-state {
+  background:
+    radial-gradient(circle at 14% 0%, var(--page-accent-a, rgba(118, 221, 204, .13)), transparent 16rem),
+    linear-gradient(145deg, rgba(20, 35, 39, .82), rgba(10, 18, 21, .72));
+}
+
+:root[data-theme="dark"] .empty-state::before,
+:root[data-theme="dark"] .access-panel::before,
+:root[data-theme="dark"] .alert-preview-panel::before,
+:root[data-theme="dark"] .alert-saved-panel::before,
+:root[data-theme="dark"] .image-input-panel::before,
+:root[data-theme="dark"] .upload-box::before,
+:root[data-theme="dark"] .post-preview-panel .review-note::before,
+:root[data-theme="dark"] .redirect-shell .access-panel::before,
+:root[data-theme="dark"] .admin-note::before,
+:root[data-theme="dark"] .admin-loading::before {
+  filter: saturate(.9) brightness(.92) drop-shadow(0 18px 24px rgba(0, 0, 0, .26));
+}
+
+:root[data-theme="dark"] .form-errors,
+:root[data-theme="dark"] .deal-message,
+:root[data-theme="dark"] .auth-form output,
+:root[data-theme="dark"] .access-panel output {
+  background: rgba(7, 16, 18, .46);
+  border-color: var(--line);
+}
+
+@media (max-width: 720px) {
+  .trust-strip span,
+  .trend-list b,
+  .queue-icon {
+    min-width: 42px;
+    min-height: 38px;
+    padding-inline: 10px;
+  }
+
+  .admin-actions,
+  .alert-card-actions,
+  .deal-actions,
+  .detail-actions,
+  .redirect-actions {
+    align-items: stretch;
+  }
+
+  .admin-actions button,
+  .alert-card-actions button,
+  .deal-actions button,
+  .deal-actions a,
+  .detail-actions button,
+  .redirect-actions a {
+    min-width: 0;
+    justify-content: center;
+  }
+
+  .image-input-panel {
+    grid-template-columns: 1fr;
+  }
+}

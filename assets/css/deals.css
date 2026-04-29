@@ -5091,3 +5091,307 @@ html[data-theme="dark"] body {
     padding: 22px;
   }
 }
+
+/* =========================================================
+   Premium visual assets and card artwork v1
+   Original SVG backplates, stronger product staging, and
+   richer commerce-card hierarchy.
+   ========================================================= */
+
+.deal-card {
+  overflow: hidden;
+}
+
+.deal-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, .55), transparent 34%),
+    radial-gradient(circle at 88% 12%, rgba(215, 179, 91, .18), transparent 8rem);
+  opacity: .72;
+}
+
+.deal-image {
+  isolation: isolate;
+  margin: 12px 12px 0;
+  border: 1px solid rgba(255, 255, 255, .68);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .55), 0 14px 36px rgba(17, 24, 39, .08);
+}
+
+.deal-image::before,
+.deal-image::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+}
+
+.deal-image::before {
+  inset: 0;
+  z-index: 0;
+  background:
+    url("../backgrounds/card-art-grid.svg") center / cover no-repeat,
+    radial-gradient(circle at 72% 22%, rgba(255, 255, 255, .64), transparent 7rem),
+    radial-gradient(circle at 18% 72%, rgba(23, 79, 71, .1), transparent 8rem);
+  opacity: .86;
+}
+
+.deal-image::after {
+  left: 18%;
+  right: 18%;
+  bottom: 14%;
+  height: 11%;
+  z-index: 1;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center, rgba(17, 24, 39, .18), transparent 68%);
+  filter: blur(2px);
+  transform: translateY(12px);
+}
+
+.deal-image img {
+  position: relative;
+  z-index: 2;
+  width: 78%;
+  height: 78%;
+  transform: translateY(-2px);
+  filter: drop-shadow(0 22px 18px rgba(17, 24, 39, .18));
+}
+
+.deal-card:hover .deal-image img {
+  transform: translateY(-8px) scale(1.055) rotate(-.6deg);
+}
+
+.deal-card:hover .deal-image::before {
+  opacity: 1;
+}
+
+.discount-badge,
+.status-badge {
+  z-index: 4;
+  border-radius: 14px;
+  backdrop-filter: blur(16px);
+}
+
+.discount-badge {
+  box-shadow: 0 12px 26px rgba(184, 92, 70, .22), inset 0 1px 0 rgba(255, 255, 255, .28);
+}
+
+.status-badge {
+  background: rgba(255, 255, 255, .74);
+  box-shadow: 0 10px 22px rgba(17, 24, 39, .08);
+}
+
+.deal-body {
+  position: relative;
+  z-index: 2;
+  padding: 18px;
+}
+
+.deal-meta span,
+.category-badge,
+.store-badges b,
+.queue-icon {
+  border-radius: 12px;
+}
+
+.coupon-row {
+  border: 1px dashed rgba(23, 79, 71, .22);
+  border-radius: 16px;
+  background:
+    linear-gradient(135deg, rgba(191, 231, 218, .22), rgba(215, 179, 91, .14)),
+    rgba(255, 255, 255, .56);
+  padding: 8px;
+}
+
+.coupon-row code {
+  letter-spacing: .08em;
+}
+
+.category-card,
+.store-card,
+.coupon-card {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.category-card::before,
+.store-card::before,
+.coupon-card::before {
+  content: "";
+  position: absolute;
+  inset: auto -28px -34px auto;
+  width: 150px;
+  height: 150px;
+  z-index: -1;
+  opacity: .2;
+  background: url("../img/categories/category-orbit.svg") center / contain no-repeat;
+  transform: rotate(-12deg);
+}
+
+.category-card::after,
+.store-card::after,
+.coupon-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  background:
+    radial-gradient(circle at 16% 12%, rgba(191, 231, 218, .26), transparent 9rem),
+    radial-gradient(circle at 90% 16%, rgba(215, 179, 91, .14), transparent 9rem);
+  opacity: .85;
+}
+
+.category-card span,
+.store-card span {
+  position: relative;
+  box-shadow: inset 0 -10px 18px rgba(7, 16, 15, .12), 0 14px 28px rgba(17, 24, 39, .12);
+}
+
+.category-card span::after,
+.store-card span::after {
+  content: "";
+  position: absolute;
+  inset: -8px;
+  z-index: -1;
+  border-radius: inherit;
+  background: rgba(255, 255, 255, .38);
+  filter: blur(10px);
+}
+
+.rich-category-card {
+  grid-template-rows: auto auto 1fr auto auto;
+}
+
+.rich-category-card small,
+.rich-category-card em {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, .5);
+  padding: 8px 10px;
+}
+
+.store-card span {
+  background:
+    url("../icons/store-seal.svg") center / 120% no-repeat,
+    linear-gradient(135deg, var(--mint), var(--gold));
+  color: #07100f;
+  letter-spacing: -.04em;
+}
+
+.store-card .store-badges b {
+  border: 1px solid rgba(23, 79, 71, .14);
+  background: rgba(191, 231, 218, .24);
+}
+
+.coupon-card {
+  padding: 18px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, .96), rgba(250, 247, 240, .86)),
+    url("../icons/coupon-ticket.svg") right -24px top 8px / 128px auto no-repeat;
+}
+
+.coupon-card > div {
+  align-items: start;
+}
+
+.coupon-card code {
+  border: 1px dashed rgba(23, 79, 71, .26);
+  border-radius: 14px;
+  background:
+    linear-gradient(135deg, rgba(191, 231, 218, .38), rgba(215, 179, 91, .2)),
+    rgba(255, 255, 255, .62);
+  letter-spacing: .08em;
+}
+
+.coupon-card footer {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+
+.floating-deal-card {
+  overflow: hidden;
+}
+
+.floating-deal-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    url("../backgrounds/card-art-grid.svg") center / cover no-repeat,
+    linear-gradient(135deg, rgba(255, 255, 255, .34), transparent);
+  opacity: .45;
+}
+
+.orbital-board {
+  background:
+    url("../backgrounds/card-art-grid.svg") center / cover no-repeat,
+    linear-gradient(145deg, rgba(255, 255, 255, .56), rgba(255, 255, 255, .16)),
+    radial-gradient(circle at 40% 26%, rgba(168, 244, 222, .48), transparent 25rem);
+}
+
+.orbital-board::before {
+  content: "";
+  position: absolute;
+  inset: 12%;
+  border-radius: 34px;
+  border: 1px solid rgba(255, 255, 255, .42);
+  background: linear-gradient(135deg, rgba(255, 255, 255, .18), transparent);
+  transform: rotate(-8deg);
+}
+
+:root[data-theme="dark"] .deal-card::after {
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, .08), transparent 34%),
+    radial-gradient(circle at 88% 12%, rgba(217, 189, 114, .12), transparent 8rem);
+}
+
+:root[data-theme="dark"] .deal-image {
+  border-color: rgba(232, 246, 241, .1);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .08), 0 18px 42px rgba(0, 0, 0, .22);
+}
+
+:root[data-theme="dark"] .deal-image::before {
+  opacity: .54;
+  background:
+    url("../backgrounds/card-art-grid.svg") center / cover no-repeat,
+    radial-gradient(circle at 72% 22%, rgba(255, 255, 255, .12), transparent 7rem),
+    radial-gradient(circle at 18% 72%, rgba(118, 221, 204, .14), transparent 8rem);
+}
+
+:root[data-theme="dark"] .deal-image::after {
+  background: radial-gradient(ellipse at center, rgba(0, 0, 0, .42), transparent 68%);
+}
+
+:root[data-theme="dark"] .coupon-row,
+:root[data-theme="dark"] .rich-category-card small,
+:root[data-theme="dark"] .rich-category-card em,
+:root[data-theme="dark"] .coupon-card code {
+  background: rgba(255, 255, 255, .06);
+  border-color: rgba(232, 246, 241, .13);
+}
+
+:root[data-theme="dark"] .category-card::after,
+:root[data-theme="dark"] .store-card::after,
+:root[data-theme="dark"] .coupon-card::after {
+  background:
+    radial-gradient(circle at 16% 12%, rgba(118, 221, 204, .13), transparent 9rem),
+    radial-gradient(circle at 90% 16%, rgba(217, 189, 114, .1), transparent 9rem);
+}
+
+:root[data-theme="dark"] .category-card::before,
+:root[data-theme="dark"] .store-card::before,
+:root[data-theme="dark"] .coupon-card::before {
+  opacity: .16;
+  filter: saturate(.9) brightness(1.08);
+}
+
+:root[data-theme="dark"] .coupon-card {
+  background:
+    linear-gradient(180deg, rgba(20, 36, 40, .96), rgba(10, 18, 21, .88)),
+    url("../icons/coupon-ticket.svg") right -24px top 8px / 128px auto no-repeat;
+}

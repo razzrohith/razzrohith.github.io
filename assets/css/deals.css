@@ -5395,3 +5395,490 @@ html[data-theme="dark"] body {
     linear-gradient(180deg, rgba(20, 36, 40, .96), rgba(10, 18, 21, .88)),
     url("../icons/coupon-ticket.svg") right -24px top 8px / 128px auto no-repeat;
 }
+
+/* =========================================================
+   Premium contrast and component-state polish v1
+   Clearer control hierarchy without flattening the luxury tone.
+   ========================================================= */
+
+:root {
+  --control-bg: rgba(255, 255, 255, .92);
+  --control-bg-hover: rgba(255, 255, 255, .98);
+  --control-text: #243247;
+  --control-muted: #4e5f73;
+  --control-border: rgba(24, 33, 48, .2);
+  --control-border-hover: rgba(23, 79, 71, .36);
+  --control-selected-text: #07100f;
+  --control-selected-bg: linear-gradient(135deg, rgba(191, 231, 218, .96), rgba(246, 237, 201, .94));
+  --control-selected-border: rgba(23, 79, 71, .42);
+  --control-disabled-bg: rgba(238, 232, 217, .72);
+  --control-disabled-text: #8a94a4;
+  --field-bg: rgba(255, 255, 255, .96);
+  --field-border: rgba(24, 33, 48, .24);
+  --field-placeholder: #6f7b8c;
+  --badge-bg: rgba(255, 255, 255, .9);
+  --badge-text: #203554;
+  --badge-border: rgba(38, 63, 103, .2);
+  --state-success-bg: rgba(40, 111, 87, .12);
+  --state-warning-bg: rgba(215, 179, 91, .18);
+  --state-danger-bg: rgba(184, 92, 70, .12);
+  --state-info-bg: rgba(38, 63, 103, .1);
+}
+
+:root[data-theme="dark"] {
+  --control-bg: rgba(13, 25, 29, .9);
+  --control-bg-hover: rgba(22, 39, 44, .96);
+  --control-text: #e3efeb;
+  --control-muted: #b8c9c5;
+  --control-border: rgba(214, 231, 226, .2);
+  --control-border-hover: rgba(118, 221, 204, .48);
+  --control-selected-text: #06110f;
+  --control-selected-bg: linear-gradient(135deg, rgba(118, 221, 204, .96), rgba(217, 189, 114, .88));
+  --control-selected-border: rgba(232, 246, 241, .18);
+  --control-disabled-bg: rgba(20, 35, 39, .58);
+  --control-disabled-text: #718883;
+  --field-bg: rgba(7, 16, 18, .82);
+  --field-border: rgba(214, 231, 226, .2);
+  --field-placeholder: #94aaa5;
+  --badge-bg: rgba(232, 246, 241, .08);
+  --badge-text: #d9e7e3;
+  --badge-border: rgba(214, 231, 226, .18);
+  --state-success-bg: rgba(131, 220, 196, .14);
+  --state-warning-bg: rgba(217, 189, 114, .16);
+  --state-danger-bg: rgba(239, 146, 125, .14);
+  --state-info-bg: rgba(159, 182, 233, .12);
+}
+
+.hero-pills button,
+.category-strip button,
+.chip-list button,
+.segmented button,
+.coupon-tabs button,
+.admin-filters button,
+.quick-filter,
+.sort-button,
+.filter-drawer-toggle,
+.filter-drawer-close,
+.panel-title button,
+.empty-actions button,
+.store-card button,
+.community-actions button,
+.copy-btn,
+.save-btn,
+.ghost-button,
+.link-button:not(.post-button),
+.archive-links a {
+  color: var(--control-text);
+  border-color: var(--control-border);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, .2), transparent),
+    var(--control-bg);
+  box-shadow: 0 9px 22px rgba(22, 30, 44, .07), inset 0 1px 0 rgba(255, 255, 255, .56);
+}
+
+.hero-pills button:hover,
+.category-strip button:hover,
+.chip-list button:hover,
+.segmented button:hover,
+.coupon-tabs button:hover,
+.admin-filters button:hover,
+.quick-filter:hover,
+.sort-button:hover,
+.filter-drawer-toggle:hover,
+.filter-drawer-close:hover,
+.panel-title button:hover,
+.empty-actions button:hover,
+.store-card button:hover,
+.community-actions button:hover,
+.copy-btn:hover,
+.save-btn:hover,
+.ghost-button:hover,
+.link-button:not(.post-button):hover,
+.archive-links a:hover {
+  color: var(--ink);
+  border-color: var(--control-border-hover);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, .28), transparent),
+    var(--control-bg-hover);
+  box-shadow: 0 14px 30px rgba(22, 30, 44, .11), inset 0 1px 0 rgba(255, 255, 255, .72);
+  transform: translateY(-1px);
+}
+
+.hero-pills button.active,
+.hero-pills button[aria-pressed="true"],
+.category-strip button.active,
+.category-strip button[aria-pressed="true"],
+.chip-list button.active,
+.chip-list button[aria-pressed="true"],
+.segmented button.active,
+.segmented button[aria-pressed="true"],
+.coupon-tabs button.active,
+.admin-filters button.active,
+.quick-filter.active,
+.sort-button.active,
+.save-btn.saved,
+.store-card button.saved {
+  color: var(--control-selected-text);
+  border-color: var(--control-selected-border);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, .34), transparent),
+    var(--control-selected-bg);
+  box-shadow: 0 16px 34px rgba(23, 79, 71, .16), inset 0 1px 0 rgba(255, 255, 255, .48);
+}
+
+.hero-pills button.active::before,
+.chip-list button.active::before,
+.segmented button.active::before,
+.coupon-tabs button.active::before,
+.admin-filters button.active::before {
+  content: "";
+  display: inline-block;
+  width: .42rem;
+  height: .42rem;
+  margin-right: .45rem;
+  border-radius: 999px;
+  background: currentColor;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, .34);
+  vertical-align: .08em;
+}
+
+button:disabled,
+.button-disabled,
+[aria-disabled="true"] {
+  cursor: not-allowed;
+  color: var(--control-disabled-text) !important;
+  border-color: var(--line) !important;
+  background: var(--control-disabled-bg) !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+.filter-panel {
+  color: var(--ink);
+  border-color: var(--line-strong);
+  background:
+    radial-gradient(circle at 14% 0%, rgba(191, 231, 218, .22), transparent 13rem),
+    linear-gradient(145deg, rgba(255, 255, 255, .96), rgba(247, 244, 236, .86));
+}
+
+.filter-group {
+  padding: 14px;
+  border: 1px solid rgba(24, 33, 48, .1);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, .54);
+}
+
+.filter-group strong,
+.field {
+  color: var(--ink);
+  letter-spacing: -.01em;
+}
+
+.field span,
+.panel-title button,
+.deal-meta,
+.store-meta,
+.coupon-meta,
+.topic-meta,
+.muted,
+small {
+  color: var(--control-muted);
+}
+
+.field select,
+.field input[type="text"],
+.field input[type="number"],
+.field input[type="url"],
+.field input[type="date"],
+.deal-form input,
+.deal-form select,
+.deal-form textarea,
+.alert-builder input,
+.alert-builder select,
+.alert-builder textarea,
+.comment-composer textarea,
+.coupon-workspace select,
+.auth-form input,
+input,
+select,
+textarea {
+  color: var(--ink);
+  border-color: var(--field-border);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, .18), transparent),
+    var(--field-bg);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .62), 0 8px 18px rgba(22, 30, 44, .04);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--field-placeholder);
+}
+
+.field select:hover,
+.deal-form input:hover,
+.deal-form select:hover,
+.deal-form textarea:hover,
+.alert-builder input:hover,
+.alert-builder select:hover,
+.alert-builder textarea:hover,
+.comment-composer textarea:hover,
+.coupon-workspace select:hover,
+.auth-form input:hover {
+  border-color: var(--control-border-hover);
+}
+
+.field input[type="range"],
+input[type="range"] {
+  accent-color: var(--brand);
+  min-height: 30px;
+}
+
+.status-badge,
+.category-badge,
+.status-pill,
+.admin-badges b,
+.tag,
+.chip,
+.deal-meta span,
+.store-badges b,
+.coupon-card code,
+.coupon-row code {
+  color: var(--badge-text);
+  border-color: var(--badge-border);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, .22), transparent),
+    var(--badge-bg);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .5);
+}
+
+.status-pill.pending,
+.status-badge.expiring,
+.admin-badges b[data-status="expiring"],
+.coupon-card .status-badge {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, .18), transparent),
+    var(--state-warning-bg);
+}
+
+.status-pill.approved,
+.status-pill.live,
+.status-badge.live,
+.admin-badges b[data-status="approved"],
+.success,
+.deal-message.success {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, .18), transparent),
+    var(--state-success-bg);
+}
+
+.status-pill.rejected,
+.status-pill.hidden,
+.status-pill.expired,
+.error,
+.deal-message.error,
+.form-error {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, .14), transparent),
+    var(--state-danger-bg);
+}
+
+.auth-tabs,
+.segmented {
+  border-color: var(--control-border);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, .36), transparent),
+    rgba(255, 255, 255, .54);
+}
+
+.auth-tabs button {
+  color: var(--control-muted);
+}
+
+.auth-tabs button.active {
+  color: var(--control-selected-text);
+  background: var(--control-selected-bg);
+  box-shadow: 0 10px 22px rgba(23, 79, 71, .14);
+}
+
+.oauth-button {
+  color: var(--control-text);
+  border-color: var(--control-border);
+  background: var(--control-bg);
+}
+
+.deal-card:focus-within,
+.category-card:focus-within,
+.store-card:focus-within,
+.coupon-card:focus-within,
+.topic-card:focus-within,
+.dashboard-card:focus-within,
+.admin-row:focus-within,
+.auth-dialog:focus-within {
+  border-color: var(--control-border-hover);
+  box-shadow: 0 0 0 5px color-mix(in srgb, var(--brand) 18%, transparent), var(--shadow-soft);
+}
+
+:focus-visible {
+  outline-color: var(--brand);
+  box-shadow: 0 0 0 5px color-mix(in srgb, var(--brand) 18%, transparent);
+}
+
+:root[data-theme="dark"] .hero-pills button,
+:root[data-theme="dark"] .category-strip button,
+:root[data-theme="dark"] .chip-list button,
+:root[data-theme="dark"] .segmented button,
+:root[data-theme="dark"] .coupon-tabs button,
+:root[data-theme="dark"] .admin-filters button,
+:root[data-theme="dark"] .quick-filter,
+:root[data-theme="dark"] .sort-button,
+:root[data-theme="dark"] .filter-drawer-toggle,
+:root[data-theme="dark"] .filter-drawer-close,
+:root[data-theme="dark"] .panel-title button,
+:root[data-theme="dark"] .empty-actions button,
+:root[data-theme="dark"] .store-card button,
+:root[data-theme="dark"] .community-actions button,
+:root[data-theme="dark"] .copy-btn,
+:root[data-theme="dark"] .save-btn,
+:root[data-theme="dark"] .ghost-button,
+:root[data-theme="dark"] .link-button:not(.post-button),
+:root[data-theme="dark"] .archive-links a {
+  color: var(--control-text);
+  border-color: var(--control-border);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, .05), transparent),
+    var(--control-bg);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, .22), inset 0 1px 0 rgba(255, 255, 255, .05);
+}
+
+:root[data-theme="dark"] .hero-pills button:hover,
+:root[data-theme="dark"] .category-strip button:hover,
+:root[data-theme="dark"] .chip-list button:hover,
+:root[data-theme="dark"] .segmented button:hover,
+:root[data-theme="dark"] .coupon-tabs button:hover,
+:root[data-theme="dark"] .admin-filters button:hover,
+:root[data-theme="dark"] .quick-filter:hover,
+:root[data-theme="dark"] .sort-button:hover,
+:root[data-theme="dark"] .filter-drawer-toggle:hover,
+:root[data-theme="dark"] .filter-drawer-close:hover,
+:root[data-theme="dark"] .panel-title button:hover,
+:root[data-theme="dark"] .empty-actions button:hover,
+:root[data-theme="dark"] .store-card button:hover,
+:root[data-theme="dark"] .community-actions button:hover,
+:root[data-theme="dark"] .copy-btn:hover,
+:root[data-theme="dark"] .save-btn:hover,
+:root[data-theme="dark"] .ghost-button:hover,
+:root[data-theme="dark"] .link-button:not(.post-button):hover,
+:root[data-theme="dark"] .archive-links a:hover {
+  color: var(--ink);
+  border-color: var(--control-border-hover);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, .08), transparent),
+    var(--control-bg-hover);
+}
+
+:root[data-theme="dark"] .hero-pills button.active,
+:root[data-theme="dark"] .hero-pills button[aria-pressed="true"],
+:root[data-theme="dark"] .category-strip button.active,
+:root[data-theme="dark"] .category-strip button[aria-pressed="true"],
+:root[data-theme="dark"] .chip-list button.active,
+:root[data-theme="dark"] .chip-list button[aria-pressed="true"],
+:root[data-theme="dark"] .segmented button.active,
+:root[data-theme="dark"] .segmented button[aria-pressed="true"],
+:root[data-theme="dark"] .coupon-tabs button.active,
+:root[data-theme="dark"] .admin-filters button.active,
+:root[data-theme="dark"] .quick-filter.active,
+:root[data-theme="dark"] .sort-button.active,
+:root[data-theme="dark"] .save-btn.saved,
+:root[data-theme="dark"] .store-card button.saved {
+  color: var(--control-selected-text);
+  border-color: var(--control-selected-border);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, .24), transparent),
+    var(--control-selected-bg);
+  box-shadow: 0 16px 34px rgba(118, 221, 204, .12), inset 0 1px 0 rgba(255, 255, 255, .18);
+}
+
+:root[data-theme="dark"] .filter-panel {
+  border-color: var(--line-strong);
+  background:
+    radial-gradient(circle at 14% 0%, rgba(118, 221, 204, .12), transparent 13rem),
+    linear-gradient(145deg, rgba(18, 34, 38, .96), rgba(9, 17, 20, .86));
+}
+
+:root[data-theme="dark"] .filter-group {
+  border-color: rgba(214, 231, 226, .11);
+  background: rgba(7, 16, 18, .38);
+}
+
+:root[data-theme="dark"] .field span,
+:root[data-theme="dark"] .panel-title button,
+:root[data-theme="dark"] .deal-meta,
+:root[data-theme="dark"] .store-meta,
+:root[data-theme="dark"] .coupon-meta,
+:root[data-theme="dark"] .topic-meta,
+:root[data-theme="dark"] .muted,
+:root[data-theme="dark"] small {
+  color: var(--control-muted);
+}
+
+:root[data-theme="dark"] .field select,
+:root[data-theme="dark"] .field input[type="text"],
+:root[data-theme="dark"] .field input[type="number"],
+:root[data-theme="dark"] .field input[type="url"],
+:root[data-theme="dark"] .field input[type="date"],
+:root[data-theme="dark"] .deal-form input,
+:root[data-theme="dark"] .deal-form select,
+:root[data-theme="dark"] .deal-form textarea,
+:root[data-theme="dark"] .alert-builder input,
+:root[data-theme="dark"] .alert-builder select,
+:root[data-theme="dark"] .alert-builder textarea,
+:root[data-theme="dark"] .comment-composer textarea,
+:root[data-theme="dark"] .coupon-workspace select,
+:root[data-theme="dark"] .auth-form input,
+:root[data-theme="dark"] input,
+:root[data-theme="dark"] select,
+:root[data-theme="dark"] textarea {
+  color: var(--ink);
+  border-color: var(--field-border);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, .04), transparent),
+    var(--field-bg);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .05), 0 8px 20px rgba(0, 0, 0, .16);
+}
+
+:root[data-theme="dark"] input::placeholder,
+:root[data-theme="dark"] textarea::placeholder {
+  color: var(--field-placeholder);
+}
+
+:root[data-theme="dark"] .status-badge,
+:root[data-theme="dark"] .category-badge,
+:root[data-theme="dark"] .status-pill,
+:root[data-theme="dark"] .admin-badges b,
+:root[data-theme="dark"] .tag,
+:root[data-theme="dark"] .chip,
+:root[data-theme="dark"] .deal-meta span,
+:root[data-theme="dark"] .store-badges b,
+:root[data-theme="dark"] .coupon-card code,
+:root[data-theme="dark"] .coupon-row code {
+  color: var(--badge-text);
+  border-color: var(--badge-border);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, .05), transparent),
+    var(--badge-bg);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .05);
+}
+
+@media (max-width: 720px) {
+  .filter-group {
+    padding: 12px;
+  }
+
+  .chip-list button,
+  .segmented button,
+  .hero-pills button,
+  .category-strip button {
+    min-height: 42px;
+  }
+}

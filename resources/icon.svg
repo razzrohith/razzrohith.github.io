@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="bg" x1="120" x2="900" y1="80" y2="940" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#07100f"/>
+      <stop offset="0.48" stop-color="#10233d"/>
+      <stop offset="1" stop-color="#0f766e"/>
+    </linearGradient>
+    <linearGradient id="coin" x1="250" x2="800" y1="200" y2="840" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#f8f0c8"/>
+      <stop offset="0.5" stop-color="#d8b45a"/>
+      <stop offset="1" stop-color="#8fdcc7"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="34" stdDeviation="34" flood-color="#020807" flood-opacity="0.38"/>
+    </filter>
+  </defs>
+  <rect width="1024" height="1024" rx="232" fill="url(#bg)"/>
+  <circle cx="760" cy="234" r="146" fill="#a8f4de" opacity="0.13"/>
+  <circle cx="248" cy="794" r="184" fill="#f4ce69" opacity="0.16"/>
+  <path d="M232 312c0-56 45-101 101-101h358c56 0 101 45 101 101v400c0 56-45 101-101 101H333c-56 0-101-45-101-101V312Z" fill="rgba(255,255,255,0.10)" stroke="rgba(255,255,255,0.24)" stroke-width="10" filter="url(#shadow)"/>
+  <path d="M335 331h132c143 0 236 77 236 181 0 109-94 181-240 181H335V331Zm122 258h18c64 0 102-27 102-77 0-48-38-77-102-77h-18v154Z" fill="url(#coin)"/>
+  <path d="M326 716h372" stroke="#f8f0c8" stroke-width="35" stroke-linecap="round" opacity="0.9"/>
+</svg>

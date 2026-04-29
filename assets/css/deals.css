@@ -3315,6 +3315,26 @@ p {
   text-decoration: none;
 }
 
+.is-capacitor body {
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.is-capacitor .market-header {
+  top: max(10px, env(safe-area-inset-top));
+}
+
+.is-capacitor .toast {
+  bottom: calc(18px + env(safe-area-inset-bottom));
+}
+
+.is-capacitor input,
+.is-capacitor select,
+.is-capacitor textarea,
+.is-capacitor button {
+  font-size: 16px;
+}
+
 @media (max-width: 1080px) {
   .market-header {
     grid-template-columns: auto auto;

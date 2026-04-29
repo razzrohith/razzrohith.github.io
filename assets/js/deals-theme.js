@@ -42,6 +42,7 @@
     document.documentElement.style.colorScheme = theme;
     updateMeta(theme);
     updateToggle();
+    window.dispatchEvent(new CustomEvent('dealnest:theme-applied', { detail: { preference, theme } }));
     if (persist) {
       try {
         localStorage.setItem(storageKey, preference);

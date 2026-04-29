@@ -47,13 +47,20 @@
     return !supabaseUrl || !anonKey;
   }
 
-  function oauthRedirectUrl() {
-    const url = new URL(window.location.href);
+  function oauthRedirectUrl(source = window.location.href) {
+    const url = new URL(source);
     url.hash = '';
     ['access_token', 'refresh_token', 'expires_in', 'expires_at', 'token_type', 'provider_token', 'provider_refresh_token', 'error', 'error_description'].forEach((key) => {
       url.searchParams.delete(key);
     });
     return url.toString();
+  }
+
+  function googleRedirectUrl() {
+    if (window.DealNestMobile?.isNative && window.DealNestMobile?.nativeRedirectUrl) {
+      return window.DealNestMobile.nativeRedirectUrl();
+    }
+    return oauthRedirectUrl();
   }
 
   function parseEnv(text) {
@@ -101,9 +108,10 @@
     return body;
   }
 
-  function parseOAuthReturn() {
-    const params = new URLSearchParams(window.location.hash.replace(/^#/, ''));
-    const query = new URLSearchParams(window.location.search);
+  function parseOAuthReturn(source = window.location.href) {
+    const url = new URL(source);
+    const params = new URLSearchParams(url.hash.replace(/^#/, ''));
+    const query = url.searchParams;
     ['access_token', 'refresh_token', 'expires_in', 'expires_at', 'token_type', 'provider_token', 'provider_refresh_token', 'error', 'error_description'].forEach((key) => {
       if (!params.has(key) && query.has(key)) params.set(key, query.get(key));
     });
@@ -125,8 +133,8 @@
     };
   }
 
-  async function hydrateOAuthSession() {
-    const returned = parseOAuthReturn();
+  async function hydrateOAuthSession(source = window.location.href) {
+    const returned = parseOAuthReturn(source);
     if (!returned?.access_token) return false;
     const previousSession = session;
     session = returned;
@@ -145,6 +153,12 @@
       toast(`Google sign-in failed: ${error.message}`);
       return false;
     }
+  }
+
+  async function handleOAuthUrl(url) {
+    const ok = await hydrateOAuthSession(url);
+    window.Capacitor?.Plugins?.Browser?.close?.().catch(() => {});
+    return ok;
   }
 
   async function rest(path, options = {}) {
@@ -387,10 +401,15 @@
   async function signInWithGoogle() {
     await resolveConfig();
     if (isMissingConfig()) throw new Error('Supabase runtime config is missing.');
-    localStorage.setItem('dealnest:oauthReturn', oauthRedirectUrl());
+    const redirectTo = googleRedirectUrl();
+    localStorage.setItem('dealnest:oauthReturn', redirectTo);
     const authorize = new URL(`${supabaseUrl}/auth/v1/authorize`);
     authorize.searchParams.set('provider', 'google');
-    authorize.searchParams.set('redirect_to', oauthRedirectUrl());
+    authorize.searchParams.set('redirect_to', redirectTo);
+    if (window.DealNestMobile?.isNative && window.Capacitor?.Plugins?.Browser) {
+      await window.Capacitor.Plugins.Browser.open({ url: authorize.toString() });
+      return;
+    }
     window.location.assign(authorize.toString());
   }
 
@@ -520,6 +539,7 @@
     signIn,
     signUp,
     signInWithGoogle,
+    handleOAuthUrl,
     logout,
     currentUserId() { return session?.user?.id || null; },
     handlePendingAction

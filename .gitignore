@@ -2,6 +2,7 @@
 .chrome-ludo-qa/
 sequence_backup/
 node_modules/
+www/
 .env
 .env.*
 !.env.example

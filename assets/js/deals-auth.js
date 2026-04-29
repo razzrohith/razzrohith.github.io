@@ -47,6 +47,15 @@
     return !supabaseUrl || !anonKey;
   }
 
+  function oauthRedirectUrl() {
+    const url = new URL(window.location.href);
+    url.hash = '';
+    ['access_token', 'refresh_token', 'expires_in', 'expires_at', 'token_type', 'provider_token', 'provider_refresh_token', 'error', 'error_description'].forEach((key) => {
+      url.searchParams.delete(key);
+    });
+    return url.toString();
+  }
+
   function parseEnv(text) {
     return text
       .split(/\r?\n/)
@@ -90,6 +99,52 @@
       throw new Error(body?.msg || body?.message || body?.error_description || `Request failed with ${response.status}`);
     }
     return body;
+  }
+
+  function parseOAuthReturn() {
+    const params = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+    const query = new URLSearchParams(window.location.search);
+    ['access_token', 'refresh_token', 'expires_in', 'expires_at', 'token_type', 'provider_token', 'provider_refresh_token', 'error', 'error_description'].forEach((key) => {
+      if (!params.has(key) && query.has(key)) params.set(key, query.get(key));
+    });
+    if (params.has('error') || params.has('error_description')) {
+      toast(params.get('error_description') || params.get('error') || 'Google sign-in was cancelled.');
+      history.replaceState(null, document.title, oauthRedirectUrl());
+      return null;
+    }
+    if (!params.has('access_token')) return null;
+    const expiresIn = Number(params.get('expires_in') || 3600);
+    return {
+      access_token: params.get('access_token'),
+      refresh_token: params.get('refresh_token') || '',
+      token_type: params.get('token_type') || 'bearer',
+      expires_in: expiresIn,
+      expires_at: Number(params.get('expires_at') || Math.floor(Date.now() / 1000) + expiresIn),
+      provider_token: params.get('provider_token') || undefined,
+      provider_refresh_token: params.get('provider_refresh_token') || undefined
+    };
+  }
+
+  async function hydrateOAuthSession() {
+    const returned = parseOAuthReturn();
+    if (!returned?.access_token) return false;
+    const previousSession = session;
+    session = returned;
+    try {
+      const user = await authRequest('/auth/v1/user', { method: 'GET', useSession: true });
+      saveSession({ ...returned, user });
+      await upsertProfile(user, user?.user_metadata?.display_name || user?.user_metadata?.full_name || '');
+      history.replaceState(null, document.title, oauthRedirectUrl());
+      toast('Signed in with Google');
+      window.dispatchEvent(new CustomEvent('dealnest:auth-changed', { detail: { session } }));
+      handlePendingAction();
+      return true;
+    } catch (error) {
+      session = previousSession;
+      history.replaceState(null, document.title, oauthRedirectUrl());
+      toast(`Google sign-in failed: ${error.message}`);
+      return false;
+    }
   }
 
   async function rest(path, options = {}) {
@@ -234,6 +289,11 @@
           <button type="button" class="active" data-auth-mode="login">Login</button>
           <button type="button" data-auth-mode="signup">Sign up</button>
         </div>
+        <button class="oauth-button google-oauth-button" type="button" data-auth-action="google" aria-label="Continue with Google">
+          <span aria-hidden="true">G</span>
+          Continue with Google
+        </button>
+        <div class="auth-divider"><span>or use email</span></div>
         <form class="auth-form" id="authForm">
           <label class="auth-name-field">Display name<input name="displayName" autocomplete="name" placeholder="Raj"></label>
           <label>Email<input name="email" type="email" autocomplete="email" required placeholder="you@example.com"></label>
@@ -324,6 +384,16 @@
     return body;
   }
 
+  async function signInWithGoogle() {
+    await resolveConfig();
+    if (isMissingConfig()) throw new Error('Supabase runtime config is missing.');
+    localStorage.setItem('dealnest:oauthReturn', oauthRedirectUrl());
+    const authorize = new URL(`${supabaseUrl}/auth/v1/authorize`);
+    authorize.searchParams.set('provider', 'google');
+    authorize.searchParams.set('redirect_to', oauthRedirectUrl());
+    window.location.assign(authorize.toString());
+  }
+
   async function logout() {
     if (session?.access_token) {
       await authRequest('/auth/v1/logout', { method: 'POST', useSession: true }).catch(() => {});
@@ -362,6 +432,14 @@
       if (!button) return;
       if (button.dataset.authAction === 'login') openAuth({ mode: 'login' });
       if (button.dataset.authAction === 'signup') openAuth({ mode: 'signup' });
+      if (button.dataset.authAction === 'google') {
+        const modal = ensureModal();
+        const output = modal.querySelector('#authOutput');
+        output.textContent = 'Opening Google sign-in...';
+        signInWithGoogle().catch((error) => {
+          output.textContent = error.message;
+        });
+      }
       if (button.dataset.authAction === 'user-menu') window.location.href = './dashboard.html';
       if (button.dataset.authAction === 'logout') logout();
       if (button.dataset.authAction === 'close') closeAuth();
@@ -403,6 +481,7 @@
 
   async function init() {
     await resolveConfig();
+    await hydrateOAuthSession();
     ensureModal();
     bindModal();
     renderHeaderAuth();
@@ -440,6 +519,7 @@
     toast,
     signIn,
     signUp,
+    signInWithGoogle,
     logout,
     currentUserId() { return session?.user?.id || null; },
     handlePendingAction

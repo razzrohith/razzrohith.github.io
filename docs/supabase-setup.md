@@ -63,6 +63,7 @@ If you are applying later incremental migrations, also run them in timestamp ord
 - `supabase/migrations/20260428020000_add_click_tracking_foundation.sql`
 - `supabase/migrations/20260428030000_fix_click_tracking_public_insert.sql`
 - `supabase/migrations/20260428040000_add_alert_notification_foundation.sql`
+- `supabase/migrations/20260429000000_add_community_forum_foundation.sql`
 
 ## What The Migration Creates
 
@@ -88,6 +89,28 @@ Guests can browse public shopping content:
 - Approved community threads/posts
 
 Guests cannot write data.
+
+## Community Forum Rules
+
+The community forum uses the existing `community_threads` and `community_posts` tables. The migration
+`20260429000000_add_community_forum_foundation.sql` adds thread body content, owner-safe pending reads, and a
+`community_reports` table for thread/reply reports.
+
+Public/guest reads are limited to:
+
+```sql
+community_threads.status = 'approved'
+community_posts.status = 'approved'
+```
+
+Signed-in users can create their own threads and replies only as:
+
+```sql
+status = 'pending'
+```
+
+They can read/edit/delete only their own pending community content. Admin/moderator roles can approve, hide, lock, and
+resolve community reports. Normal users cannot moderate forum content.
 
 ## Deal Status Model
 

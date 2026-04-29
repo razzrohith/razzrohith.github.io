@@ -24,6 +24,7 @@ where schemaname = 'public'
     'deal_alerts',
     'community_threads',
     'community_posts',
+    'community_reports',
     'moderation_queue',
     'moderation_actions',
     'audit_logs'
@@ -36,6 +37,8 @@ union all select 'stores', count(*) from public.stores
 union all select 'public_visible_deals', count(*) from public.deals where moderation_status = 'approved' and status in ('live', 'expiring_soon')
 union all select 'active_coupons', count(*) from public.coupons where status = 'active'
 union all select 'approved_threads', count(*) from public.community_threads where status = 'approved'
+union all select 'approved_posts', count(*) from public.community_posts where status = 'approved'
+union all select 'open_community_reports', count(*) from public.community_reports where status in ('open', 'reviewing')
 union all select 'moderation_queue', count(*) from public.moderation_queue;
 
 -- 3. Guest-readable tables should have approved/active rows.
@@ -60,7 +63,7 @@ select
   indexdef
 from pg_indexes
 where schemaname = 'public'
-  and tablename in ('deal_votes', 'saved_deals', 'coupons')
+  and tablename in ('deal_votes', 'saved_deals', 'coupons', 'community_reports')
   and (
     indexname in ('deal_votes_pkey', 'saved_deals_pkey', 'coupons_store_code_unique_idx')
     or indexdef ilike '%unique%'

@@ -70,6 +70,20 @@
     return Auth.rest(path).catch(() => fallback);
   }
 
+  async function fetchPublicRows(path, fallback = []) {
+    if (!Auth?.isConfigured || !Auth.publicRest) return fallback;
+    return Auth.publicRest(path).catch(() => fallback);
+  }
+
+  function escapeHtml(value) {
+    return String(value || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
   function categoryNameById(id) {
     return data.categories.find((category) => category.id === id)?.name || '';
   }
@@ -357,27 +371,257 @@
     window.DealNestMotion?.refresh();
   }
 
-  function community() {
-    const topTags = [...new Set(data.communityTopics.map((topic) => topic.tag))].slice(0, 6);
-    pageShell('Community hub', 'Discussion layer', 'A populated forum preview for deal safety, coupon reports, buying advice, and category-specific conversation.',
-      `<section class="community-section community-page"><div><h2>Members make the signal stronger.</h2><p>Use discussion previews to validate deal quality before clicking through. Reputation, moderation, and thread detail pages can plug into this structure later.</p><div class="hero-pills">${topTags.map((tag) => `<button type="button" data-placeholder="${tag} threads will open when forum routing is added.">${tag}</button>`).join('')}</div></div><div class="topic-list">${data.communityTopics.map((topic) => `<article class="topic-card motion-item"><div><strong>${topic.title}</strong><span>${topic.tag} / ${topic.user}</span><p>${data.users.find((user) => user.username === topic.user)?.badge || 'Community member'}</p></div><b>${topic.replies} replies</b></article>`).join('')}</div></section>
-      <section class="section-block"><div class="section-heading"><div><p class="eyebrow">Community standards</p><h2>Guidelines that keep deals useful</h2></div></div><div class="trust-strip">${stat('Verify price', '01', 'Post final cart price, shipping, coupon terms, and expiration context.')}${stat('Compare stores', '02', 'Mention warranty, return windows, and marketplace risk where relevant.')}${stat('Respect signal', '03', 'Vote on deal quality and report expired or misleading offers.')}</div></section>`);
+  function profileLabel(row) {
+    return row?.profiles?.display_name || row?.profiles?.username || row?.user || 'DealNest member';
+  }
+
+  function relativeDate(value) {
+    if (!value) return 'recently';
+    const delta = Date.now() - new Date(value).getTime();
+    if (!Number.isFinite(delta) || delta < 0) return 'recently';
+    const minutes = Math.floor(delta / 60000);
+    if (minutes < 1) return 'just now';
+    if (minutes < 60) return `${minutes} min ago`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours} hr ago`;
+    const days = Math.floor(hours / 24);
+    return `${days} day${days === 1 ? '' : 's'} ago`;
+  }
+
+  function communityFallbackThreads() {
+    return data.communityTopics.map((topic, index) => ({
+      id: `fallback-thread-${index + 1}`,
+      slug: slugify(topic.title),
+      title: topic.title,
+      body: `${topic.title} is open for shopping context, deal checks, and member notes. Sign in to start live forum threads once the Supabase community migration is applied.`,
+      tag: topic.tag,
+      status: 'approved',
+      reply_count: topic.replies,
+      created_at: new Date(Date.now() - (index + 2) * 3600000).toISOString(),
+      updated_at: new Date(Date.now() - (index + 1) * 1800000).toISOString(),
+      profiles: { username: topic.user, display_name: topic.user },
+      fallback: true
+    }));
+  }
+
+  function normalizeThread(row) {
+    return {
+      ...row,
+      body: row.body || 'Members are discussing this deal topic. Add a reply with price context, coupon notes, or safety checks.',
+      reply_count: Number(row.reply_count || 0),
+      status: row.status || 'approved',
+      tag: row.tag || 'General'
+    };
+  }
+
+  async function fetchCommunityThreads() {
+    const selectBase = 'community_threads?select=*,profiles(username,display_name)&order=updated_at.desc&limit=100';
+    const fallback = communityFallbackThreads();
+    const rows = remoteEnabled()
+      ? await Auth.rest(selectBase).catch(() => fallback)
+      : await fetchPublicRows(`${selectBase}&status=eq.approved`, fallback);
+    return (rows || fallback).map(normalizeThread);
+  }
+
+  async function fetchThreadByParam(value) {
+    const fallback = communityFallbackThreads().find((thread) => thread.id === value || thread.slug === value) || communityFallbackThreads()[0];
+    if (!Auth?.isConfigured) return normalizeThread(fallback);
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+    const filter = isUuid ? `id=eq.${encodeURIComponent(value)}` : `slug=eq.${encodeURIComponent(value || '')}`;
+    const selectBase = `community_threads?select=*,profiles(username,display_name)&${filter}&limit=1`;
+    const rows = remoteEnabled()
+      ? await Auth.rest(selectBase).catch(() => [])
+      : await Auth.publicRest(selectBase).catch(() => []);
+    return normalizeThread(rows?.[0] || fallback);
+  }
+
+  async function fetchThreadPosts(threadId, fallbackThread) {
+    if (!threadId || String(threadId).startsWith('fallback-thread')) {
+      return data.comments.map((comment, index) => ({
+        id: `fallback-post-${index + 1}`,
+        thread_id: fallbackThread?.id,
+        body: comment.text,
+        status: 'approved',
+        created_at: new Date(Date.now() - (index + 1) * 1500000).toISOString(),
+        profiles: { username: comment.user, display_name: comment.user },
+        badge: comment.badge
+      }));
+    }
+    const path = `community_posts?select=*,profiles(username,display_name)&thread_id=eq.${encodeURIComponent(threadId)}&order=created_at.asc&limit=200`;
+    const rows = remoteEnabled() ? await Auth.rest(path).catch(() => []) : await fetchPublicRows(`${path}&status=eq.approved`, []);
+    return rows || [];
+  }
+
+  function threadHref(thread) {
+    return `./thread.html?slug=${encodeURIComponent(thread.slug || thread.id)}`;
+  }
+
+  function renderThreadCard(thread) {
+    const status = thread.status === 'approved' ? '' : `<b class="status-pill">${escapeHtml(thread.status)}</b>`;
+    return `
+      <article class="forum-thread-card motion-item" data-thread-tag="${escapeHtml(thread.tag)}">
+        <div class="thread-kicker">
+          <span>${escapeHtml(thread.tag)}</span>
+          ${status}
+        </div>
+        <h3><a href="${threadHref(thread)}">${escapeHtml(thread.title)}</a></h3>
+        <p>${escapeHtml(thread.body).slice(0, 210)}${thread.body.length > 210 ? '...' : ''}</p>
+        <footer>
+          <span>By ${escapeHtml(profileLabel(thread))}</span>
+          <span>${compact(thread.reply_count)} replies</span>
+          <span>${relativeDate(thread.updated_at || thread.created_at)}</span>
+          <button type="button" data-community-action="report-thread" data-id="${escapeHtml(thread.id)}">Report</button>
+        </footer>
+      </article>
+    `;
+  }
+
+  function renderCommunityThreadList() {
+    const root = document.getElementById('communityThreadList');
+    if (!root) return;
+    const query = String(document.getElementById('communitySearch')?.value || '').trim().toLowerCase();
+    const activeTag = document.querySelector('[data-thread-filter].active')?.dataset.threadFilter || 'all';
+    const sort = document.getElementById('communitySort')?.value || 'active';
+    let threads = [...(window.DealNestCommunity?.threads || [])];
+    if (activeTag !== 'all') threads = threads.filter((thread) => thread.tag === activeTag);
+    if (query) {
+      const terms = query.split(/\s+/).filter(Boolean);
+      threads = threads.filter((thread) => {
+        const haystack = [thread.title, thread.body, thread.tag, profileLabel(thread)].join(' ').toLowerCase();
+        return terms.every((term) => haystack.includes(term));
+      });
+    }
+    threads.sort((a, b) => {
+      if (sort === 'newest') return new Date(b.created_at) - new Date(a.created_at);
+      if (sort === 'replies') return b.reply_count - a.reply_count;
+      return new Date(b.updated_at || b.created_at) - new Date(a.updated_at || a.created_at);
+    });
+    root.innerHTML = threads.map(renderThreadCard).join('') || '<div class="empty-state"><strong>No discussions match</strong><p>Clear the search or choose another topic to keep browsing.</p></div>';
+    window.DealNestMotion?.refresh();
+  }
+
+  async function community() {
+    pageShell('Community hub', 'Discussion layer', 'Browse deal safety checks, coupon notes, buying advice, and category-specific conversations. Guests can read; members can post, reply, and report.',
+      `<section class="forum-hero section-block motion-item">
+        <div>
+          <p class="eyebrow">Public forum</p>
+          <h2>Members make the shopping signal stronger.</h2>
+          <p>Every thread is built around practical deal context: final price, store reliability, coupon behavior, shipping terms, and real buying judgment.</p>
+          <div class="community-actions">
+            <a class="post-button link-button" href="#createThread">Start a thread</a>
+            <a class="ghost-button link-button" href="./search.html">Search deals</a>
+          </div>
+        </div>
+        <div class="forum-signal-card">
+          ${stat('guest read', 'Open', 'Approved discussions are public.')}
+          ${stat('member posts', 'Queued', 'New threads and replies wait for moderation.')}
+          ${stat('reports', 'Role-gated', 'Moderators handle community flags.')}
+        </div>
+      </section>
+      <section class="section-block forum-workspace">
+        <div class="feed-toolbar">
+          <div>
+            <p class="eyebrow">Discussions</p>
+            <h2>Trending and newest forum threads</h2>
+          </div>
+          <div class="forum-controls">
+            <input id="communitySearch" type="search" placeholder="Search discussions, tags, members..." aria-label="Search community discussions">
+            <select id="communitySort" aria-label="Sort community discussions"><option value="active">Most active</option><option value="newest">Newest</option><option value="replies">Most replies</option></select>
+          </div>
+        </div>
+        <div class="chip-list forum-tags" id="communityTagFilters"></div>
+        <div class="forum-thread-grid" id="communityThreadList"><div class="skeleton-grid">${Array.from({ length: 6 }).map(() => '<article class="skeleton-card"></article>').join('')}</div></div>
+      </section>
+      <section class="split-section" id="createThread">
+        <form class="section-block deal-form forum-composer" id="threadForm" novalidate>
+          <div class="section-heading"><div><p class="eyebrow">Create thread</p><h2>Ask the community</h2><p>Thread submissions stay pending until a moderator approves them.</p></div></div>
+          ${remoteEnabled() ? '' : '<div class="auth-required-note">Sign in to create a thread. Guests can keep reading approved discussions.</div>'}
+          <div class="form-grid">
+            <label class="wide-field">Thread title<input name="title" maxlength="140" placeholder="Example: Is this refurb monitor warranty worth it?" required></label>
+            <label>Topic tag<select name="tag" required><option value="">Choose topic</option><option>Buying advice</option><option>Deal safety</option><option>Coupons</option><option>Community picks</option><option>Gaming</option><option>Kitchen</option><option>Travel</option><option>Tech help</option></select></label>
+            <label class="wide-field">Context<textarea name="body" rows="5" maxlength="2200" placeholder="Share price context, links to compare, coupon details, or the decision you want help with." required></textarea></label>
+          </div>
+          <button class="post-button" type="submit">${remoteEnabled() ? 'Submit for review' : 'Sign in to post'}</button>
+          <output class="form-errors" id="threadOutput">Approved threads become public after moderation.</output>
+        </form>
+        <aside class="section-block">
+          <div class="section-heading"><div><p class="eyebrow">Forum standards</p><h2>Useful beats noisy</h2></div></div>
+          <div class="trust-strip forum-guidelines">${stat('Verify', '01', 'Include final cart price, coupon terms, shipping, and expiration context.')}${stat('Compare', '02', 'Mention warranty, seller trust, and return windows where relevant.')}${stat('Report', '03', 'Flag misleading, spammy, or unsafe content for moderators.')}</div>
+        </aside>
+      </section>`);
+    const threads = await fetchCommunityThreads();
+    window.DealNestCommunity = { threads };
+    const tags = ['all', ...new Set(threads.map((thread) => thread.tag).filter(Boolean))].slice(0, 10);
+    document.getElementById('communityTagFilters').innerHTML = tags.map((tag, index) => `<button type="button" class="${index === 0 ? 'active' : ''}" data-thread-filter="${escapeHtml(tag)}">${tag === 'all' ? 'All topics' : escapeHtml(tag)}</button>`).join('');
+    renderCommunityThreadList();
     window.DealNestSEO?.jsonLd('dealnest-community-jsonld', {
       '@context': 'https://schema.org',
       '@type': 'ItemList',
       name: 'DealNest community discussions',
-      itemListElement: data.communityTopics.slice(0, 8).map((topic, index) => ({
+      itemListElement: threads.slice(0, 8).map((thread, index) => ({
         '@type': 'ListItem',
         position: index + 1,
         item: {
           '@type': 'DiscussionForumPosting',
-          headline: topic.title,
-          author: { '@type': 'Person', name: topic.user },
-          about: topic.tag,
-          commentCount: topic.replies
+          headline: thread.title,
+          author: { '@type': 'Person', name: profileLabel(thread) },
+          about: thread.tag,
+          commentCount: thread.reply_count,
+          url: window.DealNestSEO?.absoluteUrl(`thread.html?slug=${encodeURIComponent(thread.slug || thread.id)}`)
         }
       }))
     });
+  }
+
+  async function threadDetail() {
+    const identifier = params.get('id') || params.get('slug') || '';
+    pageShell('Community thread', 'Forum detail', 'Read the full discussion, reply as a member, or report content for moderation.',
+      `<section class="section-block"><div class="admin-loading"><strong>Loading thread...</strong><p>Approved discussions are public; member-only pending replies are shown to their author.</p></div></section>`);
+    const thread = await fetchThreadByParam(identifier);
+    const posts = await fetchThreadPosts(thread.id, thread);
+    const canonical = window.DealNestSEO?.absoluteUrl(`thread.html?slug=${encodeURIComponent(thread.slug || thread.id)}`);
+    window.DealNestSEO?.update({
+      title: `${thread.title} | DealNest Community`,
+      description: thread.body.slice(0, 150) || 'DealNest community discussion.',
+      canonical,
+      type: 'article'
+    });
+    document.getElementById('pageContent').innerHTML = `
+      <section class="thread-detail-hero section-block motion-item">
+        <div>
+          <p class="eyebrow">${escapeHtml(thread.tag)} / ${escapeHtml(thread.status)}</p>
+          <h1>${escapeHtml(thread.title)}</h1>
+          <p>${escapeHtml(thread.body)}</p>
+          <div class="thread-meta-row"><span>Started by ${escapeHtml(profileLabel(thread))}</span><span>${compact(thread.reply_count || posts.length)} replies</span><span>${relativeDate(thread.updated_at || thread.created_at)}</span></div>
+        </div>
+        <div class="thread-actions-panel">
+          <button class="ghost-button" type="button" data-community-action="report-thread" data-id="${escapeHtml(thread.id)}">Report thread</button>
+          <a class="post-button link-button" href="#replyComposer">Reply</a>
+          <a class="text-link" href="./community.html">Back to community</a>
+        </div>
+      </section>
+      <section class="split-section thread-layout">
+        <div class="section-block">
+          <div class="section-heading"><div><p class="eyebrow">Replies</p><h2>${posts.length} visible responses</h2></div></div>
+          <div class="reply-list">${posts.map((post) => `
+            <article class="reply-card motion-item">
+              <header><strong>${escapeHtml(profileLabel(post))}</strong><span>${escapeHtml(post.badge || post.status || 'member')}</span><small>${relativeDate(post.created_at)}</small></header>
+              <p>${escapeHtml(post.body)}</p>
+              <footer><button type="button" data-community-action="report-post" data-id="${escapeHtml(post.id)}" data-thread-id="${escapeHtml(thread.id)}">Report reply</button></footer>
+            </article>
+          `).join('') || '<div class="empty-state"><strong>No approved replies yet</strong><p>Be the first member to add helpful context for moderators to review.</p></div>'}</div>
+        </div>
+        <aside class="section-block" id="replyComposer">
+          <div class="section-heading"><div><p class="eyebrow">Reply</p><h2>Add useful context</h2></div></div>
+          ${remoteEnabled() ? '' : '<div class="auth-required-note">Sign in to reply. Guest reading stays open.</div>'}
+          <form class="deal-form" id="replyForm" data-thread-id="${escapeHtml(thread.id)}" novalidate>
+            <label>Your reply<textarea name="body" rows="6" maxlength="2200" placeholder="Share final price checks, coupon details, seller notes, or a useful comparison." required></textarea></label>
+            <button class="post-button" type="submit">${remoteEnabled() ? 'Submit reply' : 'Sign in to reply'}</button>
+            <output class="form-errors" id="replyOutput">New replies are queued until moderation approves them.</output>
+          </form>
+        </aside>
+      </section>`;
+    window.DealNestMotion?.refresh();
   }
 
   function search() {
@@ -616,22 +860,27 @@
   }
 
   async function fetchAdminData() {
-    const [deals, reports, queue, clicks] = await Promise.all([
+    const [deals, reports, queue, clicks, communityReports, communityThreads, communityPosts] = await Promise.all([
       Auth.rest('deals?select=id,slug,title,description,instructions,deal_url,image_url,status,moderation_status,current_price,original_price,discount_percent,shipping_info,coupon_code,posted_by,created_at,updated_at,stores(name),categories(name)&order=created_at.desc&limit=200'),
       Auth.rest('deal_reports?select=id,reason,details,status,created_at,deal_id,deals(title,slug,status,moderation_status)&order=created_at.desc&limit=100').catch(() => []),
       Auth.rest('moderation_queue?select=id,entity_type,entity_id,title,reason,priority,status,created_at,updated_at&order=created_at.desc&limit=100').catch(() => []),
-      Auth.rest('click_events?select=id,deal_id,store_id,user_id,clicked_at,source_page,destination_host,deals(title,slug),stores(name)&order=clicked_at.desc&limit=100').catch(() => [])
+      Auth.rest('click_events?select=id,deal_id,store_id,user_id,clicked_at,source_page,destination_host,deals(title,slug),stores(name)&order=clicked_at.desc&limit=100').catch(() => []),
+      Auth.rest('community_reports?select=id,entity_type,thread_id,post_id,user_id,reason,details,status,created_at,community_threads(title,slug,status),community_posts(body,status)&order=created_at.desc&limit=100').catch(() => []),
+      Auth.rest('community_threads?select=id,slug,title,body,tag,user_id,status,reply_count,created_at,updated_at,profiles(username,display_name)&order=created_at.desc&limit=100').catch(() => []),
+      Auth.rest('community_posts?select=id,thread_id,user_id,body,status,created_at,updated_at,community_threads(title,slug,status),profiles(username,display_name)&order=created_at.desc&limit=100').catch(() => [])
     ]);
-    return { deals, reports, queue, clicks };
+    return { deals, reports, queue, clicks, communityReports, communityThreads, communityPosts };
   }
 
-  function renderAdminStats(deals, reports, clicks = []) {
+  function renderAdminStats(deals, reports, clicks = [], communityReports = [], communityThreads = []) {
     const countDeals = (predicate) => deals.filter(predicate).length;
     return `
       <section class="section-block">
         <div class="trust-strip admin-stat-grid">
           ${stat('pending deals', countDeals((deal) => deal.status === 'pending' || deal.moderation_status === 'pending'), 'Waiting for moderator review.')}
           ${stat('open reports', reports.filter((report) => report.status === 'open' || report.status === 'reviewing').length, 'Community flags needing attention.')}
+          ${stat('community flags', communityReports.filter((report) => report.status === 'open' || report.status === 'reviewing').length, 'Forum reports needing moderation.')}
+          ${stat('pending threads', communityThreads.filter((thread) => thread.status === 'pending').length, 'Member forum posts awaiting approval.')}
           ${stat('approved deals', countDeals((deal) => deal.moderation_status === 'approved' && ['live', 'expiring_soon'].includes(deal.status)), 'Visible in the public feed.')}
           ${stat('rejected deals', countDeals((deal) => deal.moderation_status === 'rejected'), 'Not visible publicly.')}
           ${stat('hidden deals', countDeals((deal) => deal.status === 'hidden'), 'Removed from public surfaces.')}
@@ -744,15 +993,87 @@
     `;
   }
 
-  function renderAdminWorkspace(deals, reports, queue, activeFilter = 'pending') {
+  function renderAdminCommunityThreadRow(thread) {
+    return `
+      <article class="admin-row motion-item" data-admin-status="${thread.status}">
+        <div>
+          <strong>${escapeHtml(thread.title)}</strong>
+          <span>${escapeHtml(thread.tag || 'General')} / ${adminStatus(thread.status)} / ${profileLabel(thread)}</span>
+          <small>${escapeHtml(thread.body || 'No body submitted')} / ${adminDate(thread.created_at)}</small>
+          <a class="text-link" href="./thread.html?slug=${encodeURIComponent(thread.slug || thread.id)}">Open thread</a>
+        </div>
+        <div class="admin-badges">
+          <b>${adminStatus(thread.status)}</b>
+          <b>thread</b>
+        </div>
+        <div class="admin-actions">
+          <button type="button" data-admin-action="approve-thread" data-id="${thread.id}">Approve</button>
+          <button type="button" data-admin-action="hide-thread" data-id="${thread.id}">Hide</button>
+          <button type="button" data-admin-action="lock-thread" data-id="${thread.id}">Lock</button>
+        </div>
+      </article>
+    `;
+  }
+
+  function renderAdminCommunityPostRow(post) {
+    return `
+      <article class="admin-row motion-item" data-admin-status="${post.status}">
+        <div>
+          <strong>${escapeHtml(post.community_threads?.title || 'Forum reply')}</strong>
+          <span>${adminStatus(post.status)} / ${profileLabel(post)}</span>
+          <small>${escapeHtml(post.body || 'No body submitted')} / ${adminDate(post.created_at)}</small>
+        </div>
+        <div class="admin-badges">
+          <b>${adminStatus(post.status)}</b>
+          <b>reply</b>
+        </div>
+        <div class="admin-actions">
+          <button type="button" data-admin-action="approve-post" data-id="${post.id}">Approve</button>
+          <button type="button" data-admin-action="hide-post" data-id="${post.id}">Hide</button>
+        </div>
+      </article>
+    `;
+  }
+
+  function renderAdminCommunityReportRow(report) {
+    const label = report.entity_type === 'post'
+      ? `${report.community_threads?.title || 'Reply report'} / ${String(report.community_posts?.body || '').slice(0, 90)}`
+      : report.community_threads?.title || 'Thread report';
+    return `
+      <article class="admin-row motion-item" data-admin-status="${report.status}">
+        <div>
+          <strong>${escapeHtml(label)}</strong>
+          <span>${escapeHtml(report.reason)} / ${adminStatus(report.status)}</span>
+          <small>${escapeHtml(report.details || 'No extra details')} / ${adminDate(report.created_at)}</small>
+        </div>
+        <div class="admin-badges">
+          <b>${report.entity_type}</b>
+          <b>${adminStatus(report.status)}</b>
+        </div>
+        <div class="admin-actions">
+          <button type="button" data-admin-action="review-community-report" data-id="${report.id}">Reviewing</button>
+          <button type="button" data-admin-action="resolve-community-report" data-id="${report.id}">Resolve</button>
+          <button type="button" data-admin-action="dismiss-community-report" data-id="${report.id}">Dismiss</button>
+        </div>
+      </article>
+    `;
+  }
+
+  function renderAdminWorkspace(deals, reports, queue, activeFilter = 'pending', communityReports = [], communityThreads = [], communityPosts = []) {
     const pendingDeals = deals.filter((deal) => deal.status === 'pending' || deal.moderation_status === 'pending');
     const rejectedDeals = deals.filter((deal) => deal.moderation_status === 'rejected');
     const hiddenDeals = deals.filter((deal) => deal.status === 'hidden');
     const expiredDeals = deals.filter((deal) => deal.status === 'expired');
     const reported = reports.filter((report) => report.status !== 'resolved' && report.status !== 'dismissed');
+    const forumReports = communityReports.filter((report) => report.status !== 'resolved' && report.status !== 'dismissed');
+    const forumThreads = communityThreads.filter((thread) => thread.status !== 'approved');
+    const forumPosts = communityPosts.filter((post) => post.status !== 'approved');
     const groups = {
       pending: pendingDeals,
       reported,
+      forumReports,
+      forumThreads,
+      forumPosts,
       rejected: rejectedDeals,
       hidden: hiddenDeals,
       expired: expiredDeals,
@@ -761,6 +1082,9 @@
     const activeItems = groups[activeFilter] || pendingDeals;
     const renderMap = {
       reported: renderAdminReportRow,
+      forumReports: renderAdminCommunityReportRow,
+      forumThreads: renderAdminCommunityThreadRow,
+      forumPosts: renderAdminCommunityPostRow,
       queue: renderAdminQueueRow
     };
     const rowRenderer = renderMap[activeFilter] || renderAdminDealRow;
@@ -834,7 +1158,7 @@
           <h1>Moderation console</h1>
           <p>Approve pending submissions, triage reports, hide unsafe deals, expire stale offers, and leave moderation notes.</p>
         </section>
-        ${renderAdminStats(adminData.deals, adminData.reports, adminData.clicks)}
+        ${renderAdminStats(adminData.deals, adminData.reports, adminData.clicks, adminData.communityReports, adminData.communityThreads)}
         <section class="section-block admin-panel" id="adminWorkspace"></section>
         <section class="section-block admin-panel" id="adminAnalytics"></section>
         <section class="section-block admin-note">
@@ -842,7 +1166,7 @@
         </section>
       `;
       window.DealNestAdmin = { ...adminData, filter: 'pending' };
-      renderAdminWorkspace(adminData.deals, adminData.reports, adminData.queue, 'pending');
+      renderAdminWorkspace(adminData.deals, adminData.reports, adminData.queue, 'pending', adminData.communityReports, adminData.communityThreads, adminData.communityPosts);
       renderAdminAnalytics(adminData.clicks);
     } catch (error) {
       document.getElementById('pageContent').innerHTML = `
@@ -856,7 +1180,7 @@
     }
   }
 
-  const renderers = { categories, stores, coupons, community, search, saved: savedPage, alerts, post: postDeal, login, games, category: categoryDetail, store: storeDetail, dashboard, admin };
+  const renderers = { categories, stores, coupons, community, thread: threadDetail, search, saved: savedPage, alerts, post: postDeal, login, games, category: categoryDetail, store: storeDetail, dashboard, admin };
   await renderers[page]?.();
 
   document.body.addEventListener('input', (event) => {
@@ -1001,6 +1325,87 @@
         submitButton.textContent = 'Save alert';
       }
     }
+    if (event.target.id === 'threadForm') {
+      event.preventDefault();
+      if (!requireMember('community-thread', 'Sign in to create community discussions.')) return;
+      const form = event.target;
+      const values = Object.fromEntries(new FormData(form).entries());
+      const output = document.getElementById('threadOutput');
+      const submitButton = form.querySelector('button[type="submit"]');
+      const title = String(values.title || '').trim();
+      const body = String(values.body || '').trim();
+      const tag = String(values.tag || '').trim();
+      const errors = [];
+      if (title.length < 8) errors.push('Thread title needs at least 8 characters.');
+      if (!tag) errors.push('Choose a topic tag.');
+      if (body.length < 20) errors.push('Add a little more context for moderators.');
+      if (errors.length) {
+        output.textContent = errors.join(' ');
+        toast('Thread needs more detail');
+        return;
+      }
+      submitButton.disabled = true;
+      submitButton.textContent = 'Submitting...';
+      output.textContent = 'Submitting thread for review...';
+      try {
+        await Auth.rest('community_threads?select=id,slug,status', {
+          method: 'POST',
+          body: {
+            slug: `${slugify(title)}-${Date.now().toString(36)}`,
+            title,
+            body,
+            tag,
+            user_id: Auth.currentUserId(),
+            status: 'pending'
+          }
+        });
+        form.reset();
+        output.textContent = 'Thread submitted for moderation. You can see it after approval.';
+        toast('Community thread submitted');
+      } catch (error) {
+        output.textContent = error.message;
+        toast('Thread could not be saved');
+      } finally {
+        submitButton.disabled = false;
+        submitButton.textContent = 'Submit for review';
+      }
+    }
+    if (event.target.id === 'replyForm') {
+      event.preventDefault();
+      if (!requireMember('community-reply', 'Sign in to reply to community discussions.')) return;
+      const form = event.target;
+      const body = String(new FormData(form).get('body') || '').trim();
+      const output = document.getElementById('replyOutput');
+      const submitButton = form.querySelector('button[type="submit"]');
+      if (body.length < 10) {
+        output.textContent = 'Replies need at least 10 characters.';
+        toast('Reply needs more context');
+        return;
+      }
+      submitButton.disabled = true;
+      submitButton.textContent = 'Submitting...';
+      output.textContent = 'Submitting reply for moderation...';
+      try {
+        await Auth.rest('community_posts?select=id,status', {
+          method: 'POST',
+          body: {
+            thread_id: form.dataset.threadId,
+            user_id: Auth.currentUserId(),
+            body,
+            status: 'pending'
+          }
+        });
+        form.reset();
+        output.textContent = 'Reply submitted for moderation.';
+        toast('Reply submitted');
+      } catch (error) {
+        output.textContent = error.message;
+        toast('Reply could not be saved');
+      } finally {
+        submitButton.disabled = false;
+        submitButton.textContent = 'Submit reply';
+      }
+    }
   });
 
   document.body.addEventListener('click', (event) => {
@@ -1067,11 +1472,57 @@
     }
   });
 
+  document.body.addEventListener('input', (event) => {
+    if (event.target.id === 'communitySearch') renderCommunityThreadList();
+  });
+
+  document.body.addEventListener('change', (event) => {
+    if (event.target.id === 'communitySort') renderCommunityThreadList();
+  });
+
+  document.body.addEventListener('click', async (event) => {
+    const filter = event.target.closest('[data-thread-filter]');
+    if (filter) {
+      document.querySelectorAll('[data-thread-filter]').forEach((button) => button.classList.toggle('active', button === filter));
+      renderCommunityThreadList();
+      return;
+    }
+    const actionButton = event.target.closest('[data-community-action]');
+    if (!actionButton) return;
+    const action = actionButton.dataset.communityAction;
+    if (!requireMember('community-report', 'Sign in to report community content for moderation.')) return;
+    if (!['report-thread', 'report-post'].includes(action)) return;
+    const reason = window.prompt('Why should moderators review this?', action === 'report-thread' ? 'Misleading or unsafe thread' : 'Misleading or unsafe reply');
+    if (reason === null) return;
+    const details = window.prompt('Add optional details for moderators:', '') || '';
+    actionButton.disabled = true;
+    try {
+      const isPost = action === 'report-post';
+      await Auth.rest('community_reports', {
+        method: 'POST',
+        body: {
+          entity_type: isPost ? 'post' : 'thread',
+          thread_id: isPost ? actionButton.dataset.threadId : actionButton.dataset.id,
+          post_id: isPost ? actionButton.dataset.id : null,
+          user_id: Auth.currentUserId(),
+          reason: reason.trim() || 'Community report',
+          details: details.trim() || null,
+          status: 'open'
+        }
+      });
+      toast('Community report sent to moderators');
+    } catch (error) {
+      toast(error.message);
+    } finally {
+      actionButton.disabled = false;
+    }
+  });
+
   document.body.addEventListener('click', async (event) => {
     const filterButton = event.target.closest('[data-admin-filter]');
     if (filterButton && window.DealNestAdmin) {
       window.DealNestAdmin.filter = filterButton.dataset.adminFilter;
-      renderAdminWorkspace(window.DealNestAdmin.deals, window.DealNestAdmin.reports, window.DealNestAdmin.queue, window.DealNestAdmin.filter);
+      renderAdminWorkspace(window.DealNestAdmin.deals, window.DealNestAdmin.reports, window.DealNestAdmin.queue, window.DealNestAdmin.filter, window.DealNestAdmin.communityReports, window.DealNestAdmin.communityThreads, window.DealNestAdmin.communityPosts);
       return;
     }
 
@@ -1089,7 +1540,7 @@
 
     const action = button.dataset.adminAction;
     const id = button.dataset.id;
-    const risky = ['reject-deal', 'hide-deal', 'expire-deal'].includes(action);
+    const risky = ['reject-deal', 'hide-deal', 'expire-deal', 'hide-thread', 'lock-thread', 'hide-post'].includes(action);
     const note = window.prompt('Add a moderation note or reason:', action.replace(/-/g, ' '));
     if (note === null) return;
     if (risky && !window.confirm(`Confirm ${action.replace(/-/g, ' ')}? This item will not appear in the public feed.`)) return;
@@ -1147,11 +1598,38 @@
         await writeModerationAction(action.replace(/-/g, '_'), 'queue', id, note);
         toast(`Queue item ${nextStatus}`);
       }
+      if (action === 'approve-thread' || action === 'hide-thread' || action === 'lock-thread') {
+        const nextStatus = action === 'approve-thread' ? 'approved' : action === 'lock-thread' ? 'locked' : 'hidden';
+        await Auth.rest(`community_threads?id=eq.${encodeURIComponent(id)}`, {
+          method: 'PATCH',
+          body: { status: nextStatus }
+        });
+        await writeModerationAction(action.replace(/-/g, '_'), 'thread', id, note);
+        toast(`Thread ${nextStatus}`);
+      }
+      if (action === 'approve-post' || action === 'hide-post') {
+        const nextStatus = action === 'approve-post' ? 'approved' : 'hidden';
+        await Auth.rest(`community_posts?id=eq.${encodeURIComponent(id)}`, {
+          method: 'PATCH',
+          body: { status: nextStatus }
+        });
+        await writeModerationAction(action.replace(/-/g, '_'), 'comment', id, note);
+        toast(`Reply ${nextStatus}`);
+      }
+      if (action === 'review-community-report' || action === 'resolve-community-report' || action === 'dismiss-community-report') {
+        const nextStatus = action === 'review-community-report' ? 'reviewing' : action === 'resolve-community-report' ? 'resolved' : 'dismissed';
+        await Auth.rest(`community_reports?id=eq.${encodeURIComponent(id)}`, {
+          method: 'PATCH',
+          body: { status: nextStatus }
+        });
+        await writeModerationAction(action.replace(/-/g, '_'), 'report', id, note);
+        toast(`Community report ${nextStatus}`);
+      }
       const refreshed = await fetchAdminData();
       window.DealNestAdmin = { ...refreshed, filter: window.DealNestAdmin.filter };
       document.querySelector('.admin-stat-grid')?.closest('.section-block')?.remove();
-      document.querySelector('.page-hero')?.insertAdjacentHTML('afterend', renderAdminStats(refreshed.deals, refreshed.reports, refreshed.clicks));
-      renderAdminWorkspace(refreshed.deals, refreshed.reports, refreshed.queue, window.DealNestAdmin.filter);
+      document.querySelector('.page-hero')?.insertAdjacentHTML('afterend', renderAdminStats(refreshed.deals, refreshed.reports, refreshed.clicks, refreshed.communityReports, refreshed.communityThreads));
+      renderAdminWorkspace(refreshed.deals, refreshed.reports, refreshed.queue, window.DealNestAdmin.filter, refreshed.communityReports, refreshed.communityThreads, refreshed.communityPosts);
       renderAdminAnalytics(refreshed.clicks);
     } catch (error) {
       toast(error.message);

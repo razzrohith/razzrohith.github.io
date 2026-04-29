@@ -16,6 +16,8 @@ These checks use only `SUPABASE_URL` and `SUPABASE_ANON_KEY` from local `.env`.
 - Anonymous save insert blocked by RLS/auth policy: pass
 - Anonymous report insert blocked by RLS/auth policy: pass
 - Anonymous alert insert blocked by RLS/auth policy: pass
+- Anonymous community thread/reply/report insert blocked by RLS/auth policy: pass after
+  `supabase/migrations/20260429000000_add_community_forum_foundation.sql`
 
 ## SQL Verification Checklist
 
@@ -39,6 +41,9 @@ Until a confirmed test user exists, authenticated-only inserts are verified by:
 - Anonymous REST insert denial checks.
 - Unique database constraints for one vote/save per user per deal.
 - Public feed checks showing only `moderation_status = 'approved'` and `status in ('live', 'expiring_soon')`.
+- Public forum checks showing only `community_threads.status = 'approved'` and
+  `community_posts.status = 'approved'` to guests.
+- Owner checks confirming normal users can submit only pending community threads/replies and cannot approve, hide, lock, or resolve reports.
 
 ## Admin Moderation Notes
 

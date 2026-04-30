@@ -482,6 +482,13 @@
   function closeFilterDrawer() {
     document.body.classList.remove('filters-open');
     els.filterDrawerToggle?.setAttribute('aria-expanded', 'false');
+    els.dealFeed?.removeAttribute('aria-hidden');
+    document.querySelector('.feed-panel')?.removeAttribute('aria-hidden');
+  }
+
+  function openFilterDrawer() {
+    document.body.classList.add('filters-open');
+    els.filterDrawerToggle?.setAttribute('aria-expanded', 'true');
   }
 
   function resetFilters() {
@@ -563,11 +570,15 @@
     });
     els.clearFilters.addEventListener('click', resetFilters);
     els.filterDrawerToggle?.addEventListener('click', () => {
-      const isOpen = document.body.classList.toggle('filters-open');
-      els.filterDrawerToggle.setAttribute('aria-expanded', String(isOpen));
+      if (document.body.classList.contains('filters-open')) closeFilterDrawer();
+      else openFilterDrawer();
     });
     els.closeFilters?.addEventListener('click', closeFilterDrawer);
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') closeFilterDrawer();
+    });
     els.menuToggle.addEventListener('click', () => {
+      closeFilterDrawer();
       const header = document.querySelector('.market-header');
       const isOpen = header.classList.toggle('menu-open');
       document.body.classList.toggle('menu-active', isOpen);

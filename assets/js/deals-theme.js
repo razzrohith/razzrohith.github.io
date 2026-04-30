@@ -58,19 +58,24 @@
     switcher.setAttribute('role', 'group');
     switcher.setAttribute('aria-label', 'Color theme');
     switcher.innerHTML = `
-      <button type="button" data-theme-choice="light" aria-label="Use light theme">Light</button>
-      <button type="button" data-theme-choice="dark" aria-label="Use dark theme">Dark</button>
-      <button type="button" data-theme-choice="system" aria-label="Use system theme">System</button>
+      <button type="button" data-theme-choice="light" onclick="window.DealNestTheme?.apply('light')">Light</button>
+      <button type="button" data-theme-choice="dark" onclick="window.DealNestTheme?.apply('dark')">Dark</button>
+      <button type="button" data-theme-choice="system" onclick="window.DealNestTheme?.apply('system')">System</button>
     `;
-    switcher.addEventListener('click', (event) => {
-      const button = event.target.closest('[data-theme-choice]');
-      if (!button) return;
-      applyTheme(button.dataset.themeChoice, true);
-      window.dispatchEvent(new CustomEvent('dealnest:theme-changed', {
-        detail: { preference, theme: resolvedTheme(preference) }
-      }));
-    });
     return switcher;
+  }
+
+  function handleThemeClick(event) {
+    const target = event.target;
+    const button = target?.closest
+      ? target.closest('[data-theme-choice]')
+      : target?.parentElement?.closest?.('[data-theme-choice]');
+    if (!button) return;
+    event.preventDefault();
+    applyTheme(button.dataset.themeChoice, true);
+    window.dispatchEvent(new CustomEvent('dealnest:theme-changed', {
+      detail: { preference, theme: resolvedTheme(preference) }
+    }));
   }
 
   function mountToggle() {
@@ -78,6 +83,9 @@
       if (header.querySelector('.theme-switcher')) return;
       const actions = header.querySelector('.header-actions');
       const switcher = makeSwitcher();
+      switcher.querySelectorAll('[data-theme-choice]').forEach((button) => {
+        button.addEventListener('click', handleThemeClick);
+      });
       if (actions) header.insertBefore(switcher, actions);
       else header.appendChild(switcher);
     });
@@ -95,6 +103,8 @@
   media?.addEventListener?.('change', () => {
     if (preference === 'system') applyTheme('system', false);
   });
+
+  document.addEventListener('click', handleThemeClick, true);
 
   window.DealNestTheme = {
     apply: (choice) => applyTheme(choice, true),

@@ -8,13 +8,12 @@ import { Plus, Star, Edit, Package, CheckCircle, User, MapPin, Phone } from "luc
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import Navbar from "@/components/Navbar";
 import { mockFarmers, mockListings, mockReservations } from "@/data/mockData";
 import { ProduceListing } from "@/lib/types";
+import { isSupabaseConfigured, getSupabase } from "@/lib/supabase";
 
 const listingSchema = z.object({
   name: z.string().min(2, "Produce name is required"),
@@ -29,6 +28,7 @@ const listingSchema = z.object({
 type ListingForm = z.infer<typeof listingSchema>;
 
 const demoFarmer = mockFarmers[0];
+const DEMO_FARMER_UUID = "11111111-0001-0001-0001-000000000001";
 
 export default function FarmerDashboard() {
   const [listings, setListings] = useState<ProduceListing[]>(
@@ -36,7 +36,7 @@ export default function FarmerDashboard() {
   );
   const [showForm, setShowForm] = useState(false);
   const [categoryValue, setCategoryValue] = useState("");
-  const [editListing, setEditListing] = useState<ProduceListing | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   const reservations = mockReservations.filter((r) => r.farmerId === demoFarmer.id);
 
@@ -44,7 +44,8 @@ export default function FarmerDashboard() {
     resolver: zodResolver(listingSchema),
   });
 
-  const onSubmit = (data: ListingForm) => {
+  const onSubmit = async (data: ListingForm) => {
+    setSubmitting(true);
     const newListing: ProduceListing = {
       id: `p${Date.now()}`,
       farmerId: demoFarmer.id,
@@ -58,11 +59,37 @@ export default function FarmerDashboard() {
       qualityNotes: data.qualityNotes,
       status: "Available",
     };
-    setListings((prev) => [newListing, ...prev]);
-    reset();
-    setCategoryValue("");
-    setShowForm(false);
-    toast.success("Listing added successfully!");
+
+    try {
+      if (isSupabaseConfigured()) {
+        const { error } = await getSupabase()
+          .from("produce_listings")
+          .insert({
+            farmer_id: DEMO_FARMER_UUID,
+            produce_name: data.name,
+            category: data.category,
+            quantity_kg: data.quantityKg,
+            price_per_kg: data.pricePerKg,
+            harvest_datetime: new Date(data.harvestDate).toISOString(),
+            pickup_location: data.pickupLocation,
+            quality_notes: data.qualityNotes ?? null,
+            status: "active",
+          });
+        if (error) console.warn("Supabase listing insert error:", error.message);
+        else toast.success("Listing saved to database!");
+      } else {
+        toast.success("Listing added successfully!");
+      }
+    } catch (e) {
+      console.warn("Supabase save failed, keeping local:", e);
+      toast.success("Listing added locally.");
+    } finally {
+      setSubmitting(false);
+      setListings((prev) => [newListing, ...prev]);
+      reset();
+      setCategoryValue("");
+      setShowForm(false);
+    }
   };
 
   const updateStatus = (id: string, status: ProduceListing["status"]) => {
@@ -163,7 +190,9 @@ export default function FarmerDashboard() {
                   <Input placeholder="e.g. Organic, freshly picked..." {...register("qualityNotes")} />
                 </div>
                 <div className="sm:col-span-2 flex gap-3">
-                  <Button type="submit" className="flex-1">Add Listing</Button>
+                  <Button type="submit" className="flex-1" disabled={submitting}>
+                    {submitting ? "Saving..." : "Add Listing"}
+                  </Button>
                   <Button type="button" variant="outline" onClick={() => setShowForm(false)}>Cancel</Button>
                 </div>
               </form>
@@ -202,7 +231,7 @@ export default function FarmerDashboard() {
                     </div>
                   </div>
                   <div className="flex gap-2 flex-wrap">
-                    <Button size="sm" variant="outline" onClick={() => { setEditListing(listing); toast.info("Edit feature coming soon!"); }}>
+                    <Button size="sm" variant="outline" onClick={() => toast.info("Edit feature coming soon!")}>
                       <Edit className="w-3.5 h-3.5 mr-1" />Edit
                     </Button>
                     <Button size="sm" variant="outline" onClick={() => updateStatus(listing.id, "Sold")} disabled={listing.status === "Sold"}>
@@ -218,7 +247,7 @@ export default function FarmerDashboard() {
           )}
         </div>
 
-        {/* Buyer Interest */}
+        {/* Buyer Reservations */}
         <div>
           <h2 className="text-lg font-semibold text-foreground mb-4">Buyer Reservations</h2>
           {reservations.length === 0 ? (

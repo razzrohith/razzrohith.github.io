@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import Navbar from "@/components/Navbar";
+import { isSupabaseConfigured, getSupabase } from "@/lib/supabase";
 
 const schema = z.object({
   name: z.string().min(2, "Name is required"),
@@ -42,6 +43,7 @@ const buyerBenefits = [
 export default function LandingPage() {
   const waitlistRef = useRef<HTMLDivElement>(null);
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [roleValue, setRoleValue] = useState<string>("");
 
   const { register, handleSubmit, setValue, formState: { errors } } = useForm<FormValues>({
@@ -52,8 +54,26 @@ export default function LandingPage() {
     waitlistRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  const onSubmit = (_data: FormValues) => {
-    setSubmitted(true);
+  const onSubmit = async (data: FormValues) => {
+    setSubmitting(true);
+    try {
+      if (isSupabaseConfigured()) {
+        const { error } = await getSupabase()
+          .from("waitlist_leads")
+          .insert({
+            name: data.name,
+            phone: data.phone,
+            role: data.role.toLowerCase(),
+            town: data.village,
+          });
+        if (error) console.warn("Supabase waitlist error:", error.message);
+      }
+    } catch (e) {
+      console.warn("Waitlist save failed, using local fallback:", e);
+    } finally {
+      setSubmitting(false);
+      setSubmitted(true);
+    }
   };
 
   return (
@@ -260,16 +280,18 @@ export default function LandingPage() {
                     type="submit"
                     variant="secondary"
                     className="w-full"
+                    disabled={submitting}
                     onClick={() => { setRoleValue("Buyer"); setValue("role", "Buyer"); }}
                   >
-                    Join as Buyer
+                    {submitting ? "Saving..." : "Join as Buyer"}
                   </Button>
                   <Button
                     type="submit"
                     className="w-full"
+                    disabled={submitting}
                     onClick={() => { setRoleValue("Farmer"); setValue("role", "Farmer"); }}
                   >
-                    Join as Farmer
+                    {submitting ? "Saving..." : "Join as Farmer"}
                   </Button>
                 </div>
               </form>

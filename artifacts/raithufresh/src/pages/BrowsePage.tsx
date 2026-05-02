@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "wouter";
 import { motion } from "framer-motion";
-import { Search, MapPin, Calendar, Phone } from "lucide-react";
+import { Search, MapPin, Calendar, Phone, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,25 @@ import Navbar from "@/components/Navbar";
 import ReservationModal from "@/components/ReservationModal";
 import { mockListings, mockFarmers } from "@/data/mockData";
 import { ProduceListing } from "@/lib/types";
+import { isSupabaseConfigured, getSupabase, SupabaseListing } from "@/lib/supabase";
+
+function mapSupabaseListing(row: SupabaseListing): ProduceListing {
+  return {
+    id: row.id,
+    farmerId: row.farmer_id,
+    name: row.produce_name,
+    category: row.category,
+    pricePerKg: Number(row.price_per_kg),
+    quantityKg: Number(row.quantity_kg),
+    harvestDate: row.harvest_datetime ? row.harvest_datetime.split("T")[0] : "",
+    pickupLocation: row.pickup_location ?? "",
+    distanceKm: Number(row.distance_km ?? 0),
+    qualityNotes: row.quality_notes ?? undefined,
+    status: "Available",
+  };
+}
+
+type FarmerMap = Record<string, { name: string; village: string }>;
 
 export default function BrowsePage() {
   const [search, setSearch] = useState("");
@@ -19,10 +38,59 @@ export default function BrowsePage() {
   const [selectedListing, setSelectedListing] = useState<ProduceListing | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
 
-  const farmer = (id: string) => mockFarmers.find((f) => f.id === id);
+  const [listings, setListings] = useState<ProduceListing[]>([]);
+  const [farmerMap, setFarmerMap] = useState<FarmerMap>({});
+  const [loading, setLoading] = useState(true);
 
-  const filtered = mockListings.filter((l) => {
-    if (l.status !== "Available") return false;
+  useEffect(() => {
+    async function load() {
+      if (!isSupabaseConfigured()) {
+        setListings(mockListings.filter((l) => l.status === "Available"));
+        const fm: FarmerMap = {};
+        mockFarmers.forEach((f) => { fm[f.id] = { name: f.name, village: f.village }; });
+        setFarmerMap(fm);
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const { data, error } = await getSupabase()
+          .from("produce_listings")
+          .select("*, farmers(id, name, village, district, rating, phone)")
+          .eq("status", "active")
+          .order("created_at", { ascending: false });
+
+        if (error) throw error;
+
+        const rows = (data ?? []) as SupabaseListing[];
+        setListings(rows.map(mapSupabaseListing));
+
+        const fm: FarmerMap = {};
+        rows.forEach((row) => {
+          if (row.farmers) {
+            fm[row.farmer_id] = {
+              name: row.farmers.name,
+              village: row.farmers.village ?? "",
+            };
+          }
+        });
+        setFarmerMap(fm);
+      } catch (e) {
+        console.warn("Supabase load failed, using mock data:", e);
+        setListings(mockListings.filter((l) => l.status === "Available"));
+        const fm: FarmerMap = {};
+        mockFarmers.forEach((f) => { fm[f.id] = { name: f.name, village: f.village }; });
+        setFarmerMap(fm);
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
+  }, []);
+
+  const farmer = (id: string) => farmerMap[id] ?? mockFarmers.find((f) => f.id === id) ?? null;
+
+  const filtered = listings.filter((l) => {
     if (search && !l.name.toLowerCase().includes(search.toLowerCase())) return false;
     if (categoryFilter !== "All" && l.category !== categoryFilter) return false;
     if (maxPrice !== "All" && l.pricePerKg > Number(maxPrice)) return false;
@@ -35,8 +103,10 @@ export default function BrowsePage() {
   };
 
   const handleContact = (listing: ProduceListing) => {
-    const f = farmer(listing.farmerId);
-    if (f) toast.success(`Farmer ${f.name}: +91 ${f.phone}`);
+    const f = mockFarmers.find((mf) => mf.id === listing.farmerId);
+    const phone = f?.phone;
+    if (phone) toast.success(`Farmer ${farmer(listing.farmerId)?.name}: +91 ${phone}`);
+    else toast.info("Contact the farmer by visiting their pickup location.");
   };
 
   return (
@@ -82,79 +152,87 @@ export default function BrowsePage() {
           </Select>
         </div>
 
-        <p className="text-sm text-muted-foreground mb-4">{filtered.length} listings found</p>
-
-        {filtered.length === 0 ? (
-          <div className="text-center py-16 text-muted-foreground">
-            <Search className="w-10 h-10 mx-auto mb-3 opacity-30" />
-            <p>No produce found. Try adjusting your filters.</p>
+        {loading ? (
+          <div className="flex items-center justify-center py-20 text-muted-foreground gap-2">
+            <Loader2 className="w-5 h-5 animate-spin" />
+            <span>Loading listings...</span>
           </div>
         ) : (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filtered.map((listing, i) => {
-              const f = farmer(listing.farmerId);
-              return (
-                <motion.div
-                  key={listing.id}
-                  initial={{ opacity: 0, y: 16 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.04, duration: 0.3 }}
-                  className="bg-card border border-border rounded-2xl p-5 shadow-sm flex flex-col gap-3"
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <h3 className="font-semibold text-foreground text-base">{listing.name}</h3>
-                      <p className="text-sm text-muted-foreground">{f?.name} · {f?.village}</p>
-                    </div>
-                    <Badge variant={listing.category === "Fruit" ? "default" : "secondary"} className="shrink-0">
-                      {listing.category}
-                    </Badge>
-                  </div>
+          <>
+            <p className="text-sm text-muted-foreground mb-4">{filtered.length} listings found</p>
+            {filtered.length === 0 ? (
+              <div className="text-center py-16 text-muted-foreground">
+                <Search className="w-10 h-10 mx-auto mb-3 opacity-30" />
+                <p>No produce found. Try adjusting your filters.</p>
+              </div>
+            ) : (
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {filtered.map((listing, i) => {
+                  const f = farmer(listing.farmerId);
+                  return (
+                    <motion.div
+                      key={listing.id}
+                      initial={{ opacity: 0, y: 16 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.04, duration: 0.3 }}
+                      className="bg-card border border-border rounded-2xl p-5 shadow-sm flex flex-col gap-3"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <h3 className="font-semibold text-foreground text-base">{listing.name}</h3>
+                          <p className="text-sm text-muted-foreground">{f?.name ?? "—"} · {f?.village ?? ""}</p>
+                        </div>
+                        <Badge variant={listing.category === "Fruit" ? "default" : "secondary"} className="shrink-0">
+                          {listing.category}
+                        </Badge>
+                      </div>
 
-                  <div className="grid grid-cols-2 gap-2 text-sm">
-                    <div className="bg-primary/5 rounded-lg p-2 text-center">
-                      <div className="font-bold text-primary text-lg">Rs {listing.pricePerKg}</div>
-                      <div className="text-muted-foreground text-xs">per kg</div>
-                    </div>
-                    <div className="bg-muted rounded-lg p-2 text-center">
-                      <div className="font-bold text-foreground text-lg">{listing.quantityKg}</div>
-                      <div className="text-muted-foreground text-xs">kg available</div>
-                    </div>
-                  </div>
+                      <div className="grid grid-cols-2 gap-2 text-sm">
+                        <div className="bg-primary/5 rounded-lg p-2 text-center">
+                          <div className="font-bold text-primary text-lg">Rs {listing.pricePerKg}</div>
+                          <div className="text-muted-foreground text-xs">per kg</div>
+                        </div>
+                        <div className="bg-muted rounded-lg p-2 text-center">
+                          <div className="font-bold text-foreground text-lg">{listing.quantityKg}</div>
+                          <div className="text-muted-foreground text-xs">kg available</div>
+                        </div>
+                      </div>
 
-                  <div className="space-y-1 text-xs text-muted-foreground">
-                    <div className="flex items-center gap-1.5">
-                      <Calendar className="w-3.5 h-3.5" />
-                      Harvest: {listing.harvestDate}
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <MapPin className="w-3.5 h-3.5" />
-                      {listing.pickupLocation} · {listing.distanceKm} km away
-                    </div>
-                  </div>
+                      <div className="space-y-1 text-xs text-muted-foreground">
+                        <div className="flex items-center gap-1.5">
+                          <Calendar className="w-3.5 h-3.5" />
+                          Harvest: {listing.harvestDate}
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <MapPin className="w-3.5 h-3.5" />
+                          {listing.pickupLocation} · {listing.distanceKm} km away
+                        </div>
+                      </div>
 
-                  {listing.qualityNotes && (
-                    <p className="text-xs text-muted-foreground italic bg-muted/50 rounded-lg px-2 py-1">
-                      {listing.qualityNotes}
-                    </p>
-                  )}
+                      {listing.qualityNotes && (
+                        <p className="text-xs text-muted-foreground italic bg-muted/50 rounded-lg px-2 py-1">
+                          {listing.qualityNotes}
+                        </p>
+                      )}
 
-                  <div className="flex gap-2 mt-auto pt-1">
-                    <Button size="sm" className="flex-1" onClick={() => handleReserve(listing)}>
-                      Reserve
-                    </Button>
-                    <Button size="sm" variant="outline" className="flex-1" onClick={() => handleContact(listing)}>
-                      <Phone className="w-3.5 h-3.5 mr-1" />
-                      Contact
-                    </Button>
-                  </div>
-                  <Link href={`/produce/${listing.id}`} className="text-xs text-center text-primary underline underline-offset-2">
-                    View full details
-                  </Link>
-                </motion.div>
-              );
-            })}
-          </div>
+                      <div className="flex gap-2 mt-auto pt-1">
+                        <Button size="sm" className="flex-1" onClick={() => handleReserve(listing)}>
+                          Reserve
+                        </Button>
+                        <Button size="sm" variant="outline" className="flex-1" onClick={() => handleContact(listing)}>
+                          <Phone className="w-3.5 h-3.5 mr-1" />
+                          Contact
+                        </Button>
+                      </div>
+                      <Link href={`/produce/${listing.id}`} className="text-xs text-center text-primary underline underline-offset-2">
+                        View full details
+                      </Link>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            )}
+          </>
         )}
       </div>
 

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { Users, Tractor, ShoppingBag, Package, TrendingUp, CheckCircle, Ban, AlertCircle } from "lucide-react";
@@ -7,35 +7,94 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Navbar from "@/components/Navbar";
 import { mockFarmers, mockBuyers, mockAgents, mockListings, mockReservations } from "@/data/mockData";
+import { isSupabaseConfigured, getSupabase } from "@/lib/supabase";
 
-const analyticsCards = [
-  { label: "Total Buyers", value: mockBuyers.length, icon: ShoppingBag, color: "bg-blue-50 text-blue-700 border-blue-100" },
-  { label: "Total Farmers", value: mockFarmers.length, icon: Tractor, color: "bg-green-50 text-green-700 border-green-100" },
-  { label: "Active Listings", value: mockListings.filter((l) => l.status === "Available").length, icon: Package, color: "bg-amber-50 text-amber-700 border-amber-100" },
-  { label: "Total Reservations", value: mockReservations.length, icon: Users, color: "bg-purple-50 text-purple-700 border-purple-100" },
-  {
-    label: "Reserved Quantity",
-    value: `${mockReservations.reduce((a, r) => a + r.quantityKg, 0)} kg`,
-    icon: TrendingUp,
-    color: "bg-orange-50 text-orange-700 border-orange-100",
-  },
-  {
-    label: "Est. Sales Value",
-    value: `Rs ${mockListings.reduce((a, l) => a + l.pricePerKg * l.quantityKg, 0).toLocaleString()}`,
-    icon: TrendingUp,
-    color: "bg-emerald-50 text-emerald-700 border-emerald-100",
-  },
-];
+type DbCounts = {
+  waitlist: number;
+  farmers: number;
+  listings: number;
+  reservations: number;
+};
 
 type UserStatus = { [id: string]: "Active" | "Suspended" };
 
 export default function AdminDashboard() {
+  const [dbCounts, setDbCounts] = useState<DbCounts | null>(null);
   const [farmerStatus, setFarmerStatus] = useState<UserStatus>(
     Object.fromEntries(mockFarmers.map((f) => [f.id, "Active" as const]))
   );
   const [buyerStatus, setBuyerStatus] = useState<UserStatus>(
     Object.fromEntries(mockBuyers.map((b) => [b.id, "Active" as const]))
   );
+
+  useEffect(() => {
+    if (!isSupabaseConfigured()) return;
+    async function loadCounts() {
+      try {
+        const sb = getSupabase();
+        const [waitlistRes, farmersRes, listingsRes, reservationsRes] = await Promise.all([
+          sb.from("waitlist_leads").select("id", { count: "exact", head: true }),
+          sb.from("farmers").select("id", { count: "exact", head: true }),
+          sb.from("produce_listings").select("id", { count: "exact", head: true }),
+          sb.from("reservations").select("id", { count: "exact", head: true }),
+        ]);
+        setDbCounts({
+          waitlist: waitlistRes.count ?? 0,
+          farmers: farmersRes.count ?? 0,
+          listings: listingsRes.count ?? 0,
+          reservations: reservationsRes.count ?? 0,
+        });
+      } catch (e) {
+        console.warn("Admin count fetch failed:", e);
+      }
+    }
+    loadCounts();
+  }, []);
+
+  const analyticsCards = [
+    {
+      label: "Waitlist Signups",
+      value: dbCounts ? dbCounts.waitlist : "—",
+      sub: dbCounts ? "from database" : "Supabase not connected",
+      icon: Users,
+      color: "bg-blue-50 text-blue-700 border-blue-100",
+    },
+    {
+      label: "Total Farmers",
+      value: dbCounts ? dbCounts.farmers : mockFarmers.length,
+      sub: dbCounts ? "from database" : "mock data",
+      icon: Tractor,
+      color: "bg-green-50 text-green-700 border-green-100",
+    },
+    {
+      label: "Produce Listings",
+      value: dbCounts ? dbCounts.listings : mockListings.filter((l) => l.status === "Available").length,
+      sub: dbCounts ? "from database" : "mock data",
+      icon: Package,
+      color: "bg-amber-50 text-amber-700 border-amber-100",
+    },
+    {
+      label: "Reservations",
+      value: dbCounts ? dbCounts.reservations : mockReservations.length,
+      sub: dbCounts ? "from database" : "mock data",
+      icon: ShoppingBag,
+      color: "bg-purple-50 text-purple-700 border-purple-100",
+    },
+    {
+      label: "Reserved Qty (mock)",
+      value: `${mockReservations.reduce((a, r) => a + r.quantityKg, 0)} kg`,
+      sub: "mock data",
+      icon: TrendingUp,
+      color: "bg-orange-50 text-orange-700 border-orange-100",
+    },
+    {
+      label: "Est. Sales Value (mock)",
+      value: `Rs ${mockListings.reduce((a, l) => a + l.pricePerKg * l.quantityKg, 0).toLocaleString()}`,
+      sub: "mock data",
+      icon: TrendingUp,
+      color: "bg-emerald-50 text-emerald-700 border-emerald-100",
+    },
+  ];
 
   const toggleFarmer = (id: string, name: string) => {
     setFarmerStatus((prev) => {
@@ -60,7 +119,12 @@ export default function AdminDashboard() {
       <Navbar />
       <div className="max-w-5xl mx-auto px-4 py-8">
         <h1 className="text-2xl font-bold text-foreground mb-1">Admin Dashboard</h1>
-        <p className="text-muted-foreground text-sm mb-6">Manage all users, listings, and platform activity</p>
+        <p className="text-muted-foreground text-sm mb-1">Manage all users, listings, and platform activity</p>
+        {isSupabaseConfigured() ? (
+          <p className="text-xs text-primary font-medium mb-6">Connected to Supabase — showing live counts</p>
+        ) : (
+          <p className="text-xs text-muted-foreground mb-6">Supabase not configured — showing mock data</p>
+        )}
 
         {/* Analytics */}
         <motion.div
@@ -79,6 +143,7 @@ export default function AdminDashboard() {
               <card.icon className="w-5 h-5 mb-2 opacity-80" />
               <div className="text-2xl font-bold">{card.value}</div>
               <div className="text-xs font-medium mt-0.5 opacity-80">{card.label}</div>
+              <div className="text-xs opacity-60 mt-0.5">{card.sub}</div>
             </motion.div>
           ))}
         </motion.div>

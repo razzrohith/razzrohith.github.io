@@ -42,6 +42,30 @@ This inserts:
 
 ---
 
+## Security — Reservation DELETE Grant Cleanup (patch-reservation-delete-cleanup.sql)
+
+### Changes applied
+
+SQL patch: `supabase/patch-reservation-delete-cleanup.sql`
+
+Grants revoked:
+- `REVOKE DELETE ON reservations FROM authenticated`
+- `REVOKE DELETE ON reservations FROM anon`
+
+No DELETE RLS policy is added. No user role can delete reservations in the MVP. The reservation lifecycle is managed through status changes only: `pending → confirmed → completed / cancelled`.
+
+#### Testing guidelines
+
+- Use only fake/mock data during all tests
+- No real personal data
+- No paid services, paid APIs, paid Supabase add-ons, or paid Replit features are used
+
+### Apply the patch
+
+Paste `supabase/patch-reservation-delete-cleanup.sql` into Supabase SQL Editor → Run.
+
+---
+
 ## Security — Reservation Update Hardening (patch-reservation-update-security.sql)
 
 ### Changes applied

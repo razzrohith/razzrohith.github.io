@@ -5,13 +5,13 @@ import {
   ArrowLeft, MapPin, Calendar, Star, Phone,
   Package, FileText, Navigation, Loader2, AlertCircle,
 } from "lucide-react";
-import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Navbar from "@/components/Navbar";
 import ReservationModal from "@/components/ReservationModal";
+import ContactFarmerDialog from "@/components/ContactFarmerDialog";
 import { mockListings, mockFarmers } from "@/data/mockData";
 import { ProduceListing } from "@/lib/types";
 import { isSupabaseConfigured, getProduceListingById, SupabaseListing } from "@/lib/supabase";
@@ -60,6 +60,7 @@ export default function ProduceDetailPage() {
   const [notFound, setNotFound] = useState(false);
   const [reserveQty, setReserveQty] = useState(1);
   const [modalOpen, setModalOpen] = useState(false);
+  const [contactOpen, setContactOpen] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -163,13 +164,7 @@ export default function ProduceDetailPage() {
   const farmerPhone = farmer?.phone ?? null;
   const farmerVerified = farmer?.verified ?? false;
 
-  const handleContact = () => {
-    if (farmerPhone) {
-      toast.success(`${farmerName}: +91 ${farmerPhone}`);
-    } else {
-      toast.info("Please reserve first or visit the pickup location to reach the farmer.");
-    }
-  };
+  const handleContact = () => setContactOpen(true);
 
   return (
     <div className="min-h-screen bg-background">
@@ -358,6 +353,12 @@ export default function ProduceDetailPage() {
         open={modalOpen}
         onClose={() => setModalOpen(false)}
         listing={listing}
+      />
+      <ContactFarmerDialog
+        open={contactOpen}
+        onClose={() => setContactOpen(false)}
+        farmerName={farmerName}
+        phone={farmerPhone}
       />
     </div>
   );

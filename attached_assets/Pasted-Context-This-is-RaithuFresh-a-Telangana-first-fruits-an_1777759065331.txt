@@ -1,0 +1,123 @@
+Context:
+This is RaithuFresh, a Telangana-first fruits and vegetables marketplace for farmers, buyers, agents, and admins.
+
+Rules:
+- Focus only on fruits and vegetables.
+- Use only free tools, free tiers, open-source libraries, and mock/local alternatives.
+- Do not use paid services or paid APIs.
+- Do not touch DealNest/deals/coupons/stores/threads code or data.
+- Do not add map, delivery, payments, admin promotion tools, Edge Functions, or new major features.
+- Do not use service_role key.
+- Do not expose secrets.
+- Do not weaken RLS.
+- Use only fake/mock names, phone numbers, emails, villages, and test details during testing.
+- Do not use real personal data.
+
+Task:
+Run a Buyer Contact + Reservation Polish phase.
+
+Current state:
+- Browse Produce loads real Supabase listings.
+- Browse Contact now uses real Supabase farmer phone.
+- Produce Detail loads real Supabase listing data.
+- Reservation from detail page uses real listing id.
+- Buyer phone is not publicly shown.
+
+Goal:
+Improve the buyer contact and reservation experience without changing the core app structure.
+
+Tasks:
+
+1. Add mobile tap-to-call support
+
+Update Contact Farmer behavior on:
+- Browse Produce
+- Produce Detail
+
+If farmer phone exists:
+- Show the farmer name and phone.
+- Add a clickable tel: link or button so mobile users can tap to call.
+- Keep desktop behavior clean.
+
+If farmer phone is missing:
+Show:
+"Please reserve first or visit the pickup location."
+
+Do not expose buyer phone numbers publicly.
+
+2. Add copy phone option if simple
+
+If easy, add a small "Copy phone" action for farmer phone.
+
+Requirements:
+- Use browser Clipboard API only.
+- No paid service.
+- If clipboard fails, show a friendly fallback message.
+
+3. Improve reservation success message
+
+After buyer reserves produce, show a clearer success message:
+
+"Reservation request sent. Please contact the farmer before pickup. Payment is Cash or UPI directly to the farmer."
+
+Keep payment flow unchanged:
+- No online payment.
+- No Razorpay.
+- No Stripe.
+- No paid services.
+
+4. Improve reservation validation
+
+Make sure reservation form validates:
+- Buyer name required
+- Buyer phone required
+- Quantity required
+- Quantity must be greater than 0
+- Quantity should not exceed available quantity if available in current listing data
+
+Use fake/mock buyer details during testing.
+
+5. Regression testing
+
+Test:
+- Browse Produce loads 15 live Supabase listings.
+- Contact Farmer on Browse shows/calls real farmer phone.
+- Contact Farmer on Produce Detail shows/calls real farmer phone.
+- Copy phone works if implemented.
+- Missing farmer phone fallback works.
+- Reservation from Browse works.
+- Reservation from Detail works.
+- Reservation inserts with real listing_id.
+- Farmer Dashboard receives reservation for correct farmer.
+- Buyer phone is not public.
+- Waitlist form still works.
+- Farmer Dashboard still works.
+- Agent Dashboard still works.
+- Admin Dashboard still works.
+- PWA files still exist.
+- TypeScript has zero errors.
+- No console errors.
+- No secrets printed.
+- No paid services used.
+
+6. Documentation
+
+Update README with:
+- Tap-to-call support
+- Copy phone behavior if added
+- Reservation success message
+- Buyer phone privacy rule
+- Testing uses fake/mock data only
+- No paid services are used
+
+After completion, report:
+- Files changed
+- Contact behavior added on Browse
+- Contact behavior added on Produce Detail
+- Whether tel: call links work
+- Whether copy phone works
+- Whether reservation validation improved
+- Whether reservation success message improved
+- TypeScript result
+- Console errors, if any
+- Any remaining buyer-flow limitations

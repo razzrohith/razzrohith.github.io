@@ -42,6 +42,56 @@ This inserts:
 
 ---
 
+## Buyer Contact + Reservation Polish
+
+### What changed
+
+#### 1. Tap-to-call support on Browse Produce and Produce Detail
+
+Both pages now open a `ContactFarmerDialog` when the Contact Farmer button is clicked. The dialog shows the farmer's name and phone number, with two actions:
+
+- **Call Now** — an `<a href="tel:+91{phone}">` link. On mobile, tapping this opens the native dialer. On desktop it is handled by the OS default (e.g. FaceTime, Teams).
+- **Copy Number** — uses `navigator.clipboard.writeText()`. If the Clipboard API is unavailable (e.g. HTTP context), falls back to a toast showing the phone number as text.
+
+If the farmer has no phone number on record, the dialog shows: "Please reserve first or visit the pickup location to reach this farmer."
+
+#### 2. Farmer phone vs buyer phone — separate paths
+
+- **Farmer phone**: from `farmers` table → shown in Contact dialog (intentionally public in a direct-to-buyer marketplace).
+- **Buyer phone**: from `reservations.buyer_phone` → shown only to the farmer in their Dashboard reservation cards, and to admin. Never shown on any public page.
+
+#### 3. Improved reservation success message
+
+The success screen after submitting a reservation now reads:
+
+> **Reservation Request Sent**
+> Your reservation request has been sent to the farmer. Please contact the farmer before coming for pickup to confirm availability.
+> Payment: Cash or UPI directly to the farmer at pickup. No online payment required.
+
+The "Close" button is now labelled "Done" for clarity.
+
+#### 4. Reservation quantity validation
+
+The quantity field now has a runtime max check in `onSubmit`: if the entered quantity exceeds `listing.quantityKg`, the form shows an inline error "Only X kg available" without submitting. The `<input>` also carries `min={1}` and `max={listing.quantityKg}` HTML attributes so mobile steppers and browser validation are consistent.
+
+#### 5. Files changed
+
+| File | Change |
+|---|---|
+| `src/components/ContactFarmerDialog.tsx` | New component — tel: link, Clipboard copy, no-phone fallback |
+| `src/pages/BrowsePage.tsx` | Contact button opens ContactFarmerDialog; removed toast import |
+| `src/pages/ProduceDetailPage.tsx` | Contact Farmer button opens ContactFarmerDialog; removed toast import |
+| `src/components/ReservationModal.tsx` | Improved success message; quantity max validation; min/max HTML attributes |
+
+#### Testing notes
+
+- All phone numbers used during testing are fake/mock (e.g. `9876543210`).
+- No real personal data is stored or displayed.
+- No paid services, no Razorpay, no Stripe, no online payment of any kind.
+- Clipboard API tested with both `navigator.clipboard` (modern browsers) and fallback toast (HTTP/insecure context).
+
+---
+
 ## Buyer Flow Cleanup — Browse Contact + Privacy
 
 ### What changed

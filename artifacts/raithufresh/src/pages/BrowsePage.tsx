@@ -2,13 +2,13 @@ import { useState, useEffect } from "react";
 import { Link } from "wouter";
 import { motion } from "framer-motion";
 import { Search, MapPin, Calendar, Phone, Loader2 } from "lucide-react";
-import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import Navbar from "@/components/Navbar";
 import ReservationModal from "@/components/ReservationModal";
+import ContactFarmerDialog from "@/components/ContactFarmerDialog";
 import { mockListings, mockFarmers } from "@/data/mockData";
 import { ProduceListing } from "@/lib/types";
 import { isSupabaseConfigured, getSupabase, SupabaseListing } from "@/lib/supabase";
@@ -37,6 +37,7 @@ export default function BrowsePage() {
   const [maxPrice, setMaxPrice] = useState("All");
   const [selectedListing, setSelectedListing] = useState<ProduceListing | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [contactTarget, setContactTarget] = useState<{ name: string; phone: string | null } | null>(null);
 
   const [listings, setListings] = useState<ProduceListing[]>([]);
   const [farmerMap, setFarmerMap] = useState<FarmerMap>({});
@@ -105,10 +106,7 @@ export default function BrowsePage() {
 
   const handleContact = (listing: ProduceListing) => {
     const f = farmerMap[listing.farmerId];
-    const name = f?.name ?? "Farmer";
-    const phone = f?.phone;
-    if (phone) toast.success(`${name}: +91 ${phone}`);
-    else toast.info("Please reserve first or visit the pickup location.");
+    setContactTarget({ name: f?.name ?? "Farmer", phone: f?.phone ?? null });
   };
 
   return (
@@ -242,6 +240,12 @@ export default function BrowsePage() {
         open={modalOpen}
         onClose={() => setModalOpen(false)}
         listing={selectedListing}
+      />
+      <ContactFarmerDialog
+        open={contactTarget !== null}
+        onClose={() => setContactTarget(null)}
+        farmerName={contactTarget?.name ?? "Farmer"}
+        phone={contactTarget?.phone ?? null}
       />
     </div>
   );

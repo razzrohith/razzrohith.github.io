@@ -28,12 +28,24 @@ export default function ReservationModal({ open, onClose, listing }: Props) {
   const [success, setSuccess] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  const { register, handleSubmit, formState: { errors }, reset } = useForm<FormValues>({
-    resolver: zodResolver(schema),
-  });
+  const {
+    register,
+    handleSubmit,
+    setError,
+    formState: { errors },
+    reset,
+  } = useForm<FormValues>({ resolver: zodResolver(schema) });
 
   const onSubmit = async (data: FormValues) => {
     if (!listing) return;
+
+    if (listing.quantityKg > 0 && data.quantityKg > listing.quantityKg) {
+      setError("quantityKg", {
+        message: `Only ${listing.quantityKg} kg available`,
+      });
+      return;
+    }
+
     setSubmitting(true);
     try {
       if (isSupabaseConfigured()) {
@@ -80,20 +92,33 @@ export default function ReservationModal({ open, onClose, listing }: Props) {
                 <Input
                   id="qty"
                   type="number"
+                  min={1}
+                  max={listing?.quantityKg}
                   placeholder={listing ? `Max ${listing.quantityKg} kg` : ""}
                   {...register("quantityKg")}
                 />
-                {errors.quantityKg && <p className="text-destructive text-xs mt-1">{errors.quantityKg.message}</p>}
+                {errors.quantityKg && (
+                  <p className="text-destructive text-xs mt-1">{errors.quantityKg.message}</p>
+                )}
               </div>
               <div>
                 <Label htmlFor="name">Your name</Label>
                 <Input id="name" placeholder="Enter your name" {...register("buyerName")} />
-                {errors.buyerName && <p className="text-destructive text-xs mt-1">{errors.buyerName.message}</p>}
+                {errors.buyerName && (
+                  <p className="text-destructive text-xs mt-1">{errors.buyerName.message}</p>
+                )}
               </div>
               <div>
                 <Label htmlFor="phone">Your phone number</Label>
-                <Input id="phone" placeholder="10-digit mobile number" maxLength={10} {...register("buyerPhone")} />
-                {errors.buyerPhone && <p className="text-destructive text-xs mt-1">{errors.buyerPhone.message}</p>}
+                <Input
+                  id="phone"
+                  placeholder="10-digit mobile number"
+                  maxLength={10}
+                  {...register("buyerPhone")}
+                />
+                {errors.buyerPhone && (
+                  <p className="text-destructive text-xs mt-1">{errors.buyerPhone.message}</p>
+                )}
               </div>
               <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 text-sm text-amber-800">
                 Payment: Cash or UPI directly to farmer
@@ -106,14 +131,18 @@ export default function ReservationModal({ open, onClose, listing }: Props) {
         ) : (
           <div className="flex flex-col items-center gap-4 py-6 text-center">
             <CheckCircle className="w-14 h-14 text-primary" />
-            <h3 className="text-lg font-semibold text-foreground">Request Sent!</h3>
-            <p className="text-muted-foreground text-sm">
-              Your request has been sent to the farmer. Please contact the farmer before pickup.
+            <h3 className="text-lg font-semibold text-foreground">Reservation Request Sent</h3>
+            <p className="text-muted-foreground text-sm leading-relaxed">
+              Your reservation request has been sent to the farmer. Please contact the farmer
+              before coming for pickup to confirm availability.
             </p>
-            <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 text-sm text-amber-800 w-full">
-              Payment: Cash or UPI directly to farmer
+            <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 text-sm text-amber-800 w-full text-left">
+              <span className="font-medium">Payment:</span> Cash or UPI directly to the farmer at
+              pickup. No online payment required.
             </div>
-            <Button onClick={handleClose} className="w-full">Close</Button>
+            <Button onClick={handleClose} className="w-full">
+              Done
+            </Button>
           </div>
         )}
       </DialogContent>

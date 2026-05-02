@@ -1,0 +1,168 @@
+import { useState } from "react";
+import { Link } from "wouter";
+import { motion } from "framer-motion";
+import { Search, MapPin, Calendar, Phone } from "lucide-react";
+import { toast } from "sonner";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import Navbar from "@/components/Navbar";
+import ReservationModal from "@/components/ReservationModal";
+import { mockListings, mockFarmers } from "@/data/mockData";
+import { ProduceListing } from "@/lib/types";
+
+export default function BrowsePage() {
+  const [search, setSearch] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("All");
+  const [maxPrice, setMaxPrice] = useState("All");
+  const [selectedListing, setSelectedListing] = useState<ProduceListing | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+
+  const farmer = (id: string) => mockFarmers.find((f) => f.id === id);
+
+  const filtered = mockListings.filter((l) => {
+    if (l.status !== "Available") return false;
+    if (search && !l.name.toLowerCase().includes(search.toLowerCase())) return false;
+    if (categoryFilter !== "All" && l.category !== categoryFilter) return false;
+    if (maxPrice !== "All" && l.pricePerKg > Number(maxPrice)) return false;
+    return true;
+  });
+
+  const handleReserve = (listing: ProduceListing) => {
+    setSelectedListing(listing);
+    setModalOpen(true);
+  };
+
+  const handleContact = (listing: ProduceListing) => {
+    const f = farmer(listing.farmerId);
+    if (f) toast.success(`Farmer ${f.name}: +91 ${f.phone}`);
+  };
+
+  return (
+    <div className="min-h-screen bg-background">
+      <Navbar />
+      <div className="max-w-6xl mx-auto px-4 py-8">
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-foreground mb-1">Browse Fresh Produce</h1>
+          <p className="text-muted-foreground text-sm">Directly from Telangana farmers near you</p>
+        </div>
+
+        {/* Filters */}
+        <div className="flex flex-col sm:flex-row gap-3 mb-6">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              className="pl-9"
+              placeholder="Search produce (tomato, mango...)"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+            <SelectTrigger className="w-full sm:w-36">
+              <SelectValue placeholder="Category" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="All">All Types</SelectItem>
+              <SelectItem value="Fruit">Fruit</SelectItem>
+              <SelectItem value="Vegetable">Vegetable</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={maxPrice} onValueChange={setMaxPrice}>
+            <SelectTrigger className="w-full sm:w-40">
+              <SelectValue placeholder="Max Price" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="All">Any Price</SelectItem>
+              <SelectItem value="25">Up to Rs 25/kg</SelectItem>
+              <SelectItem value="50">Up to Rs 50/kg</SelectItem>
+              <SelectItem value="80">Up to Rs 80/kg</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <p className="text-sm text-muted-foreground mb-4">{filtered.length} listings found</p>
+
+        {filtered.length === 0 ? (
+          <div className="text-center py-16 text-muted-foreground">
+            <Search className="w-10 h-10 mx-auto mb-3 opacity-30" />
+            <p>No produce found. Try adjusting your filters.</p>
+          </div>
+        ) : (
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filtered.map((listing, i) => {
+              const f = farmer(listing.farmerId);
+              return (
+                <motion.div
+                  key={listing.id}
+                  initial={{ opacity: 0, y: 16 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.04, duration: 0.3 }}
+                  className="bg-card border border-border rounded-2xl p-5 shadow-sm flex flex-col gap-3"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <h3 className="font-semibold text-foreground text-base">{listing.name}</h3>
+                      <p className="text-sm text-muted-foreground">{f?.name} · {f?.village}</p>
+                    </div>
+                    <Badge variant={listing.category === "Fruit" ? "default" : "secondary"} className="shrink-0">
+                      {listing.category}
+                    </Badge>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div className="bg-primary/5 rounded-lg p-2 text-center">
+                      <div className="font-bold text-primary text-lg">Rs {listing.pricePerKg}</div>
+                      <div className="text-muted-foreground text-xs">per kg</div>
+                    </div>
+                    <div className="bg-muted rounded-lg p-2 text-center">
+                      <div className="font-bold text-foreground text-lg">{listing.quantityKg}</div>
+                      <div className="text-muted-foreground text-xs">kg available</div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1 text-xs text-muted-foreground">
+                    <div className="flex items-center gap-1.5">
+                      <Calendar className="w-3.5 h-3.5" />
+                      Harvest: {listing.harvestDate}
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <MapPin className="w-3.5 h-3.5" />
+                      {listing.pickupLocation} · {listing.distanceKm} km away
+                    </div>
+                  </div>
+
+                  {listing.qualityNotes && (
+                    <p className="text-xs text-muted-foreground italic bg-muted/50 rounded-lg px-2 py-1">
+                      {listing.qualityNotes}
+                    </p>
+                  )}
+
+                  <div className="flex gap-2 mt-auto pt-1">
+                    <Button size="sm" className="flex-1" onClick={() => handleReserve(listing)}>
+                      Reserve
+                    </Button>
+                    <Button size="sm" variant="outline" className="flex-1" onClick={() => handleContact(listing)}>
+                      <Phone className="w-3.5 h-3.5 mr-1" />
+                      Contact
+                    </Button>
+                  </div>
+                  <Link href={`/produce/${listing.id}`} className="text-xs text-center text-primary underline underline-offset-2">
+                    View full details
+                  </Link>
+                </motion.div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      <ReservationModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        listing={selectedListing}
+      />
+    </div>
+  );
+}

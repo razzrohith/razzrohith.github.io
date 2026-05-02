@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "RaithuFresh"
+version = "1.0.0"
+id = "artifacts/raithufresh"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 25885
+
+[services.development]
+run = "pnpm --filter @workspace/raithufresh run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/raithufresh", "run", "build" ]
+publicDir = "artifacts/raithufresh/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "25885"
+BASE_PATH = "/"

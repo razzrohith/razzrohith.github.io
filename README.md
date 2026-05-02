@@ -4,6 +4,158 @@ Connecting Telangana farmers directly with local buyers. MVP React web app with 
 
 ---
 
+## UX Audit + Farmer Mark-as-Seen Phase
+
+### Overview
+
+Full UX logic audit of all 13 areas. Two functional fixes and one notification improvement applied. Zero database/RLS changes required.
+
+---
+
+### Part 1 — Waitlist Dynamic Submit Button Fix
+
+**File changed:** `src/pages/LandingPage.tsx`
+
+**Problem:** The waitlist form previously showed a static "Join Waitlist" submit button regardless of which role the user selected. The task description originally referred to two separate buttons, but the checkpoint before this phase had already consolidated them into one static button.
+
+**Fix:**
+- Submit button text is now dynamic based on the selected role:
+  - No role selected → `Join Waitlist`
+  - Buyer selected → `Join as Buyer`
+  - Farmer selected → `Join as Farmer`
+  - Agent selected → `Join as Agent`
+- Helper text added below role dropdown: "Choose your role, then submit the form."
+- `scrollToWaitlistWithRole()` type updated to accept `"Agent"` in addition to `"Buyer"` and `"Farmer"` (was narrowly typed before).
+- Supabase insert, validation, double-submit prevention, and success message all unchanged.
+
+---
+
+### Part 2 — Farmer Dashboard "Mark all as seen"
+
+**Files changed:** `src/pages/FarmerDashboard.tsx`, `src/components/Navbar.tsx`
+
+**How it works:**
+
+| Action | Effect |
+|---|---|
+| Click "Mark all as seen" (in banner) | Clears amber banner, clears "N new" chip, fires custom browser event |
+| Click X button on banner | Same — calls `markAllSeen()` instead of just `setBannerDismissed` |
+| Click "Mark all as seen" (near heading) | Same — also available when banner was previously dismissed but chip is still visible |
+| Custom browser event `raithu_farmer_badge_update` | Navbar listens and re-reads localStorage to update badge instantly |
+
+**`markAllSeen()` function:**
+```ts
+const markAllSeen = () => {
+  setNewPendingCount(0);
+  setBannerDismissed(true);
+  localStorage.setItem("raithu_farmer_new_pending", "0");
+  window.dispatchEvent(new CustomEvent("raithu_farmer_badge_update"));
+};
+```
+
+**Navbar change:** Badge is now a reactive `useState` (not a synchronous render-time read). A `useEffect` subscribes to the `raithu_farmer_badge_update` event on mount and unsubscribes on unmount. This means the badge disappears from the navbar immediately when "Mark all as seen" is clicked — no page reload required.
+
+**What it does NOT do:**
+- Does not change any reservation status
+- Does not mark reservations confirmed/cancelled/completed
+- Does not delete reservations
+- Does not touch the database or RLS
+- Does not reload the page
+
+---
+
+### Part 3 — Full UX Logic Audit Results
+
+| Area | Issue Found | Fix Made | Files Changed | Result |
+|---|---|---|---|---|
+| Landing Page — waitlist form | Submit button static "Join Waitlist" regardless of role | Dynamic button text: "Join as Buyer / Farmer / Agent" | `LandingPage.tsx` | Fixed |
+| Landing Page — waitlist form | No helper text under role dropdown | Added "Choose your role, then submit the form." | `LandingPage.tsx` | Fixed |
+| Landing Page — hero CTAs | scrollToWaitlistWithRole typed as "Buyer" | "Farmer" only — typed to also accept "Agent" | `LandingPage.tsx` | Fixed |
+| Landing Page — footer | "Join as Farmer" and "Join as Buyer" links preselect role | Already correct — scroll + preselect working | None | No issue |
+| Landing Page — wording | "delivery" / "online payment" wording | Footer correctly says "Payment is Cash or UPI directly to the farmer." | None | No issue |
+| Waitlist form | Supabase insert, validation, double-submit | All intact and working | None | No issue |
+| Browse Produce | Reserve button on non-active listings | Query filters `status = 'active'` from DB; mock filter filters `status === 'Available'` | None | No issue |
+| Browse Produce | "delivery" or "online payment" wording | None found | None | No issue |
+| Produce Detail | Reserve button shown only when `isAvailable` | Already guarded | None | No issue |
+| Produce Detail | "More from this farmer" Reserve buttons | Only shown for active listings (getOtherActiveListingsByFarmer filters active) | None | No issue |
+| Produce Detail — wording | "RaithuFresh does not handle delivery" | Correct wording already present | None | No issue |
+| Farmer Profile | Reserve on listed items | getActiveListingsByFarmer only returns active listings | None | No issue |
+| Farmer Profile | Trust note | "Contact farmer before pickup. Payment is Cash or UPI." — correct | None | No issue |
+| Buyer Dashboard | Cancel button shown only for pending | isPending guard correct | None | No issue |
+| Buyer Dashboard | Contact Farmer only when phone available | `farmer?.phone` guard correct | None | No issue |
+| Buyer Reservation Detail | View Farmer Profile uses `farmer.id` | Fixed in prior phase — uses correct `farmer.id` from join | None | No issue |
+| Farmer Dashboard | Amber banner not clearing Navbar badge | Fixed — `markAllSeen` fires custom event; Navbar listens reactively | `FarmerDashboard.tsx`, `Navbar.tsx` | Fixed |
+| Farmer Dashboard | Banner X button only dismissed, not marking seen | Fixed — X now calls `markAllSeen()` | `FarmerDashboard.tsx` | Fixed |
+| Agent Dashboard | Shows mock data for commission and assigned farmers | Correctly labeled as demo; real data loads for assistance requests | None | By design |
+| Admin Dashboard | "mock data" labels on cards | Already labeled correctly (shows "from database" when connected) | None | No issue |
+| Admin Dashboard | "Est. Sales Value (mock)" label | Already labeled "mock data" | None | No issue |
+| Login Page | Demo mode warning when Supabase not configured | Already present | None | No issue |
+| Signup Page | Admin accounts note | "Admin accounts are assigned manually" — correct | None | No issue |
+| Navbar — desktop | Farmer Dashboard badge reactive | Fixed — now uses useState + event listener | `Navbar.tsx` | Fixed |
+| Navbar — mobile | Farmer Dashboard badge reactive | Fixed — same state used for both desktop and mobile | `Navbar.tsx` | Fixed |
+| Navbar — all users | Farmer/Agent Dashboard links visible to guests | Expected for this MVP — ProtectedRoute shows "Please log in" | None | By design |
+| Navbar — buyer access | Buyer Dashboard in user dropdown | Correct — buyer + admin roles only | None | No issue |
+| Contact Farmer dialog | WhatsApp / tel / copy actions | Not changed — working correctly | None | No issue |
+| Reservation modal | Single submit button | "Send Reservation Request" — correct | None | No issue |
+| Reservation modal | Success message varies by login state | Correct — different text for guest vs logged-in | None | No issue |
+| Empty/loading/error states | All pages | All have appropriate empty states and loading spinners | None | No issue |
+| Role-based access messages | ProtectedRoute | Shows "Please log in to continue" for guests | None | No issue |
+| PWA files | manifest.json, sw.js, icons | All present in public/ | None | No issue |
+| DealNest/deal/coupon wording | All files | None found — all wording is RaithuFresh-specific | None | No issue |
+
+---
+
+### Fake/Mock Testing Rule
+
+All test names, phones, villages, and IDs used during development and testing are fake/mock data only. No real personal data is used anywhere in the codebase.
+
+Test data examples (mock only):
+- Farmer: "Ramaiah", phone: 9000000001, village: Shadnagar
+- Buyer: "Ravi Test Buyer", phone: 9876500001
+
+---
+
+### No Paid Services Used
+
+All icons: Lucide or local SVGs. Maps: OpenStreetMap (free, no API key). Auth/DB: Supabase free tier. No Stripe, Google Maps API, Twilio, or any paid service used.
+
+---
+
+### TypeScript Result
+
+Exit 0 — zero errors after all changes.
+
+### Console Error Result
+
+None. Browser console shows only Vite HMR messages.
+
+### Mark all as seen — Works without reload?
+
+Yes. The custom browser event `raithu_farmer_badge_update` fires immediately when "Mark all as seen" is clicked. The Navbar's `useEffect` listener calls `setFarmerNewPending(readBadgeCount())` synchronously, clearing the badge in the same render cycle. No page navigation or reload required.
+
+---
+
+### Remaining UX Limitations
+
+| Limitation | Notes |
+|---|---|
+| Navbar badge only reactive via custom event | If another tab/window visits FarmerDashboard, this tab's Navbar will not auto-update (acceptable for pilot scale) |
+| Agent/Admin commission tracking is mock-only | By design for pilot — no real payment integration |
+| No pagination on Buyer Dashboard or Farmer Dashboard | Sufficient for pilot scale |
+| FarmerProfilePage shows "not found" when Supabase not configured | Expected — farmer IDs are Supabase UUIDs, unavailable in mock mode |
+
+---
+
+### Recommended Next Phase
+
+- Farmer Dashboard: edit listing (name, price, quantity, harvest date) in-place
+- Farmer Dashboard: real-time reservation updates using Supabase realtime subscription
+- Buyer Dashboard: push notification opt-in when reservation is confirmed by farmer
+
+---
+
+---
+
 ## Supabase Setup
 
 ### 1. Create a Supabase project

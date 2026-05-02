@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { Menu, X, Leaf, LogOut, ChevronDown, ClipboardList } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -36,11 +36,21 @@ export default function Navbar() {
 
   const displayName = profile?.full_name ?? user?.email?.split("@")[0] ?? "Account";
 
-  // New pending reservations count for farmer badge — read from localStorage (set by FarmerDashboard on load)
-  const farmerNewPending =
+  // Reactive badge count — initialised from localStorage, updates when FarmerDashboard fires the custom event
+  const readBadgeCount = () =>
     (role === "farmer" || role === "admin")
       ? Math.max(0, parseInt(localStorage.getItem("raithu_farmer_new_pending") ?? "0", 10) || 0)
       : 0;
+
+  const [farmerNewPending, setFarmerNewPending] = useState<number>(readBadgeCount);
+
+  useEffect(() => {
+    setFarmerNewPending(readBadgeCount());
+    const handler = () => setFarmerNewPending(readBadgeCount());
+    window.addEventListener("raithu_farmer_badge_update", handler);
+    return () => window.removeEventListener("raithu_farmer_badge_update", handler);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [role]);
 
   return (
     <nav className="sticky top-0 z-50 bg-white border-b border-border shadow-sm">

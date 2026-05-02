@@ -1,0 +1,172 @@
+Context:
+This is RaithuFresh, a Telangana-first fruits and vegetables marketplace for farmers, buyers, agents, and admins.
+
+Rules:
+- Focus only on fruits and vegetables.
+- Use only free tools, free tiers, open-source libraries, and mock/local alternatives.
+- Do not use paid services or paid APIs.
+- Do not touch DealNest/deals/coupons/stores/threads code or data.
+- Do not add map, delivery, payments, admin promotion tools, Edge Functions, or paid services.
+- Do not use service_role key.
+- Do not expose secrets.
+- Do not weaken RLS.
+- Use only fake/mock names, phone numbers, emails, villages, and test details during testing.
+- Do not use real personal data.
+
+Task:
+Complete the full UX Logic Audit + Farmer Notification Mark-as-Seen phase.
+
+Important:
+The previous run only confirmed the Farmer Dashboard notification indicator exists. It did not complete the full UX audit and did not add the Mark all as seen/read action.
+
+Do all items below.
+
+Part 1 — Fix Landing Page waitlist role-submit issue
+
+Current issue:
+The waitlist form has an “I am a” role dropdown, but it shows two submit buttons:
+- Join as Buyer
+- Join as Farmer
+
+This is confusing.
+
+Fix:
+Replace the two submit buttons with one dynamic submit button.
+
+Button text should depend on selected role:
+- Buyer → Join as Buyer
+- Farmer → Join as Farmer
+- Agent → Join as Agent
+
+Keep:
+- Role dropdown
+- Join as Buyer CTA preselects Buyer
+- Join as Farmer CTA preselects Farmer
+- Supabase insert
+- Validation
+- Double-submit prevention
+- Success message
+
+Add helper text under role dropdown:
+“Choose your role, then submit the form.”
+
+Part 2 — Add Farmer Dashboard “Mark all as seen” action
+
+Current state:
+Farmer Dashboard already has:
+- new pending reservation count
+- amber banner
+- “N new” chip
+- Navbar badge using localStorage
+
+Add:
+- Button text: “Mark all as seen”
+- It should appear in the amber banner and/or near Buyer Reservations heading.
+- When clicked:
+  - Clear the amber banner immediately.
+  - Clear the “N new” chip immediately.
+  - Clear the Navbar Farmer Dashboard badge immediately if possible.
+  - Update localStorage safely.
+  - Do not reload the page.
+  - Do not change reservation status.
+  - Do not mark reservations confirmed/cancelled/completed.
+  - Do not delete reservations.
+  - Do not change database/RLS.
+
+If needed, use a small custom browser event so Navbar updates after localStorage changes without reload.
+
+Part 3 — Full UX logic audit
+
+Audit these areas:
+1. Landing Page
+2. Waitlist form
+3. Browse Produce
+4. Produce Detail
+5. Farmer Profile
+6. Buyer Dashboard
+7. Buyer Reservation Detail
+8. Farmer Dashboard
+9. Agent Dashboard
+10. Admin Dashboard
+11. Login / Signup
+12. Navbar desktop and mobile
+13. Contact Farmer dialog
+14. Reservation modal
+15. Empty/loading/error states
+16. Role-based access messages
+
+Look for and fix safe issues like:
+- contradictory buttons
+- wrong role CTAs
+- broken links
+- wrong route parameters
+- “delivery” wording
+- “online payment/checkout” wording
+- actions shown when they cannot work
+- Reserve buttons on non-active listings
+- confusing empty states
+- unclear success messages
+- dashboard links shown to wrong roles
+- mock/demo wording visible in live mode
+- unrelated DealNest/deal/coupon/store wording in RaithuFresh UI
+
+Do not make database/RLS changes unless absolutely required.
+If a fix needs RLS/database change, stop and report first.
+
+Part 4 — Required testing
+
+Use fake/mock data only.
+
+Test:
+- Landing Page loads.
+- Waitlist role dropdown changes submit button correctly.
+- Buyer selected → button says Join as Buyer.
+- Farmer selected → button says Join as Farmer.
+- Agent selected → button says Join as Agent.
+- Join as Buyer CTA preselects Buyer.
+- Join as Farmer CTA preselects Farmer.
+- Fake waitlist submit works.
+- Farmer Dashboard notification banner appears when applicable.
+- Mark all as seen clears banner/chip/navbar badge without reload.
+- Browse Produce works.
+- Produce Detail works.
+- Farmer Profile works.
+- Buyer Dashboard works.
+- Buyer Reservation Detail works.
+- Farmer Dashboard works.
+- Agent Dashboard works.
+- Admin Dashboard works.
+- Login/Signup work.
+- Contact Farmer dialog works.
+- WhatsApp/tel/copy still work.
+- Reservation modal works.
+- Protected routes show correct messages.
+- PWA files still exist.
+- TypeScript has zero errors.
+- No console errors.
+- No secrets printed.
+- No paid services used.
+
+Part 5 — Documentation
+
+Update README with:
+- Waitlist dynamic submit button fix
+- Farmer “Mark all as seen” behavior
+- UX audit summary
+- Fake/mock testing rule
+- No paid services used
+
+Final report format:
+Return a table with:
+- Area checked
+- Issue found
+- Fix made
+- Files changed
+- Test result
+
+Also include:
+- TypeScript result
+- Console error result
+- Whether Mark all as seen works without reload
+- Remaining UX limitations
+- Recommended next phase

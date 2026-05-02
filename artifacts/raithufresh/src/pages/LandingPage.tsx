@@ -179,7 +179,7 @@ export default function LandingPage() {
 
   // ── Handlers ─────────────────────────────────────────────────────────────
 
-  const scrollToWaitlistWithRole = (role: "Buyer" | "Farmer") => {
+  const scrollToWaitlistWithRole = (role: "Buyer" | "Farmer" | "Agent") => {
     setRoleValue(role);
     setValue("role", role, { shouldValidate: false });
     setTimeout(() => {
@@ -947,8 +947,12 @@ export default function LandingPage() {
                       <SelectItem value="Agent">Agent — I help farmers list produce</SelectItem>
                     </SelectContent>
                   </Select>
-                  {errors.role && (
+                  {errors.role ? (
                     <p className="text-destructive text-xs mt-1">{errors.role.message}</p>
+                  ) : (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Choose your role, then submit the form.
+                    </p>
                   )}
                 </div>
 
@@ -971,6 +975,12 @@ export default function LandingPage() {
                       <Loader2 className="w-4 h-4 animate-spin" />
                       Saving...
                     </span>
+                  ) : roleValue === "Buyer" ? (
+                    "Join as Buyer"
+                  ) : roleValue === "Farmer" ? (
+                    "Join as Farmer"
+                  ) : roleValue === "Agent" ? (
+                    "Join as Agent"
                   ) : (
                     "Join Waitlist"
                   )}

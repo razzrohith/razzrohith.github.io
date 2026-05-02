@@ -326,8 +326,8 @@ export default function BuyerReservationDetailPage({ id }: Props) {
                   View Listing
                 </Button>
               </Link>
-              {farmer && (
-                <Link href={`/farmers/${reservation.listing_id}`}>
+              {farmer?.id && (
+                <Link href={`/farmers/${farmer.id}`}>
                   <Button size="sm" variant="outline">
                     View Farmer Profile
                   </Button>

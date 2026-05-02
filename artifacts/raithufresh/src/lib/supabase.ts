@@ -760,7 +760,7 @@ export async function getBuyerReservationById(
     .select(
       "id, listing_id, buyer_name, quantity_kg, status, payment_method, created_at, " +
       "produce_listings(produce_name, category, price_per_kg, harvest_datetime, pickup_location, district, status, " +
-      "farmers(name, village, district, rating, verified, phone))"
+      "farmers(id, name, village, district, rating, verified, phone))"
     )
     .eq("id", reservationId)
     .eq("buyer_user_id", user.id)

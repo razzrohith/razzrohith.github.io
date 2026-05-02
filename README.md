@@ -135,6 +135,164 @@ All names, phones, villages, and IDs are fake/mock test data. No real personal d
 
 ---
 
+## Produce Detail Conversion + Farmer Cross-Sell Phase
+
+### Overview
+
+This phase improves `ProduceDetailPage.tsx` for better buyer decision-making:
+- Added "More from this farmer" section with up to 3 cross-sell cards
+- Added dedicated Farmer Trust card (icon, verified badge, stars, View Profile + Contact)
+- Replaced plain "not found" block with the existing `empty-produce.svg`
+- Added `getOtherActiveListingsByFarmer()` helper to `src/lib/supabase.ts`
+- All buyer actions (Reserve, Contact, WhatsApp, Share, View Details) remain intact
+
+---
+
+### Files Changed
+
+| File | Change |
+|---|---|
+| `src/lib/supabase.ts` | Added `getOtherActiveListingsByFarmer(farmerId, excludeListingId)` helper |
+| `src/pages/ProduceDetailPage.tsx` | Farmer Trust card, "More from this farmer" section, improved empty state, `modalListing` state for per-card Reserve modal |
+
+---
+
+### `getOtherActiveListingsByFarmer()` Helper
+
+```ts
+getOtherActiveListingsByFarmer(farmerId: string, excludeListingId: string): Promise<SupabaseListing[]>
+```
+
+- Queries `produce_listings` where `farmer_id = farmerId`, `status = 'active'`, `id != excludeListingId`
+- Joins `farmers(id, name, village, district, rating, verified)` — **no `phone` field**
+- Orders by `created_at DESC`, limit 3
+- Returns empty array on any error (best-effort, never crashes the page)
+- Uses current RLS — no weakening
+
+**Privacy rules confirmed:**
+- Farmer phone: not included in the join — only reachable via Contact Farmer dialog
+- Buyer phone: not queried anywhere on this page
+- Reservation data: not queried
+- `service_role` key: not used
+
+---
+
+### Produce Detail Page — Section Order
+
+1. Top bar: Back to Browse + Share Listing
+2. Main listing card: name, farmer attribution, category badge + SVG icon, price/qty tiles, harvest date, pickup location, quality notes, status
+3. **Farmer Trust Card** (new): farmer icon, name, Verified badge, star rating, View Farmer Profile + Contact Farmer buttons
+4. Pickup Directions
+5. Before You Come for Pickup (4 checklist items)
+6. Reserve This Produce / Sold state
+7. **More from this farmer** (new): up to 3 cross-sell cards
+8. Similar produce nearby (existing)
+
+---
+
+### "More from this farmer" Cards
+
+Each card shows:
+- Produce name + harvest date + pickup location
+- Category SVG icon + category badge
+- Price per kg tile + quantity available tile
+- View Details button (navigates to that listing's detail page)
+- Reserve button (opens `ReservationModal` with that listing's data)
+- Contact Farmer button (reuses main farmer's `ContactFarmerDialog` — same farmer)
+- Share button (calls `shareListing()` with that listing's data)
+
+If the farmer has no other active listings, the section is hidden entirely.
+
+---
+
+### Farmer Trust Card
+
+Shows:
+- `icon-farmer-week.svg` avatar (local SVG asset)
+- Farmer name
+- "Verified" badge (BadgeCheck icon, only if `verified = true`)
+- Star rating (amber filled stars, only if `rating > 0`)
+- Village, district location
+- View Farmer Profile button → navigates to `/farmers/:id`
+- Contact Farmer button → opens `ContactFarmerDialog`
+
+---
+
+### `modalListing` State
+
+Added `modalListing: ProduceListing | null` state. When Reserve is clicked:
+- From the main listing section: `openModal(listing)` — passes the main listing
+- From a "More from this farmer" card: `openModal(mapped)` — passes that card's mapped listing
+
+`ReservationModal` receives `modalListing ?? listing` so it always has a valid listing.
+
+---
+
+### Empty / Not Found State
+
+Uses `empty-produce.svg` illustration instead of a plain icon, with a "Back to Browse" button.
+
+---
+
+### All Buyer Actions Verified Working
+
+| Action | Status |
+|---|---|
+| Reserve (main listing) | Working — opens modal with main listing |
+| Reserve (from More from farmer) | Working — opens modal with that listing |
+| Contact Farmer | Working — opens ContactFarmerDialog with farmer phone |
+| WhatsApp (inside ContactFarmerDialog) | Working — `wa.me/{phone}` link |
+| Tap-to-call (inside ContactFarmerDialog) | Working — `tel:{phone}` link |
+| Copy phone (inside ContactFarmerDialog) | Working |
+| Share Listing (top bar) | Working — `shareListing()` with main listing |
+| Share (from More from farmer card) | Working — `shareListing()` with that listing |
+| View Details (from More from farmer card) | Working — navigates to `/produce/{id}` |
+| View Farmer Profile | Working — navigates to `/farmers/{id}` |
+| Similar nearby produce | Working — unchanged |
+
+---
+
+### Privacy / Security
+
+- Buyer phone: never shown on public pages
+- Farmer phone: only exposed via `ContactFarmerDialog` (not in any card or listing data directly)
+- `getOtherActiveListingsByFarmer` join: no `phone` field selected
+- Reservation data: not queried on public Produce Detail page
+- RLS: unchanged
+- Secrets: not printed anywhere
+
+---
+
+### Fake/Mock Testing Rule
+
+All test farmer names, phone numbers, villages, produce names, and IDs are fake/mock data. No real personal data used.
+
+---
+
+### No Paid Services
+
+All icons are Lucide or local SVGs. No paid images, no external image hotlinks, no paid APIs.
+
+---
+
+### TypeScript Result
+
+Exit 0 — zero errors.
+
+---
+
+### Remaining Produce Detail Limitations
+
+| Limitation | Notes |
+|---|---|
+| Reserve qty input only on main listing | "More from farmer" cards navigate to the detail page for qty-based reservations — Reserve button opens modal with qty defaulting to 1 |
+| No farmer photo | Uses `icon-farmer-week.svg` placeholder |
+| No Google Maps directions | Noted on the page — planned for a future version |
+| Delivery not supported | Pickup only — noted on the page |
+| WhatsApp/call from "More from farmer" card | Uses the same farmer's phone (same farmer, reuses the existing dialog) |
+
+---
+
 ## Landing Trust Indicators + Live Stats Phase
 
 ### Overview

@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import {
   ArrowLeft, MapPin, Calendar, Star, Phone,
   Package, FileText, Navigation, Loader2, AlertCircle,
-  Share2, Info, CheckCircle2,
+  Share2, Info, CheckCircle2, BadgeCheck, Tractor,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -16,7 +16,11 @@ import ContactFarmerDialog from "@/components/ContactFarmerDialog";
 import { mockListings, mockFarmers } from "@/data/mockData";
 import { ProduceListing } from "@/lib/types";
 import {
-  isSupabaseConfigured, getProduceListingById, getSupabase, SupabaseListing,
+  isSupabaseConfigured,
+  getProduceListingById,
+  getOtherActiveListingsByFarmer,
+  getSupabase,
+  SupabaseListing,
 } from "@/lib/supabase";
 import { shareListing } from "@/lib/share";
 
@@ -60,6 +64,21 @@ type SimilarItem = {
   location: string;
 };
 
+// ── Sub-components ────────────────────────────────────────────────────────────
+
+function CategoryIcon({ category, size = 20 }: { category: string; size?: number }) {
+  return (
+    <img
+      src={category === "Fruit" ? "/assets/icon-fruit.svg" : "/assets/icon-vegetable.svg"}
+      alt={category}
+      width={size}
+      height={size}
+      style={{ width: size, height: size }}
+      className="shrink-0"
+    />
+  );
+}
+
 // ── Component ────────────────────────────────────────────────────────────────
 
 export default function ProduceDetailPage() {
@@ -71,8 +90,10 @@ export default function ProduceDetailPage() {
   const [notFound, setNotFound] = useState(false);
   const [reserveQty, setReserveQty] = useState(1);
   const [modalOpen, setModalOpen] = useState(false);
+  const [modalListing, setModalListing] = useState<ProduceListing | null>(null);
   const [contactOpen, setContactOpen] = useState(false);
   const [similar, setSimilar] = useState<SimilarItem[]>([]);
+  const [moreFarmer, setMoreFarmer] = useState<SupabaseListing[]>([]);
 
   // ── Load main listing ─────────────────────────────────────────────────────
 
@@ -157,19 +178,32 @@ export default function ProduceDetailPage() {
           id: row.id,
           name: row.produce_name,
           pricePerKg: Number(row.price_per_kg),
-          location: [
-            row.farmers?.village,
-            row.farmers?.district,
-          ].filter(Boolean).join(", "),
+          location: [row.farmers?.village, row.farmers?.district].filter(Boolean).join(", "),
         }));
 
         setSimilar(items);
       } catch {
-        // Similar listings are best-effort — silently skip on error
+        // Similar listings are best-effort
       }
     }
     loadSimilar();
   }, [listing]);
+
+  // ── Load more from this farmer ────────────────────────────────────────────
+
+  useEffect(() => {
+    if (!listing?.farmerId || !id || !isSupabaseConfigured()) return;
+
+    async function loadMore() {
+      try {
+        const more = await getOtherActiveListingsByFarmer(listing!.farmerId!, id!);
+        setMoreFarmer(more);
+      } catch {
+        // best-effort
+      }
+    }
+    loadMore();
+  }, [listing?.farmerId, id]);
 
   // ── Loading ──────────────────────────────────────────────────────────────
 
@@ -192,9 +226,13 @@ export default function ProduceDetailPage() {
       <div className="min-h-screen bg-background">
         <Navbar />
         <div className="max-w-2xl mx-auto px-4 py-16 text-center">
-          <div className="w-14 h-14 rounded-full bg-destructive/10 flex items-center justify-center mx-auto mb-4">
-            <AlertCircle className="w-7 h-7 text-destructive" />
-          </div>
+          <img
+            src="/assets/empty-produce.svg"
+            alt="Listing not found"
+            width={120}
+            height={96}
+            className="mx-auto mb-5 opacity-75"
+          />
           <h2 className="text-xl font-bold text-foreground mb-2">Produce not found</h2>
           <p className="text-sm text-muted-foreground mb-6">
             This listing may have been removed or is no longer active.
@@ -207,7 +245,7 @@ export default function ProduceDetailPage() {
     );
   }
 
-  // ── Detail view ──────────────────────────────────────────────────────────
+  // ── Derived values ────────────────────────────────────────────────────────
 
   const farmerName = farmer?.name ?? "Farmer";
   const farmerVillage = farmer?.village ?? "";
@@ -228,10 +266,24 @@ export default function ProduceDetailPage() {
       id: listing.id,
     });
 
+  const openModal = (l: ProduceListing) => {
+    setModalListing(l);
+    setModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setModalOpen(false);
+    setModalListing(null);
+  };
+
+  // ── Render ────────────────────────────────────────────────────────────────
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
       <div className="max-w-2xl mx-auto px-4 py-8">
+
+        {/* Top bar */}
         <div className="flex items-center justify-between mb-5">
           <Link
             href="/browse"
@@ -239,12 +291,7 @@ export default function ProduceDetailPage() {
           >
             <ArrowLeft className="w-4 h-4" /> Back to Browse
           </Link>
-          <Button
-            variant="outline"
-            size="sm"
-            className="gap-1.5"
-            onClick={handleShare}
-          >
+          <Button variant="outline" size="sm" className="gap-1.5" onClick={handleShare}>
             <Share2 className="w-4 h-4" />
             Share Listing
           </Button>
@@ -255,7 +302,8 @@ export default function ProduceDetailPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
         >
-          {/* Header card */}
+
+          {/* ── Main listing card ── */}
           <div className="bg-card border border-border rounded-2xl p-6 mb-4 shadow-sm">
             <div className="flex items-start justify-between gap-3 mb-4">
               <div>
@@ -274,41 +322,14 @@ export default function ProduceDetailPage() {
                   )}
                   {farmerLocation ? ` · ${farmerLocation}` : ""}
                 </p>
-                {listing.farmerId && (
-                  <Link
-                    href={`/farmers/${listing.farmerId}`}
-                    className="text-xs text-primary underline underline-offset-2 mt-1 inline-block"
-                  >
-                    View Farmer Profile
-                  </Link>
-                )}
               </div>
-              <div className="flex flex-col items-end gap-1.5 shrink-0">
+              <div className="flex items-center gap-1.5 shrink-0">
+                <CategoryIcon category={listing.category} size={22} />
                 <Badge variant={listing.category === "Fruit" ? "default" : "secondary"}>
                   {listing.category}
                 </Badge>
-                {farmerVerified && (
-                  <span className="text-xs text-primary font-medium">Verified Farmer</span>
-                )}
               </div>
             </div>
-
-            {/* Farmer rating */}
-            {farmerRating > 0 && (
-              <div className="flex items-center gap-1 mb-4">
-                {[1, 2, 3, 4, 5].map((s) => (
-                  <Star
-                    key={s}
-                    className={`w-4 h-4 ${
-                      s <= Math.round(farmerRating)
-                        ? "fill-secondary text-secondary"
-                        : "text-muted-foreground"
-                    }`}
-                  />
-                ))}
-                <span className="text-sm text-muted-foreground ml-1">{farmerRating}</span>
-              </div>
-            )}
 
             {/* Price / Quantity */}
             <div className="grid grid-cols-2 gap-3 mb-4">
@@ -356,11 +377,7 @@ export default function ProduceDetailPage() {
                 <Package className="w-4 h-4 text-primary shrink-0" />
                 <span>
                   Status:{" "}
-                  <span
-                    className={`font-medium ${
-                      isAvailable ? "text-primary" : "text-destructive"
-                    }`}
-                  >
+                  <span className={`font-medium ${isAvailable ? "text-primary" : "text-destructive"}`}>
                     {listing.status}
                   </span>
                 </span>
@@ -368,7 +385,69 @@ export default function ProduceDetailPage() {
             </div>
           </div>
 
-          {/* Pickup directions */}
+          {/* ── Farmer trust card ── */}
+          {farmer && (
+            <div className="bg-primary/5 border border-primary/15 rounded-2xl p-5 mb-4 shadow-sm">
+              <div className="flex items-start justify-between gap-3 mb-3">
+                <div className="flex items-center gap-3">
+                  <img
+                    src="/assets/icon-farmer-week.svg"
+                    alt="Farmer profile"
+                    width={40}
+                    height={40}
+                    className="shrink-0"
+                  />
+                  <div>
+                    <p className="font-semibold text-foreground leading-tight">{farmerName}</p>
+                    {farmerLocation && (
+                      <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+                        <MapPin className="w-3 h-3 shrink-0" />
+                        {farmerLocation}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                {farmerVerified && (
+                  <div className="flex items-center gap-1 text-xs text-primary font-semibold shrink-0">
+                    <BadgeCheck className="w-4 h-4" />
+                    Verified
+                  </div>
+                )}
+              </div>
+
+              {farmerRating > 0 && (
+                <div className="flex items-center gap-0.5 mb-3">
+                  {[1, 2, 3, 4, 5].map((s) => (
+                    <Star
+                      key={s}
+                      className={`w-4 h-4 ${
+                        s <= Math.round(farmerRating)
+                          ? "fill-amber-400 text-amber-400"
+                          : "text-muted-foreground/20 fill-muted-foreground/10"
+                      }`}
+                    />
+                  ))}
+                  <span className="text-xs text-muted-foreground ml-1">{farmerRating}</span>
+                </div>
+              )}
+
+              <div className="flex gap-2">
+                {listing.farmerId && (
+                  <Link href={`/farmers/${listing.farmerId}`} className="flex-1">
+                    <Button size="sm" variant="outline" className="w-full">
+                      View Farmer Profile
+                    </Button>
+                  </Link>
+                )}
+                <Button size="sm" variant="outline" className="flex-1" onClick={handleContact}>
+                  <Phone className="w-3.5 h-3.5 mr-1.5" />
+                  Contact Farmer
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* ── Pickup directions ── */}
           <div className="bg-card border border-border rounded-2xl p-5 mb-4 shadow-sm">
             <div className="flex items-center gap-2 mb-2">
               <Navigation className="w-4 h-4 text-primary" />
@@ -384,7 +463,7 @@ export default function ProduceDetailPage() {
             </p>
           </div>
 
-          {/* Before Pickup — Buyer Notes */}
+          {/* ── Before pickup notes ── */}
           <div className="bg-card border border-border rounded-2xl p-5 mb-4 shadow-sm">
             <div className="flex items-center gap-2 mb-3">
               <Info className="w-4 h-4 text-primary" />
@@ -405,7 +484,7 @@ export default function ProduceDetailPage() {
             </ul>
           </div>
 
-          {/* Reserve section — only if Available */}
+          {/* ── Reserve section ── */}
           {isAvailable ? (
             <div className="bg-card border border-border rounded-2xl p-5 mb-4 shadow-sm">
               <h3 className="font-semibold text-foreground mb-3">Reserve This Produce</h3>
@@ -432,7 +511,7 @@ export default function ProduceDetailPage() {
                 Payment: Cash or UPI directly to farmer at pickup
               </div>
               <div className="flex gap-3">
-                <Button className="flex-1" onClick={() => setModalOpen(true)}>
+                <Button className="flex-1" onClick={() => openModal(listing)}>
                   Reserve Now
                 </Button>
                 <Button variant="outline" className="flex-1" onClick={handleContact}>
@@ -457,7 +536,128 @@ export default function ProduceDetailPage() {
             </div>
           )}
 
-          {/* Similar produce */}
+          {/* ── More from this farmer ── */}
+          {moreFarmer.length > 0 && (
+            <div className="bg-card border border-border rounded-2xl p-5 mb-4 shadow-sm">
+              <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
+                <Tractor className="w-4 h-4 text-primary" />
+                More from {farmerName}
+              </h3>
+              <div className="space-y-4">
+                {moreFarmer.map((item) => {
+                  const mapped = mapToProduceListing(item);
+                  const harvestDate = item.harvest_datetime
+                    ? item.harvest_datetime.split("T")[0]
+                    : null;
+                  const loc = [
+                    (item.farmers as { village?: string | null } | null)?.village,
+                    (item.farmers as { district?: string | null } | null)?.district ?? item.district,
+                  ].filter(Boolean).join(", ");
+
+                  return (
+                    <div
+                      key={item.id}
+                      className="border border-border rounded-xl p-4 flex flex-col gap-3"
+                    >
+                      {/* Name + category */}
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="font-semibold text-foreground truncate">
+                            {item.produce_name}
+                          </p>
+                          <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-0.5">
+                            {harvestDate && (
+                              <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                <Calendar className="w-3 h-3" />
+                                Harvest: {harvestDate}
+                              </span>
+                            )}
+                            {loc && (
+                              <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                <MapPin className="w-3 h-3" />
+                                {loc}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <CategoryIcon category={item.category} size={18} />
+                          <Badge
+                            variant={item.category === "Fruit" ? "default" : "secondary"}
+                          >
+                            {item.category}
+                          </Badge>
+                        </div>
+                      </div>
+
+                      {/* Price + Qty */}
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="bg-primary/5 rounded-lg p-2 text-center">
+                          <div className="font-bold text-primary text-base">
+                            Rs {item.price_per_kg}
+                          </div>
+                          <div className="text-xs text-muted-foreground">per kg</div>
+                        </div>
+                        <div className="bg-muted rounded-lg p-2 text-center">
+                          <div className="font-bold text-foreground text-base">
+                            {item.quantity_kg}
+                          </div>
+                          <div className="text-xs text-muted-foreground">kg available</div>
+                        </div>
+                      </div>
+
+                      {/* Action row 1: View + Reserve */}
+                      <div className="grid grid-cols-2 gap-2">
+                        <Link href={`/produce/${item.id}`}>
+                          <Button size="sm" variant="outline" className="w-full">
+                            View Details
+                          </Button>
+                        </Link>
+                        <Button
+                          size="sm"
+                          className="w-full"
+                          onClick={() => openModal(mapped)}
+                        >
+                          Reserve
+                        </Button>
+                      </div>
+
+                      {/* Action row 2: Contact + Share */}
+                      <div className="grid grid-cols-2 gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="w-full"
+                          onClick={handleContact}
+                        >
+                          <Phone className="w-3.5 h-3.5 mr-1.5" />
+                          Contact Farmer
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="w-full"
+                          onClick={() =>
+                            shareListing({
+                              name: item.produce_name,
+                              pricePerKg: Number(item.price_per_kg),
+                              location: loc,
+                              id: item.id,
+                            })
+                          }
+                        >
+                          <Share2 className="w-3.5 h-3.5 mr-1.5" />
+                          Share
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* ── Similar produce ── */}
           {similar.length > 0 && (
             <div className="bg-card border border-border rounded-2xl p-5 mb-4 shadow-sm">
               <h3 className="font-semibold text-foreground mb-3">
@@ -491,8 +691,8 @@ export default function ProduceDetailPage() {
 
       <ReservationModal
         open={modalOpen}
-        onClose={() => setModalOpen(false)}
-        listing={listing}
+        onClose={closeModal}
+        listing={modalListing ?? listing}
       />
       <ContactFarmerDialog
         open={contactOpen}

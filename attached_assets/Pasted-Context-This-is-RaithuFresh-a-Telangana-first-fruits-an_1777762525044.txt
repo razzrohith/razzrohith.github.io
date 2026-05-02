@@ -1,0 +1,189 @@
+Context:
+This is RaithuFresh, a Telangana-first fruits and vegetables marketplace for farmers, buyers, agents, and admins.
+
+Rules:
+- Focus only on fruits and vegetables.
+- Use only free tools, free tiers, open-source libraries, and mock/local alternatives.
+- Do not use paid services or paid APIs.
+- Do not use paid stock images.
+- Do not use copyrighted brand images.
+- Do not hotlink images from random websites.
+- Do not touch DealNest/deals/coupons/stores/threads code or data.
+- Do not add map, delivery, payments, admin promotion tools, Edge Functions, or paid services.
+- Do not use service_role key.
+- Do not expose secrets.
+- Do not weaken RLS.
+- Use only fake/mock names, phone numbers, emails, villages, and test details during testing.
+- Do not use real personal data.
+
+Visual assets / UI realism rule:
+Where useful, use existing local SVG assets or create small self-made local SVG assets only.
+Store assets locally in public/assets if new assets are needed.
+Add alt text wherever images are rendered.
+Do not use external image hotlinks.
+
+Task:
+Run a Produce Detail Conversion + Farmer Cross-Sell phase.
+
+Current state:
+- Browse Produce loads live Supabase listings.
+- Produce Detail loads live Supabase listing data.
+- Public Farmer Profile works at /farmers/:id.
+- Contact Farmer supports call, copy phone, and free WhatsApp wa.me.
+- Share Listing works.
+- Reservation flow works.
+- Buyer phone is not public.
+- Landing page now has live stats, farmer discovery, and local SVG assets.
+
+Goal:
+Improve Produce Detail so buyers can make a better decision, see more listings from the same farmer, and navigate smoothly.
+
+Tasks:
+
+1. Add “More from this farmer” section
+
+On Produce Detail page, add a section near the bottom:
+
+“More from this farmer”
+
+Show up to 3 other active listings from the same farmer.
+
+Each card should show:
+- Produce name
+- Category
+- Price per kg
+- Quantity available
+- Harvest date/time
+- Pickup location or village/district
+- View Details button
+- Reserve button
+- Contact Farmer button
+- Share button
+
+Rules:
+- Exclude the current listing.
+- Only show status = active.
+- Use live Supabase data.
+- If no other listings exist, show nothing or a clean empty state.
+
+2. Add helper if needed
+
+In src/lib/supabase.ts, add helper if useful:
+
+getOtherActiveListingsByFarmer(farmerId, excludeListingId)
+
+Use current RLS.
+Do not weaken RLS.
+Do not expose buyer phone numbers.
+Do not expose reservation data.
+
+3. Improve Produce Detail visual clarity
+
+Add or improve small sections:
+
+A. Listing summary card:
+- Price per kg
+- Available quantity
+- Harvest date
+- Pickup location
+- Status
+
+B. Pickup reminder:
+- Contact farmer before pickup.
+- Confirm quantity before travel.
+- Payment is Cash or UPI directly to farmer.
+- No online payment in MVP.
+
+C. Farmer trust card:
+- Farmer name
+- Verified badge if verified
+- Rating
+- Village/district
+- View Farmer Profile button
+
+Keep UI clean and mobile-friendly.
+Do not redesign the whole page.
+
+4. Add local visual polish if useful
+
+Use existing assets:
+- icon-fruit.svg
+- icon-vegetable.svg
+- empty-produce.svg
+- icon-farmer-week.svg
+
+Or create one small local SVG if needed:
+- pickup-basket.svg
+- harvest-note.svg
+
+No paid images.
+No external image links.
+
+5. Keep existing buyer actions working
+
+Do not break:
+- Reserve
+- Contact Farmer
+- WhatsApp
+- Tap-to-call
+- Copy phone
+- Share Listing
+- View Farmer Profile
+- Similar nearby produce
+
+6. Privacy/security
+
+Verify:
+- Buyer phone is not shown publicly.
+- Reservation buyer_phone remains visible only to listing owner farmer and admin.
+- Farmer phone appears only through Contact Farmer dialog.
+- No admin/dashboard data appears on public pages.
+- No RLS changes unless absolutely required.
+- No secrets printed.
+
+7. Testing
+
+Use fake/mock data only.
+
+Test:
+- Produce Detail loads real Supabase listing.
+- More from this farmer loads other active listings.
+- Current listing is excluded from More from this farmer.
+- Sold/out_of_stock listings do not appear.
+- View Details from More from this farmer works.
+- Reserve from More from this farmer works.
+- Contact Farmer from More from this farmer works.
+- WhatsApp from More from this farmer works.
+- Share from More from this farmer works.
+- Similar nearby produce still works.
+- Farmer Profile link still works.
+- Browse Produce still works.
+- Landing page still works.
+- Waitlist form still works.
+- Farmer Dashboard still works.
+- Agent Dashboard still works.
+- Admin Dashboard still works.
+- PWA files still exist.
+- TypeScript has zero errors.
+- No console errors.
+- No secrets printed.
+- No paid services used.
+
+8. Documentation
+
+Update README with:
+- More from this farmer section
+- Produce Detail trust/summary improvements
+- Public/private data rules
+- Fake/mock testing rule
+- No paid services used
+
+After completion, report:
+- Files changed
+- Supabase helper added/updated
+- Whether More from this farmer loads live Supabase data
+- Whether current listing is excluded
+- Whether reservation/contact/share still work
+- TypeScript result
+- Console errors, if any
+- Remaining Produce Detail limitations

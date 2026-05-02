@@ -229,6 +229,32 @@ export async function getFarmerProfileById(farmerId: string): Promise<SupabaseFa
   return data as SupabaseFarmer | null;
 }
 
+/**
+ * Fetches up to 3 other active listings from the same farmer, excluding the current listing.
+ * Public-safe: no phone exposed in the farmer join.
+ */
+export async function getOtherActiveListingsByFarmer(
+  farmerId: string,
+  excludeListingId: string
+): Promise<SupabaseListing[]> {
+  if (!isSupabaseConfigured()) return [];
+  const { data, error } = await getSupabase()
+    .from("produce_listings")
+    .select(
+      "id, farmer_id, produce_name, category, price_per_kg, quantity_kg, harvest_datetime, pickup_location, district, distance_km, quality_notes, status, farmers(id, name, village, district, rating, verified)"
+    )
+    .eq("farmer_id", farmerId)
+    .eq("status", "active")
+    .neq("id", excludeListingId)
+    .order("created_at", { ascending: false })
+    .limit(3);
+  if (error) {
+    console.warn("getOtherActiveListingsByFarmer error:", error.message);
+    return [];
+  }
+  return (data ?? []) as unknown as SupabaseListing[];
+}
+
 /** Fetches all active produce_listings for a given farmer_id. Public (RLS: status=active for anon). */
 export async function getActiveListingsByFarmer(farmerId: string): Promise<SupabaseListing[]> {
   if (!isSupabaseConfigured()) return [];

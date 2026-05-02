@@ -42,6 +42,82 @@ This inserts:
 
 ---
 
+## Security — Post-QA Hardening (patch-post-qa-security-hardening.sql)
+
+### Summary of changes
+
+Applied after full role-based QA pass. Two tables were hardened.
+
+#### A. produce_listings
+
+| Access | Before patch | After patch |
+|---|---|---|
+| anon SELECT active listings | Allowed | Allowed (unchanged) |
+| anon INSERT listing | Allowed (no ownership check) | **Blocked** |
+| authenticated farmer INSERT | Allowed for own farmer_id | Allowed for own farmer_id (unchanged) |
+| authenticated farmer UPDATE | Allowed for own farmer_id | Allowed for own farmer_id (unchanged) |
+
+Changes made:
+- `DROP POLICY public_insert_listings` — removed the schema.sql-era anon insert with no ownership check
+- `REVOKE INSERT ON produce_listings FROM anon`
+
+Browse Produce continues to work publicly. The `public_read_active_listings` policy is untouched.
+
+#### B. agent_call_requests
+
+| Access | Before patch | After patch |
+|---|---|---|
+| anon SELECT | Allowed | **Blocked** |
+| anon INSERT | Allowed | **Blocked** |
+| anon UPDATE status | Allowed | **Blocked** |
+| buyer/farmer SELECT | Allowed (all authenticated) | **Blocked** |
+| buyer/farmer INSERT | Allowed (all authenticated) | **Blocked** |
+| buyer/farmer UPDATE | Allowed (all authenticated) | **Blocked** |
+| agent/admin SELECT | Allowed | Allowed (role-gated) |
+| agent/admin INSERT | Allowed | Allowed (role-gated) |
+| agent/admin UPDATE status | Allowed | Allowed (role-gated, domain enforced) |
+
+Policies dropped:
+- `public_insert_call_requests` (anon)
+- `public_read_call_requests` (anon)
+- `public_update_call_request_status` (anon)
+- `auth_insert_call_requests` (all authenticated)
+- `auth_read_call_requests` (all authenticated)
+- `auth_update_call_request_status` (all authenticated)
+
+Grants revoked:
+- `REVOKE SELECT, INSERT, UPDATE, DELETE ON agent_call_requests FROM anon`
+
+Policies added:
+- `agent_admin_read_call_requests` — SELECT WHERE role IN ('agent','admin')
+- `agent_admin_insert_call_requests` — INSERT WHERE role IN ('agent','admin')
+- `agent_admin_update_call_request_status` — UPDATE WHERE role IN ('agent','admin'), status domain enforced
+
+#### Why INSERT is restricted to agent/admin for agent_call_requests
+
+No public farmer callback form exists anywhere in the app. The only places that INSERT into `agent_call_requests` are:
+- AgentDashboard (authenticated, role=agent/admin)
+- AdminDashboard does not insert (read + update only)
+
+Restricting INSERT to agent/admin is safe and correct. If a public callback form is added in a future sprint, add a dedicated `public_insert_call_requests` policy with `WITH CHECK (true)` and no SELECT/UPDATE for anon.
+
+### Apply the patch
+
+```bash
+# Run in Supabase SQL Editor, or via scripts:
+pnpm --filter @workspace/scripts exec tsx /tmp/apply_patch.ts
+```
+
+Or paste `supabase/patch-post-qa-security-hardening.sql` into Supabase SQL Editor → Run.
+
+### Testing guidelines
+
+- Use only fake/mock names, phone numbers, emails, villages during all tests.
+- No real personal data.
+- No paid services, paid APIs, paid Supabase add-ons, or paid Replit features are used.
+
+---
+
 ## Security — Role Self-Escalation Prevention
 
 ### Problem (fixed)

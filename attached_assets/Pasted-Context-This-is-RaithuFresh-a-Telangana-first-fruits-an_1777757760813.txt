@@ -1,0 +1,112 @@
+Context:
+This is RaithuFresh, a Telangana-first fruits and vegetables marketplace for farmers, buyers, agents, and admins.
+
+Rules:
+- Focus only on fruits and vegetables.
+- Use only free tools, free tiers, open-source libraries, and mock/local alternatives.
+- Do not use any paid service, paid API, paid Supabase add-on, paid Replit feature, paid SMS/WhatsApp API, paid email API, paid map API, paid analytics, or paid AI API.
+- Do not touch DealNest/deals/coupons/stores/threads code or data.
+- Do not add map, delivery, payments, admin promotion tools, Edge Functions, or new UI features.
+- Do not use service_role key.
+- Do not expose secrets.
+- Do not weaken RLS.
+- Use only fake/mock names, phone numbers, emails, villages, and test details during testing.
+- Do not use real personal data.
+
+Task:
+Apply a small security-hardening patch based on the latest QA report.
+
+Current QA findings:
+1. public_insert_listings on produce_listings allows anon listing insert.
+2. public_update_call_request_status on agent_call_requests allows anon status update.
+3. auth_read_call_requests currently allows authenticated users to SELECT all agent call requests.
+
+Goal:
+Harden these policies now that authentication and role-based routes exist.
+
+Step 1 — Create SQL patch
+
+Create:
+
+supabase/patch-post-qa-security-hardening.sql
+
+Required changes:
+
+A. produce_listings
+
+Remove anonymous insert access:
+- Drop public_insert_listings policy if it exists.
+- Revoke INSERT on produce_listings from anon if currently granted.
+
+Keep:
+- anon can still SELECT active produce_listings.
+- authenticated farmers can INSERT listings only for their own farmer_id.
+- authenticated farmers can UPDATE only their own listings.
+- Browse Produce must still work publicly.
+
+B. agent_call_requests
+
+Remove anonymous status update:
+- Drop public_update_call_request_status policy if it exists.
+- Revoke UPDATE on agent_call_requests from anon.
+
+Restrict agent call request read/update to agent/admin users:
+- Drop overly broad authenticated read/update policies if they allow all authenticated users.
+- Add SELECT policy where user_profiles.role IN ('agent', 'admin').
+- Add UPDATE(status) policy where user_profiles.role IN ('agent', 'admin').
+- Keep status limited to:
+  - pending
+  - called
+  - resolved
+
+Decide insert behavior carefully:
+- If the Agent Dashboard is the only place creating requests, restrict INSERT to agent/admin.
+- If there is a public farmer callback form somewhere, keep public INSERT only, but do not allow public SELECT or UPDATE.
+- Check the current app before deciding.
+- Use the minimum safe access.
+
+Do not allow buyer/farmer roles to read all agent call requests.
+Do not allow anon to read all agent call requests.
+Do not allow anon to update call request status.
+
+Step 2 — Verify frontend impact
+
+After applying the patch, test:
+
+1. Browse Produce still loads public active listings.
+2. Farmer Dashboard still creates listings for logged-in farmers.
+3. Anonymous users cannot create produce_listings directly.
+4. Agent Dashboard still loads call requests for agent user.
+5. Agent Dashboard still creates call requests if logged in as agent.
+6. Agent Dashboard status update still works for agent.
+7. Admin Dashboard Agent Requests tab still loads.
+8. Admin can update agent request status.
+9. Buyer/farmer users cannot read agent_call_requests through Supabase client.
+10. Waitlist form still works.
+11. Reservation flow still works.
+12. No console errors.
+13. No TypeScript errors.
+14. No secrets printed.
+
+Step 3 — Documentation
+
+Update README with:
+- Anonymous users can browse active listings but cannot insert produce listings.
+- Agent call requests are visible/editable only to agent/admin users.
+- Public insert is allowed only if a public farmer callback form exists.
+- All testing uses fake/mock data only.
+- No paid services are used.
+
+After completion, report:
+- Files changed
+- SQL patch added and run
+- Policies dropped
+- Policies added
+- Grants changed
+- Whether Browse Produce still works
+- Whether Farmer Dashboard listing creation still works
+- Whether Agent Dashboard still works for agent/admin
+- Whether buyer/farmer access to agent requests is blocked
+- TypeScript result
+- Console errors, if any
+- Any remaining MVP security tradeoffs

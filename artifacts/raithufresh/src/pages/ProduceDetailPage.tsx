@@ -262,9 +262,26 @@ export default function ProduceDetailPage() {
                 <h1 className="text-2xl font-bold text-foreground">{listing.name}</h1>
                 <p className="text-muted-foreground text-sm mt-0.5">
                   by{" "}
-                  <span className="font-medium text-foreground">{farmerName}</span>
+                  {listing.farmerId ? (
+                    <Link
+                      href={`/farmers/${listing.farmerId}`}
+                      className="font-medium text-foreground hover:underline underline-offset-2"
+                    >
+                      {farmerName}
+                    </Link>
+                  ) : (
+                    <span className="font-medium text-foreground">{farmerName}</span>
+                  )}
                   {farmerLocation ? ` · ${farmerLocation}` : ""}
                 </p>
+                {listing.farmerId && (
+                  <Link
+                    href={`/farmers/${listing.farmerId}`}
+                    className="text-xs text-primary underline underline-offset-2 mt-1 inline-block"
+                  >
+                    View Farmer Profile
+                  </Link>
+                )}
               </div>
               <div className="flex flex-col items-end gap-1.5 shrink-0">
                 <Badge variant={listing.category === "Fruit" ? "default" : "secondary"}>

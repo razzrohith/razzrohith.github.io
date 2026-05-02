@@ -11,6 +11,7 @@ import ProduceDetailPage from "@/pages/ProduceDetailPage";
 import FarmerDashboard from "@/pages/FarmerDashboard";
 import AgentDashboard from "@/pages/AgentDashboard";
 import AdminDashboard from "@/pages/AdminDashboard";
+import FarmerProfilePage from "@/pages/FarmerProfilePage";
 import LoginPage from "@/pages/LoginPage";
 import SignupPage from "@/pages/SignupPage";
 import InstallBanner from "@/components/InstallBanner";
@@ -24,6 +25,7 @@ function Router() {
       <Route path="/" component={LandingPage} />
       <Route path="/browse" component={BrowsePage} />
       <Route path="/produce/:id" component={ProduceDetailPage} />
+      <Route path="/farmers/:id" component={FarmerProfilePage} />
       <Route path="/login" component={LoginPage} />
       <Route path="/signup" component={SignupPage} />
 

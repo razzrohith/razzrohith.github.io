@@ -195,7 +195,17 @@ export default function BrowsePage() {
                       <div className="flex items-start justify-between gap-2">
                         <div>
                           <h3 className="font-semibold text-foreground text-base">{listing.name}</h3>
-                          <p className="text-sm text-muted-foreground">{f?.name ?? "—"} · {f?.village ?? ""}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {listing.farmerId ? (
+                              <Link
+                                href={`/farmers/${listing.farmerId}`}
+                                className="font-medium text-foreground hover:underline underline-offset-2"
+                              >
+                                {f?.name ?? "—"}
+                              </Link>
+                            ) : (f?.name ?? "—")}
+                            {f?.village ? ` · ${f.village}` : ""}
+                          </p>
                         </div>
                         <Badge variant={listing.category === "Fruit" ? "default" : "secondary"} className="shrink-0">
                           {listing.category}

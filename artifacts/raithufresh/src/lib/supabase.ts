@@ -214,6 +214,37 @@ export async function getProduceListingById(id: string): Promise<SupabaseListing
   return data as SupabaseListing | null;
 }
 
+/** Fetches a single farmer's public profile by farmers.id (anon-safe). */
+export async function getFarmerProfileById(farmerId: string): Promise<SupabaseFarmer | null> {
+  if (!isSupabaseConfigured()) return null;
+  const { data, error } = await getSupabase()
+    .from("farmers")
+    .select("id, name, village, district, rating, phone, verified, assisted_mode, user_id")
+    .eq("id", farmerId)
+    .maybeSingle();
+  if (error) {
+    console.warn("getFarmerProfileById error:", error.message);
+    return null;
+  }
+  return data as SupabaseFarmer | null;
+}
+
+/** Fetches all active produce_listings for a given farmer_id. Public (RLS: status=active for anon). */
+export async function getActiveListingsByFarmer(farmerId: string): Promise<SupabaseListing[]> {
+  if (!isSupabaseConfigured()) return [];
+  const { data, error } = await getSupabase()
+    .from("produce_listings")
+    .select("*, farmers(id, name, village, district, rating, phone, verified)")
+    .eq("farmer_id", farmerId)
+    .eq("status", "active")
+    .order("created_at", { ascending: false });
+  if (error) {
+    console.warn("getActiveListingsByFarmer error:", error.message);
+    return [];
+  }
+  return (data ?? []) as SupabaseListing[];
+}
+
 /** Fetches all produce_listings for a given farmer_id (any status). */
 export async function getFarmerListings(farmerId: string): Promise<SupabaseListing[]> {
   if (!isSupabaseConfigured()) return [];

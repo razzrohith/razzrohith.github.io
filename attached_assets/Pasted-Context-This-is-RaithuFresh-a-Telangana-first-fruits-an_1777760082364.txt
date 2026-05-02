@@ -1,0 +1,205 @@
+Context:
+This is RaithuFresh, a Telangana-first fruits and vegetables marketplace for farmers, buyers, agents, and admins.
+
+Rules:
+- Focus only on fruits and vegetables.
+- Use only free tools, free tiers, open-source libraries, and mock/local alternatives.
+- Do not use paid services or paid APIs.
+- Do not touch DealNest/deals/coupons/stores/threads code or data.
+- Do not add map, delivery, payments, admin promotion tools, Edge Functions, or paid services.
+- Do not use service_role key.
+- Do not expose secrets.
+- Do not weaken RLS.
+- Use only fake/mock names, phone numbers, emails, villages, and test details during testing.
+- Do not use real personal data.
+
+Task:
+Run a Public Farmer Profile phase.
+
+Current state:
+- Browse Produce loads live Supabase listings.
+- Produce Detail loads live Supabase listing data.
+- Contact Farmer dialog supports tap-to-call, copy phone, and free WhatsApp wa.me deep link.
+- Share Listing works on Browse and Produce Detail.
+- Reservation flow works from Browse and Detail.
+- Buyer phone is not public.
+- Farmer Dashboard is protected at /farmer.
+
+Important route instruction:
+Do not use /farmer/:id because /farmer is already the protected Farmer Dashboard route.
+Use this public route instead:
+
+/farmers/:id
+
+Goal:
+Create a public Farmer Profile page where buyers can view a farmer’s basic profile and all active fruit/vegetable listings from that farmer.
+
+Tasks:
+
+1. Add public Farmer Profile route
+
+Create route:
+
+/farmers/:id
+
+This page should be public.
+
+It should load farmer data from Supabase by farmer id.
+
+Show:
+- Farmer name
+- Village
+- District
+- Rating if available
+- Verified badge if verified
+- Assisted mode badge if assisted_mode is true
+- Total active listings count
+- Simple trust note:
+  "Contact the farmer before pickup. Payment is Cash or UPI directly to the farmer."
+
+Do not show buyer data.
+Do not show reservations.
+Do not show admin-only data.
+
+2. Load farmer’s active listings
+
+On the Farmer Profile page, show active listings from that farmer.
+
+Each listing card should show:
+- Produce name
+- Category
+- Price per kg
+- Quantity available
+- Harvest date/time
+- Pickup location
+- Quality notes if available
+- View Details button
+- Reserve button
+- Contact Farmer button
+- Share button
+
+Only show:
+- status = active
+
+Do not show sold/out_of_stock/reserved listings publicly.
+
+3. Supabase helpers
+
+In src/lib/supabase.ts, add helper functions if needed:
+
+- getFarmerProfileById(farmerId)
+- getActiveListingsByFarmer(farmerId)
+
+Use current RLS safely.
+Do not weaken RLS unless absolutely required.
+If RLS blocks something, stop and report the exact issue before changing policies.
+
+4. Connect Browse and Detail to Farmer Profile
+
+Update Browse Produce:
+- Farmer name should link to /farmers/:id if farmer id exists.
+
+Update Produce Detail:
+- Farmer name/profile area should link to /farmers/:id.
+- Add small button or link:
+  "View Farmer Profile"
+
+Do not disrupt existing Contact Farmer behavior.
+
+5. Contact behavior on Farmer Profile
+
+Use the existing ContactFarmerDialog.
+
+When buyer clicks Contact Farmer:
+- Show farmer phone if available.
+- Tap-to-call works.
+- Copy phone works.
+- WhatsApp wa.me works.
+- WhatsApp message should include produce name if contact is from a listing card.
+- Do not use WhatsApp Business API.
+- Do not use paid SMS or messaging services.
+
+6. Share Farmer Profile
+
+Add a small "Share Farmer Profile" button.
+
+Behavior:
+- Use free Web Share API if available.
+- Fallback to clipboard.
+- If clipboard fails, show URL in friendly toast/message.
+- No paid services.
+
+Share text example:
+"View Ramaiah's fresh fruit and vegetable listings on RaithuFresh near Shadnagar."
+
+7. Empty/error/loading states
+
+Add:
+- Loading state while fetching farmer profile.
+- Not-found state if farmer does not exist or is not publicly readable.
+- Empty state if farmer has no active listings:
+  "No active listings from this farmer right now."
+
+8. Privacy and security
+
+Verify:
+- Buyer phone is never public.
+- Reservation buyer_phone is only visible to listing owner farmer and admin.
+- Farmer phone is only shown through Contact Farmer flow.
+- Public page only shows farmer profile and active listings.
+- No protected dashboard data is shown.
+- No RLS weakening.
+- No secrets printed.
+
+9. Testing
+
+Use fake/mock data only.
+
+Test:
+- /farmers/:id loads for a real Supabase farmer.
+- Farmer profile shows name, village, district, rating, verified status if available.
+- Active listings from that farmer load.
+- Sold/out_of_stock listings do not show publicly.
+- Browse farmer name links to Farmer Profile.
+- Produce Detail links to Farmer Profile.
+- View Details from Farmer Profile opens correct listing.
+- Reserve from Farmer Profile works and inserts real listing_id.
+- Contact Farmer works from Farmer Profile.
+- WhatsApp button still works.
+- Share Farmer Profile works.
+- Invalid farmer id shows not-found state.
+- Browse Produce still works.
+- Produce Detail still works.
+- Farmer Dashboard still works.
+- Agent Dashboard still works.
+- Admin Dashboard still works.
+- Waitlist form still works.
+- PWA files still exist.
+- TypeScript has zero errors.
+- No console errors.
+- No secrets printed.
+- No paid services used.
+
+10. Documentation
+
+Update README with:
+- Public Farmer Profile route /farmers/:id
+- What data is public
+- What data is private
+- Active listings only
+- Contact Farmer behavior
+- Share Farmer Profile behavior
+- Fake/mock testing rule
+- No paid services used
+
+After completion, report:
+- Files changed
+- Route added
+- Supabase helpers added/updated
+- Whether farmer profile loads live Supabase data
+- Whether farmer active listings load
+- Whether Browse and Detail link to farmer profile
+- Whether reservation/contact/share work from farmer profile
+- TypeScript result
+- Console errors, if any
+- Any remaining limitations

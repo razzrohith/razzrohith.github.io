@@ -42,6 +42,99 @@ This inserts:
 
 ---
 
+## Public Farmer Profile — `/farmers/:id`
+
+### What was added
+
+#### 1. New public route `/farmers/:id`
+
+Registered in `App.tsx` alongside the other public routes. No authentication required. Completely separate from `/farmer` (the protected Farmer Dashboard). Uses Wouter route parameter `:id`.
+
+#### 2. Farmer profile data loaded from Supabase
+
+Two new helper functions in `src/lib/supabase.ts`:
+
+| Function | Query | Access |
+|---|---|---|
+| `getFarmerProfileById(farmerId)` | `farmers` table by id | Anon (public RLS on `farmers`) |
+| `getActiveListingsByFarmer(farmerId)` | `produce_listings` where `status = 'active'` and `farmer_id = farmerId` | Anon (RLS enforces status=active) |
+
+No RLS policies were changed. Both functions return null/empty on error.
+
+#### 3. Profile card shows
+
+- Farmer name (large heading)
+- Village, District (with MapPin icon)
+- Star rating (if available)
+- Verified Farmer badge (green, BadgeCheck icon)
+- Agent Assisted badge (amber, for `assisted_mode = true`)
+- Active listings count
+- Trust note: "Contact the farmer before pickup. Payment is Cash or UPI directly to the farmer. RaithuFresh does not handle online payment."
+
+#### 4. Active listings section
+
+Shows only `status = 'active'` listings. Sold, out_of_stock, and reserved listings are never shown publicly. Each listing card includes:
+
+- Produce name + category badge
+- Price per kg / quantity available
+- Harvest date, pickup location, distance, quality notes
+- Reserve button → opens ReservationModal (real `listing_id`)
+- Contact button → opens ContactFarmerDialog (farmer phone, produce name pre-filled for WhatsApp)
+- Share button → `shareListing()` helper (Web Share API → clipboard → toast fallback)
+- View full details → `/produce/:id`
+
+#### 5. Empty / not-found / loading states
+
+| State | Behavior |
+|---|---|
+| Loading | Spinner: "Loading farmer profile..." |
+| Not found (invalid id, RLS blocked, no row) | Error card: "Farmer not found" + Browse Produce button |
+| Active listings = 0 | "No active listings from this farmer right now." + Browse all produce button |
+
+#### 6. Share Farmer Profile
+
+A "Share Profile" button in the top-right (next to Back to Browse) uses Web Share API if available, then clipboard copy, then toast with URL. Share text:
+> "View Ramaiah's fresh fruit and vegetable listings on RaithuFresh near Shadnagar, Rangareddy."
+
+#### 7. Links added
+
+- **Browse Produce**: Farmer name on each card is now a clickable link → `/farmers/:id`
+- **Produce Detail**: Farmer name is now a clickable link + small "View Farmer Profile" text link below
+
+#### 8. Privacy rules maintained
+
+- Farmer phone: available only through the Contact Farmer dialog (explicitly opt-in)
+- Buyer phone (`reservations.buyer_phone`): never shown on this page
+- No reservation data shown on the public profile
+- No admin-only data shown
+
+#### 9. Files changed
+
+| File | Change |
+|---|---|
+| `src/lib/supabase.ts` | Added `getFarmerProfileById`, `getActiveListingsByFarmer` |
+| `src/pages/FarmerProfilePage.tsx` | New — complete public profile page |
+| `src/App.tsx` | Imported `FarmerProfilePage`, added `Route path="/farmers/:id"` |
+| `src/pages/BrowsePage.tsx` | Farmer name now links to `/farmers/:id` |
+| `src/pages/ProduceDetailPage.tsx` | Farmer name links to `/farmers/:id`; "View Farmer Profile" link added |
+
+#### 10. Test farmer IDs (fake/mock seed data)
+
+| Farmer | ID |
+|---|---|
+| Ramaiah (Shadnagar, Rangareddy) | `11111111-0001-0001-0001-000000000001` |
+| Lakshmi Devi (Vikarabad) | `11111111-0001-0001-0001-000000000002` |
+| Venkat Rao (Narayanpet) | `11111111-0001-0001-0001-000000000003` |
+| Srinivas (Siddipet) | `11111111-0001-0001-0001-000000000004` |
+| Yellamma (Nizamabad) | `11111111-0001-0001-0001-000000000005` |
+| Narayana (Khammam) | `11111111-0001-0001-0001-000000000006` |
+| Padma Bai (Warangal) | `11111111-0001-0001-0001-000000000007` |
+| Suresh Kumar (Karimnagar) | `11111111-0001-0001-0001-000000000008` |
+
+All names, phones, villages, and IDs are fake/mock test data. No real personal data used.
+
+---
+
 ## Buyer Sharing + Detail UX
 
 ### What changed

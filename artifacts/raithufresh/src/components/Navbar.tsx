@@ -36,6 +36,12 @@ export default function Navbar() {
 
   const displayName = profile?.full_name ?? user?.email?.split("@")[0] ?? "Account";
 
+  // New pending reservations count for farmer badge — read from localStorage (set by FarmerDashboard on load)
+  const farmerNewPending =
+    (role === "farmer" || role === "admin")
+      ? Math.max(0, parseInt(localStorage.getItem("raithu_farmer_new_pending") ?? "0", 10) || 0)
+      : 0;
+
   return (
     <nav className="sticky top-0 z-50 bg-white border-b border-border shadow-sm">
       <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
@@ -50,13 +56,18 @@ export default function Navbar() {
             <Link
               key={l.href}
               href={l.href}
-              className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+              className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors inline-flex items-center gap-1.5 ${
                 location === l.href
                   ? "bg-primary text-primary-foreground"
                   : "text-foreground hover:bg-muted"
               }`}
             >
               {l.label}
+              {l.href === "/farmer" && farmerNewPending > 0 && (
+                <span className="inline-flex items-center justify-center min-w-[16px] h-4 px-1 text-[10px] font-bold rounded-full bg-amber-500 text-white leading-none">
+                  {farmerNewPending > 9 ? "9+" : farmerNewPending}
+                </span>
+              )}
             </Link>
           ))}
 
@@ -132,13 +143,18 @@ export default function Navbar() {
               key={l.href}
               href={l.href}
               onClick={() => setOpen(false)}
-              className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+              className={`px-3 py-2 rounded-md text-sm font-medium transition-colors inline-flex items-center gap-1.5 ${
                 location === l.href
                   ? "bg-primary text-primary-foreground"
                   : "text-foreground hover:bg-muted"
               }`}
             >
               {l.label}
+              {l.href === "/farmer" && farmerNewPending > 0 && (
+                <span className="inline-flex items-center justify-center min-w-[16px] h-4 px-1 text-[10px] font-bold rounded-full bg-amber-500 text-white leading-none">
+                  {farmerNewPending > 9 ? "9+" : farmerNewPending}
+                </span>
+              )}
             </Link>
           ))}
 

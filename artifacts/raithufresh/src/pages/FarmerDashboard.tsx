@@ -5,7 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
 import {
-  Plus, Star, Edit, Package, CheckCircle, User, MapPin, Phone, Loader2,
+  Plus, Star, Edit, Package, CheckCircle, User, MapPin, Phone, Loader2, Bell, X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -115,6 +115,8 @@ export default function FarmerDashboard() {
   const [reservationsLoading, setReservationsLoading] = useState(false);
   const [reservationsError, setReservationsError] = useState<string | null>(null);
   const [updatingReservation, setUpdatingReservation] = useState<string | null>(null);
+  const [newPendingCount, setNewPendingCount] = useState(0);
+  const [bannerDismissed, setBannerDismissed] = useState(false);
 
   // ── Load farmer row and listings ─────────────────────────────────────────
 
@@ -125,6 +127,11 @@ export default function FarmerDashboard() {
       setListingsLoaded(true);
       return;
     }
+
+    // Track "new since last visit" — read previous timestamp, immediately update to now
+    const prevTs = localStorage.getItem("raithu_farmer_last_visit_ts");
+    const prevLastVisit = prevTs ? new Date(prevTs) : new Date(0);
+    localStorage.setItem("raithu_farmer_last_visit_ts", new Date().toISOString());
 
     setFarmerLoading(true);
     try {
@@ -139,6 +146,12 @@ export default function FarmerDashboard() {
         ]);
         setListings(sbListings.map(supabaseToLocal));
         setReservations(sbReservations);
+        // Count pending reservations newer than the previous visit
+        const newCount = sbReservations.filter(
+          (r) => r.status === "pending" && new Date(r.created_at) > prevLastVisit
+        ).length;
+        setNewPendingCount(newCount);
+        localStorage.setItem("raithu_farmer_new_pending", String(newCount));
       } else {
         setListings([]);
         setReservations([]);
@@ -555,7 +568,32 @@ export default function FarmerDashboard() {
 
         {/* Buyer Reservations — live from Supabase */}
         <div>
-          <h2 className="text-lg font-semibold text-foreground mb-4">Buyer Reservations</h2>
+          {/* New pending banner */}
+          {newPendingCount > 0 && !bannerDismissed && (
+            <div className="flex items-center gap-3 bg-amber-50 border border-amber-200 text-amber-800 rounded-xl px-4 py-3 mb-4">
+              <Bell className="w-4 h-4 text-amber-600 shrink-0" />
+              <p className="text-sm flex-1">
+                You have <strong>{newPendingCount}</strong> new pending{" "}
+                {newPendingCount === 1 ? "reservation" : "reservations"} since your last visit.
+              </p>
+              <button
+                onClick={() => setBannerDismissed(true)}
+                className="text-amber-600 hover:text-amber-800 shrink-0 p-0.5 rounded"
+                aria-label="Dismiss notification"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+
+          <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+            Buyer Reservations
+            {newPendingCount > 0 && (
+              <span className="inline-flex items-center px-2 py-0.5 text-xs font-bold rounded-full bg-amber-100 text-amber-700 border border-amber-200">
+                {newPendingCount} new
+              </span>
+            )}
+          </h2>
 
           {/* Loading */}
           {reservationsLoading && (

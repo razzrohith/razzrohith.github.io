@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   ClipboardList, Calendar, MapPin, Package, Phone,
   CheckCircle2, Clock, XCircle, Loader2, BadgeCheck, Search, X,
+  ArrowUpDown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,9 +22,14 @@ import {
 // ── Constants ────────────────────────────────────────────────────────────────
 
 type FilterTab = "all" | ReservationStatus;
+type SortOrder = "newest" | "oldest" | "quantity_high" | "status";
 
 const ALL_STATUSES: ReservationStatus[] = ["pending", "confirmed", "completed", "cancelled"];
 const FILTER_TABS: FilterTab[] = ["all", ...ALL_STATUSES];
+
+const STATUS_PRIORITY: Record<ReservationStatus, number> = {
+  pending: 0, confirmed: 1, completed: 2, cancelled: 3,
+};
 
 const STATUS_BADGE: Record<ReservationStatus, string> = {
   pending: "bg-amber-50 text-amber-700 border-amber-200",
@@ -53,6 +59,13 @@ const STATUS_LABEL: Record<ReservationStatus, string> = {
   cancelled: "Cancelled",
 };
 
+const SORT_LABELS: Record<SortOrder, string> = {
+  newest: "Newest first",
+  oldest: "Oldest first",
+  quantity_high: "Quantity high to low",
+  status: "By status",
+};
+
 // ── Component ────────────────────────────────────────────────────────────────
 
 export default function BuyerDashboard() {
@@ -61,6 +74,8 @@ export default function BuyerDashboard() {
   const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState<FilterTab>("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [sortOrder, setSortOrder] = useState<SortOrder>("newest");
+  const [sortOpen, setSortOpen] = useState(false);
   const [cancellingIds, setCancellingIds] = useState<Set<string>>(new Set());
   const [contactOpen, setContactOpen] = useState(false);
   const [contactTarget, setContactTarget] = useState<{
@@ -71,10 +86,7 @@ export default function BuyerDashboard() {
 
   useEffect(() => {
     async function load() {
-      if (!isSupabaseConfigured()) {
-        setLoading(false);
-        return;
-      }
+      if (!isSupabaseConfigured()) { setLoading(false); return; }
       const data = await getReservationsForCurrentBuyer();
       setReservations(data);
       setLoading(false);
@@ -94,29 +106,36 @@ export default function BuyerDashboard() {
 
   const totalCount = reservations.length;
 
-  // ── Filtered + searched list ──────────────────────────────────────────────
+  // ── Sorted → Filtered → Searched ─────────────────────────────────────────
 
-  const filtered = useMemo(() => {
-    let list = reservations;
-    if (activeFilter !== "all") {
-      list = list.filter((r) => r.status === activeFilter);
-    }
+  const processed = useMemo(() => {
+    // 1. Sort
+    const sorted = [...reservations].sort((a, b) => {
+      if (sortOrder === "newest") return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      if (sortOrder === "oldest") return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+      if (sortOrder === "quantity_high") return b.quantity_kg - a.quantity_kg;
+      if (sortOrder === "status") return STATUS_PRIORITY[a.status] - STATUS_PRIORITY[b.status];
+      return 0;
+    });
+
+    // 2. Filter by status tab
+    const filtered = activeFilter === "all" ? sorted : sorted.filter((r) => r.status === activeFilter);
+
+    // 3. Filter by search
     const q = searchQuery.trim().toLowerCase();
-    if (q) {
-      list = list.filter((r) => {
-        const listing = r.produce_listings;
-        const farmer = listing?.farmers;
-        return (
-          listing?.produce_name?.toLowerCase().includes(q) ||
-          farmer?.name?.toLowerCase().includes(q) ||
-          farmer?.village?.toLowerCase().includes(q) ||
-          farmer?.district?.toLowerCase().includes(q) ||
-          r.status.toLowerCase().includes(q)
-        );
-      });
-    }
-    return list;
-  }, [reservations, activeFilter, searchQuery]);
+    if (!q) return filtered;
+    return filtered.filter((r) => {
+      const listing = r.produce_listings;
+      const farmer = listing?.farmers;
+      return (
+        listing?.produce_name?.toLowerCase().includes(q) ||
+        farmer?.name?.toLowerCase().includes(q) ||
+        farmer?.village?.toLowerCase().includes(q) ||
+        farmer?.district?.toLowerCase().includes(q) ||
+        r.status.toLowerCase().includes(q)
+      );
+    });
+  }, [reservations, activeFilter, searchQuery, sortOrder]);
 
   const hasActiveFilters = activeFilter !== "all" || searchQuery.trim().length > 0;
 
@@ -127,28 +146,17 @@ export default function BuyerDashboard() {
       `Cancel your reservation request for "${produceName}"? This cannot be undone.`
     );
     if (!confirmed) return;
-
     setCancellingIds((prev) => new Set(prev).add(reservationId));
     const ok = await cancelBuyerReservation(reservationId);
-    setCancellingIds((prev) => {
-      const next = new Set(prev);
-      next.delete(reservationId);
-      return next;
-    });
-
+    setCancellingIds((prev) => { const n = new Set(prev); n.delete(reservationId); return n; });
     if (ok) {
       setReservations((prev) =>
-        prev.map((r) =>
-          r.id === reservationId ? { ...r, status: "cancelled" as ReservationStatus } : r
-        )
+        prev.map((r) => r.id === reservationId ? { ...r, status: "cancelled" as ReservationStatus } : r)
       );
     }
   };
 
-  const clearFilters = () => {
-    setActiveFilter("all");
-    setSearchQuery("");
-  };
+  const clearFilters = () => { setActiveFilter("all"); setSearchQuery(""); };
 
   const displayName = profile?.full_name ?? user?.email?.split("@")[0] ?? "Buyer";
 
@@ -163,9 +171,7 @@ export default function BuyerDashboard() {
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-foreground">Buyer Dashboard</h1>
           <p className="text-sm text-muted-foreground mt-0.5">Welcome back, {displayName}</p>
-          {user?.email && (
-            <p className="text-xs text-muted-foreground">{user.email}</p>
-          )}
+          {user?.email && <p className="text-xs text-muted-foreground">{user.email}</p>}
         </div>
 
         {/* Status tiles */}
@@ -177,7 +183,7 @@ export default function BuyerDashboard() {
                 key={status}
                 onClick={() => setActiveFilter(activeFilter === status ? "all" : status)}
                 className={`rounded-xl p-3 border text-center transition-all ${STATUS_TILE[status]} ${
-                  activeFilter === status ? "ring-2 ring-offset-1 ring-current opacity-100" : "opacity-80 hover:opacity-100"
+                  activeFilter === status ? "ring-2 ring-offset-1 ring-current opacity-100" : "opacity-75 hover:opacity-100"
                 }`}
               >
                 <Icon className="w-4 h-4 mx-auto mb-1.5 opacity-80" />
@@ -188,36 +194,58 @@ export default function BuyerDashboard() {
           })}
         </div>
 
-        {/* Filter tabs + Search */}
+        {/* Filter tabs + Search + Sort */}
         <div className="mb-4 space-y-3">
-          {/* Filter tabs */}
-          <div className="flex items-center gap-1.5 flex-wrap">
-            {FILTER_TABS.map((tab) => {
-              const count = tab === "all" ? totalCount : counts[tab as ReservationStatus];
-              const isActive = activeFilter === tab;
-              return (
-                <button
-                  key={tab}
-                  onClick={() => setActiveFilter(tab)}
-                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors border ${
-                    isActive
-                      ? "bg-primary text-primary-foreground border-primary"
-                      : "bg-white text-foreground border-border hover:bg-muted"
-                  }`}
-                >
-                  <span className="capitalize">{tab === "all" ? "All" : STATUS_LABEL[tab as ReservationStatus]}</span>
-                  <span
-                    className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${
+          {/* Filter tabs + Sort */}
+          <div className="flex items-center gap-2 flex-wrap justify-between">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {FILTER_TABS.map((tab) => {
+                const count = tab === "all" ? totalCount : counts[tab as ReservationStatus];
+                const isActive = activeFilter === tab;
+                return (
+                  <button
+                    key={tab}
+                    onClick={() => setActiveFilter(tab)}
+                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors border ${
                       isActive
-                        ? "bg-white/20 text-primary-foreground"
-                        : "bg-muted text-muted-foreground"
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "bg-white text-foreground border-border hover:bg-muted"
                     }`}
                   >
-                    {count}
-                  </span>
-                </button>
-              );
-            })}
+                    <span className="capitalize">{tab === "all" ? "All" : STATUS_LABEL[tab as ReservationStatus]}</span>
+                    <span className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${isActive ? "bg-white/20 text-primary-foreground" : "bg-muted text-muted-foreground"}`}>
+                      {count}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Sort dropdown */}
+            <div className="relative">
+              <button
+                onClick={() => setSortOpen((o) => !o)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm border bg-white text-foreground border-border hover:bg-muted transition-colors"
+              >
+                <ArrowUpDown className="w-3.5 h-3.5 text-muted-foreground" />
+                <span className="text-xs">{SORT_LABELS[sortOrder]}</span>
+              </button>
+              {sortOpen && (
+                <div className="absolute right-0 top-full mt-1 bg-white border border-border rounded-xl shadow-lg z-20 min-w-[180px] py-1">
+                  {(Object.keys(SORT_LABELS) as SortOrder[]).map((opt) => (
+                    <button
+                      key={opt}
+                      onClick={() => { setSortOrder(opt); setSortOpen(false); }}
+                      className={`w-full text-left px-4 py-2 text-sm transition-colors ${
+                        sortOrder === opt ? "text-primary font-semibold" : "text-foreground hover:bg-muted"
+                      }`}
+                    >
+                      {SORT_LABELS[opt]}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Search */}
@@ -246,10 +274,15 @@ export default function BuyerDashboard() {
           Reservation History
           {!loading && (
             <span className="text-xs font-normal text-muted-foreground ml-1">
-              ({filtered.length} {filtered.length === 1 ? "result" : "results"})
+              ({processed.length} {processed.length === 1 ? "result" : "results"})
             </span>
           )}
         </h2>
+
+        {/* Backdrop for sort dropdown */}
+        {sortOpen && (
+          <div className="fixed inset-0 z-10" onClick={() => setSortOpen(false)} />
+        )}
 
         {/* List */}
         {loading ? (
@@ -258,7 +291,6 @@ export default function BuyerDashboard() {
             <span>Loading your reservations...</span>
           </div>
         ) : reservations.length === 0 ? (
-          /* True empty — no reservations at all */
           <div className="text-center py-16">
             <img
               src="/assets/empty-produce.svg"
@@ -275,8 +307,7 @@ export default function BuyerDashboard() {
               <Button>Browse Produce</Button>
             </Link>
           </div>
-        ) : filtered.length === 0 ? (
-          /* Filter/search returns nothing */
+        ) : processed.length === 0 ? (
           <div className="text-center py-12">
             <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mx-auto mb-3">
               <Search className="w-5 h-5 text-muted-foreground" />
@@ -285,24 +316,18 @@ export default function BuyerDashboard() {
             <p className="text-sm text-muted-foreground mb-4">
               Try adjusting your search or filter selection.
             </p>
-            <Button variant="outline" onClick={clearFilters}>
-              Clear filters
-            </Button>
+            <Button variant="outline" onClick={clearFilters}>Clear filters</Button>
           </div>
         ) : (
           <AnimatePresence initial={false}>
             <div className="space-y-4">
-              {filtered.map((r, i) => {
+              {processed.map((r, i) => {
                 const listing = r.produce_listings;
                 const farmer = listing?.farmers;
-                const farmerLocation = [farmer?.village, farmer?.district]
-                  .filter(Boolean)
-                  .join(", ");
+                const farmerLocation = [farmer?.village, farmer?.district].filter(Boolean).join(", ");
                 const Icon = STATUS_ICON[r.status];
                 const reservedDate = new Date(r.created_at).toLocaleDateString("en-IN", {
-                  day: "numeric",
-                  month: "short",
-                  year: "numeric",
+                  day: "numeric", month: "short", year: "numeric",
                 });
                 const estimatedTotal = listing?.price_per_kg
                   ? (r.quantity_kg * Number(listing.price_per_kg)).toLocaleString()
@@ -318,20 +343,16 @@ export default function BuyerDashboard() {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.97 }}
                     transition={{ delay: i * 0.03, duration: 0.25 }}
-                    className={`bg-card border rounded-2xl p-5 shadow-sm transition-opacity ${
+                    className={`bg-card border rounded-2xl p-5 shadow-sm transition-opacity border-border ${
                       r.status === "cancelled" ? "opacity-70" : ""
-                    } border-border`}
+                    }`}
                   >
                     {/* Card header */}
                     <div className="flex items-start justify-between gap-2 mb-3">
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
                           <img
-                            src={
-                              listing?.category === "Fruit"
-                                ? "/assets/icon-fruit.svg"
-                                : "/assets/icon-vegetable.svg"
-                            }
+                            src={listing?.category === "Fruit" ? "/assets/icon-fruit.svg" : "/assets/icon-vegetable.svg"}
                             alt={listing?.category ?? "Produce"}
                             width={18}
                             height={18}
@@ -343,14 +364,11 @@ export default function BuyerDashboard() {
                         </div>
                         {farmer?.name && (
                           <p className="text-xs text-muted-foreground mt-0.5">
-                            by {farmer.name}
-                            {farmerLocation ? ` · ${farmerLocation}` : ""}
+                            by {farmer.name}{farmerLocation ? ` · ${farmerLocation}` : ""}
                           </p>
                         )}
                       </div>
-                      <span
-                        className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full border font-medium shrink-0 ${STATUS_BADGE[r.status]}`}
-                      >
+                      <span className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full border font-medium shrink-0 ${STATUS_BADGE[r.status]}`}>
                         <Icon className="w-3 h-3" />
                         {STATUS_LABEL[r.status]}
                       </span>
@@ -378,14 +396,17 @@ export default function BuyerDashboard() {
                         <span>{reservedDate}</span>
                       </div>
                       <div className="flex items-center gap-2 text-muted-foreground col-span-2 sm:col-span-1">
-                        <span className="text-xs">
-                          {r.payment_method ?? "Cash or UPI directly to farmer"}
-                        </span>
+                        <span className="text-xs">{r.payment_method ?? "Cash or UPI directly to farmer"}</span>
                       </div>
                     </div>
 
                     {/* Actions */}
                     <div className="flex gap-2 flex-wrap">
+                      <Link href={`/buyer/reservations/${r.id}`}>
+                        <Button size="sm" variant="default">
+                          View Details
+                        </Button>
+                      </Link>
                       <Link href={`/produce/${r.listing_id}`}>
                         <Button size="sm" variant="outline">
                           View Listing
@@ -414,20 +435,12 @@ export default function BuyerDashboard() {
                           variant="ghost"
                           className="text-destructive hover:bg-destructive/10 hover:text-destructive"
                           disabled={isCancelling}
-                          onClick={() =>
-                            handleCancel(r.id, listing?.produce_name ?? "this produce")
-                          }
+                          onClick={() => handleCancel(r.id, listing?.produce_name ?? "this produce")}
                         >
                           {isCancelling ? (
-                            <>
-                              <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
-                              Cancelling...
-                            </>
+                            <><Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />Cancelling...</>
                           ) : (
-                            <>
-                              <XCircle className="w-3.5 h-3.5 mr-1.5" />
-                              Cancel Request
-                            </>
+                            <><XCircle className="w-3.5 h-3.5 mr-1.5" />Cancel Request</>
                           )}
                         </Button>
                       )}
@@ -439,8 +452,7 @@ export default function BuyerDashboard() {
           </AnimatePresence>
         )}
 
-        {/* Clear filters shortcut when filters are active and list is non-empty */}
-        {hasActiveFilters && filtered.length > 0 && (
+        {hasActiveFilters && processed.length > 0 && (
           <div className="mt-4 text-center">
             <button
               onClick={clearFilters}
@@ -455,10 +467,7 @@ export default function BuyerDashboard() {
       {contactTarget && (
         <ContactFarmerDialog
           open={contactOpen}
-          onClose={() => {
-            setContactOpen(false);
-            setContactTarget(null);
-          }}
+          onClose={() => { setContactOpen(false); setContactTarget(null); }}
           farmerName={contactTarget.name}
           phone={contactTarget.phone}
           produceName={contactTarget.produceName}

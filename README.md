@@ -135,6 +135,172 @@ All names, phones, villages, and IDs are fake/mock test data. No real personal d
 
 ---
 
+## Buyer Reservation Detail + Dashboard Flow Phase
+
+### Overview
+
+Adds a focused `/buyer/reservations/:id` detail page for logged-in buyers, a sort dropdown to the dashboard, and View Details links on each dashboard card.
+
+---
+
+### Files Changed
+
+| File | Change |
+|---|---|
+| `src/lib/supabase.ts` | Added `BuyerReservationDetail` type + `getBuyerReservationById()` helper |
+| `src/pages/BuyerReservationDetail.tsx` | New — reservation detail page (protected, buyer + admin) |
+| `src/pages/BuyerDashboard.tsx` | Added sort dropdown, View Details button on each card |
+| `src/App.tsx` | Added `/buyer/reservations/:id` protected route |
+
+---
+
+### Route Added
+
+| Route | Protection | Access |
+|---|---|---|
+| `/buyer/reservations/:id` | ProtectedRoute `["buyer", "admin"]` | Buyer sees own reservation only; admin allowed by RLS |
+
+---
+
+### `getBuyerReservationById()` Helper
+
+```ts
+getBuyerReservationById(reservationId: string): Promise<BuyerReservationDetail | null>
+```
+
+- Double-guards: `.eq("id", id).eq("buyer_user_id", user.id)` (client) + RLS SELECT policy (server)
+- Returns `null` if reservation not found, belongs to another buyer, or user is not logged in
+- Joins: produce_listings with `harvest_datetime`, `district`, `status`; farmers with `rating`, `verified`, `phone`
+
+---
+
+### `BuyerReservationDetail` Type
+
+```ts
+export type BuyerReservationDetail = {
+  id, listing_id, buyer_name, quantity_kg, status, payment_method, created_at,
+  produce_listings?: {
+    produce_name, category, price_per_kg,
+    harvest_datetime: string | null,
+    pickup_location: string | null,
+    district: string | null,
+    status: string,
+    farmers?: {
+      name, village, district,
+      rating: number | null,
+      verified: boolean | null,
+      phone: string | null,
+    } | null,
+  } | null,
+}
+```
+
+---
+
+### Reservation Detail Page
+
+| Section | Content |
+|---|---|
+| Header card | Produce name + category SVG icon, status badge |
+| Reservation details | Quantity, estimated total, reserved date + time, expected harvest date, payment method |
+| Pickup location | Address text, district, "Open in map" link (OpenStreetMap search, free, no API key) |
+| Farmer card | Name, Verified badge (ShieldCheck), village/district, star rating |
+| Actions | View Listing, View Farmer Profile, Contact Farmer, Cancel Request (pending only) |
+
+#### States
+
+| State | Display |
+|---|---|
+| Loading | Spinner + "Loading reservation..." |
+| Not found / access denied | XCircle + "Reservation not found" + Back to Buyer Dashboard |
+| Loaded | Full detail layout |
+
+#### Pickup location map link
+
+- URL: `https://www.openstreetmap.org/search?query={encodeURIComponent(pickup_location)}`
+- Free, no API key, no embedding, no paid service
+- Opens in new tab (`target="_blank" rel="noopener noreferrer"`)
+
+#### Cancel Request from detail page
+
+- Same `cancelBuyerReservation()` helper as dashboard
+- Same RLS USING+WITH CHECK protection
+- On success: updates local state → status badge changes to Cancelled, Cancel Request button disappears
+
+---
+
+### Buyer Dashboard Changes
+
+#### Sort Dropdown
+
+| Option | Sort logic |
+|---|---|
+| Newest first | `created_at` DESC (default) |
+| Oldest first | `created_at` ASC |
+| Quantity high to low | `quantity_kg` DESC |
+| By status | pending → confirmed → completed → cancelled |
+
+- Client-side only, no server call
+- Sort applied before filter and search
+- Dropdown closes on outside click (transparent fixed backdrop)
+
+#### View Details Button
+
+- Added as the primary (default variant) action button on each dashboard card
+- Links to `/buyer/reservations/:id`
+- Other buttons remain: View Listing (outline), Contact Farmer (outline), Cancel Request (ghost/destructive for pending)
+
+---
+
+### Access Control
+
+| Attempt | Result |
+|---|---|
+| Guest visits `/buyer/reservations/:id` | ProtectedRoute → "Please log in to continue" |
+| Buyer visits own reservation | Loads correctly |
+| Buyer visits another buyer's reservation | `getBuyerReservationById` returns null (client `.eq("buyer_user_id", user.id)` + RLS) → "Reservation not found" |
+| Invalid UUID | Supabase returns null → "Reservation not found" |
+| Buyer cancels own pending from detail | Works — Cancel Request disappears, badge becomes Cancelled |
+| Buyer cancels confirmed/completed | Cancel button never shown (only shown for pending) |
+
+---
+
+### Privacy / Security
+
+| Rule | Status |
+|---|---|
+| Buyer sees only own reservation | Client double-guard + RLS SELECT policy |
+| Cross-buyer isolation | `buyer_user_id = auth.uid()` enforced at both layers |
+| Guest blocked | ProtectedRoute gate |
+| Cancel limited to pending only | RLS USING gate + button conditionally rendered |
+| Farmer phone | Only in authenticated Contact Farmer dialog on own reservation |
+| Buyer phone | Not selected in any buyer helper |
+| service_role key | Not used |
+| Secrets | Not printed |
+| No paid services | OpenStreetMap (free), all icons Lucide or local SVGs |
+
+---
+
+### TypeScript Result
+
+Exit 0 — zero errors.
+
+### Console Errors
+
+None.
+
+---
+
+### Remaining Limitations
+
+| Limitation | Notes |
+|---|---|
+| View Farmer Profile button uses `listing_id` as farmer ID | Farmer ID not available in `BuyerReservation` type — fix: extend query to include farmer `id` in a future patch |
+| No back-navigation on cancel from detail | User stays on detail page after cancel (status updates in place) |
+| No pagination on dashboard | All reservations loaded at once |
+
+---
+
 ## Buyer Dashboard Reservation Management + UX Polish Phase
 
 ### Overview

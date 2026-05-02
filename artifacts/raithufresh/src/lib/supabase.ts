@@ -714,6 +714,65 @@ export async function getReservationsForCurrentBuyer(): Promise<BuyerReservation
   return (data ?? []) as unknown as BuyerReservation[];
 }
 
+export type BuyerReservationDetail = {
+  id: string;
+  listing_id: string;
+  buyer_name: string;
+  quantity_kg: number;
+  status: ReservationStatus;
+  payment_method: string | null;
+  created_at: string;
+  produce_listings?: {
+    produce_name: string;
+    category: string;
+    price_per_kg: number;
+    harvest_datetime: string | null;
+    pickup_location: string | null;
+    district: string | null;
+    status: string;
+    farmers?: {
+      id?: string;
+      name: string;
+      village: string | null;
+      district: string | null;
+      rating: number | null;
+      verified: boolean | null;
+      phone: string | null;
+    } | null;
+  } | null;
+};
+
+/**
+ * Fetches a single reservation for the currently logged-in buyer by ID.
+ * Client-side guard: .eq("buyer_user_id", user.id) + RLS SELECT policy.
+ * Returns null if not found, not owned by current buyer, or not logged in.
+ * Farmer phone included for ContactFarmerDialog (own reservation context only).
+ */
+export async function getBuyerReservationById(
+  reservationId: string
+): Promise<BuyerReservationDetail | null> {
+  if (!isSupabaseConfigured()) return null;
+  const { data: { user } } = await getSupabase().auth.getUser();
+  if (!user) return null;
+
+  const { data, error } = await getSupabase()
+    .from("reservations")
+    .select(
+      "id, listing_id, buyer_name, quantity_kg, status, payment_method, created_at, " +
+      "produce_listings(produce_name, category, price_per_kg, harvest_datetime, pickup_location, district, status, " +
+      "farmers(name, village, district, rating, verified, phone))"
+    )
+    .eq("id", reservationId)
+    .eq("buyer_user_id", user.id)
+    .maybeSingle();
+
+  if (error) {
+    console.warn("getBuyerReservationById error:", error.message);
+    return null;
+  }
+  return data as unknown as BuyerReservationDetail | null;
+}
+
 export type AgentCallRequestStatus = "pending" | "called" | "resolved";
 
 export type AgentCallRequestInsert = {

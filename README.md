@@ -4,6 +4,264 @@ Connecting Telangana farmers directly with local buyers. MVP React web app with 
 
 ---
 
+## Farmer Dashboard — Realtime + Listing Management Polish
+
+### Files changed
+
+| File | What changed |
+|---|---|
+| `src/pages/FarmerDashboard.tsx` | Complete overhaul — all features below |
+| `src/lib/supabase.ts` | Added `updateListing()` helper |
+
+---
+
+### 1. Realtime Reservation Updates
+
+Supabase Realtime subscription is enabled on mount when Supabase is configured and the farmer row is loaded.
+
+**How it works:**
+- Subscribes to `postgres_changes` on the `reservations` table (all events: INSERT, UPDATE, DELETE).
+- On any change, calls `refreshReservations()` which re-fetches the farmer's reservations via RLS-protected query.
+- The event payload is never used directly — data always comes from the secure re-fetch.
+- Connection status displayed as a "Live" (green) or "Offline" (red) pill next to the Buyer Reservations heading.
+- If Realtime is unavailable or errors out, the status pill shows "Offline" and a manual Refresh button is always visible.
+
+**Free tier note:** Supabase Realtime (postgres_changes) is available on the free tier but must be enabled per table in the Supabase dashboard (Database → Replication). If not enabled, the subscription will fail silently and the Offline pill will appear — the app continues to work via manual refresh.
+
+**Fallback behavior:**
+- Manual "Refresh" button is always shown when Supabase is configured and farmer row is loaded.
+- Clicking Refresh re-fetches reservations, updates pending count, and fires the Navbar badge event.
+- No page reload required.
+
+---
+
+### 2. Manual Refresh Fallback
+
+A "Refresh" button is always visible in the Buyer Reservations heading row (when Supabase is configured).
+
+- Shows loading spinner while fetching.
+- Updates reservation list, pending count, and Navbar badge in one call.
+- Works whether Realtime is connected or not.
+
+---
+
+### 3. Listing Edit Modal
+
+Clicking "Edit" on any listing opens a Dialog modal with pre-filled values.
+
+**Editable fields:**
+- Produce name
+- Category (Fruit / Vegetable)
+- Quantity kg
+- Price per kg
+- Harvest date
+- Pickup location
+- District (optional)
+- Quality notes (optional)
+- Status (Available / Sold / Out of Stock)
+
+**Protected fields (never sent to server from this modal):**
+- id
+- farmer_id
+- created_at
+- user_id
+
+**How it works:**
+- Uses `updateListing()` in `supabase.ts` which does `.update(fields).eq("id", listingId)`.
+- Farmer RLS enforces server-side that only the farmer's own listings can be edited.
+- Local state (ProduceListing[]) and raw Supabase state (SupabaseListing[]) both updated immediately on success for instant UI refresh.
+- If Supabase is not configured, updates local state only (demo mode).
+
+---
+
+### 4. Quick Quantity Update
+
+Each listing card shows the quantity as a clickable underlined number.
+
+- Click the quantity to open an inline input field with the current value.
+- Type the new quantity and click "Save" (or press X to cancel).
+- Uses `updateListing()` with `{ quantity_kg: newQty }`.
+- RLS enforces server-side ownership.
+- Both `listings` (local) and `rawListings` (Supabase) state updated immediately.
+
+---
+
+### 5. Listing Status Actions
+
+| Listing Status | Available Actions |
+|---|---|
+| Available | Mark Sold, Mark Out of Stock |
+| Sold | Reactivate |
+| Out of Stock | Reactivate |
+
+Reactivate sets status back to `active` in the database. This is a safe transition since `active` is a valid domain value. RLS enforces ownership.
+
+---
+
+### 6. Reservation Cards
+
+Each reservation card now shows:
+
+| Field | Source | Notes |
+|---|---|---|
+| Buyer name | reservations.buyer_name | |
+| Status badge | reservations.status | Color-coded |
+| Quantity + produce name | reservations.quantity_kg + produce_listings.produce_name | |
+| Buyer phone | reservations.buyer_phone | Visible only on Farmer Dashboard — farmer owns the listing |
+| Pickup location | produce_listings.pickup_location | Joined from listing |
+| Payment method | reservations.payment_method | If provided |
+| Received date | reservations.created_at | en-IN locale |
+| Action buttons | Based on status | See table below |
+
+**Action buttons by status:**
+
+| Status | Buttons shown |
+|---|---|
+| Pending | Confirm, Cancel |
+| Confirmed | Complete, Cancel |
+| Completed | "No further actions" label |
+| Cancelled | "No further actions" label |
+
+---
+
+### 7. Reservation Filters
+
+Filter pills appear above the reservation list when there are any reservations.
+
+Filters: All | Pending | Confirmed | Completed | Cancelled
+
+- Each filter shows a count badge.
+- Active filter is highlighted with primary color.
+- Filters are client-side only — no extra DB queries.
+- Filter resets are not required when reservations refresh — the filter persists and the filtered list updates naturally.
+
+---
+
+### 8. Empty / Loading / Error States
+
+| Situation | State shown |
+|---|---|
+| No listings yet | "No listings yet. Add your first produce listing above." |
+| Listings loading | Spinner with "Loading your listings..." |
+| No reservations (any) | "No buyer reservations yet..." / "Reservations unavailable in demo mode." |
+| No reservations for active filter | "No {filter} reservations." |
+| Reservations loading | Spinner card |
+| Reservations fetch error | Error message + "Try again" button |
+| Farmer row not linked | Amber warning banner at top |
+| Realtime unavailable | "Offline" red pill in heading row |
+| Listing update fails | Toast error "Could not save changes. Try again." |
+| Reservation status update fails | Toast error "Could not update reservation status. Try again." |
+| Quantity update fails | Toast error "Could not update quantity. Try again." |
+
+---
+
+### 9. Privacy / Security Rules
+
+| Rule | Enforcement |
+|---|---|
+| Farmer sees only own listings | `getFarmerListings(farmer.id)` + RLS `farmer_id = auth.uid()` via farmers join |
+| Farmer sees only reservations for own listings | `getReservationsForFarmer(farmer.id)` (two-query: listing IDs first, then reservations) + RLS |
+| Farmer cannot edit another farmer's listing | `updateListing()` uses `.eq("id", listingId)` + RLS blocks cross-farmer update |
+| Farmer cannot change farmer_id | `updateListing()` does not accept farmer_id in the fields argument (TypeScript Partial type excludes it) |
+| Farmer cannot edit protected columns | Protected fields (id, farmer_id, created_at) never included in update payload |
+| Buyer phone visible only on Farmer Dashboard | buyer_phone is selected only in `getReservationsForFarmer()` — not in browse or public queries |
+| Buyer Dashboard only shows buyer's own reservations | `getReservationsForCurrentBuyer()` uses `.eq("buyer_user_id", user.id)` + RLS |
+| Admin Dashboard unaffected | Uses separate `getAllReservationsForAdmin()` with admin RLS policy |
+| No secrets printed | No console.log of env vars, keys, or personal data |
+| No paid services used | No Stripe, Google Maps API, Twilio, or any paid service |
+
+---
+
+### 10. `updateListing()` in supabase.ts
+
+```typescript
+export async function updateListing(
+  listingId: string,
+  fields: Partial<{
+    produce_name: string;
+    category: "Fruit" | "Vegetable";
+    quantity_kg: number;
+    price_per_kg: number;
+    harvest_datetime: string;
+    pickup_location: string;
+    district: string;
+    quality_notes: string;
+    status: "active" | "sold" | "out_of_stock" | "reserved";
+  }>
+): Promise<boolean>
+```
+
+- Protected fields (id, farmer_id, created_at) are not part of the Partial type and can never be passed.
+- RLS policy on produce_listings enforces that only the farmer who owns the listing (via farmers.user_id = auth.uid()) can update it.
+- Returns `true` on success, `false` on error.
+
+---
+
+### Realtime Subscription Pattern
+
+```typescript
+const channel = getSupabase()
+  .channel(`farmer-res-${farmerRow.id}`)
+  .on("postgres_changes", { event: "*", schema: "public", table: "reservations" }, () => {
+    refreshReservations(); // RLS-protected re-fetch — payload data is never used
+  })
+  .subscribe((status) => {
+    if (status === "SUBSCRIBED") setRealtimeConnected(true);
+    else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
+      setRealtimeConnected(false);
+    }
+  });
+```
+
+Cleanup on unmount: `getSupabase().removeChannel(channel)`.
+
+---
+
+### Mark All as Seen — Updated Behavior
+
+`markAllSeen()` now also updates `raithu_farmer_last_visit_ts` to the current time. This means subsequent calls to `refreshReservations()` correctly count only reservations newer than the mark-as-seen timestamp, not previously seen ones.
+
+---
+
+### TypeScript Result
+
+Exit 0 — zero errors after all changes.
+
+### Console Errors
+
+None. Only HMR update messages and the pre-existing GoTrueClient multiple-instance warning (caused by Supabase auth in two contexts during HMR reload — not a production concern).
+
+---
+
+### Fake / Mock Testing Rule
+
+All test names, phones, villages, and IDs are fake/mock only. No real personal data is used anywhere in the codebase.
+
+Examples (mock only):
+- Farmer: "Ramaiah", phone: 9000000001, village: Shadnagar
+- Buyer: "Ravi Test Buyer", phone: 9876500001
+
+---
+
+### No Paid Services Used
+
+All icons: Lucide. Maps: OpenStreetMap (free). Auth/DB: Supabase free tier. No Stripe, Google Maps API, Twilio, or any paid service.
+
+---
+
+### Remaining Farmer Dashboard Limitations
+
+| Limitation | Notes |
+|---|---|
+| Realtime filter is table-wide | Subscription subscribes to all reservation changes; RLS on the re-fetch ensures only this farmer's data is returned. For pilot scale this is acceptable. |
+| Realtime requires manual enable in Supabase dashboard | Must enable postgres_changes replication per table. Free tier supports it but requires one-time setup. |
+| No push notifications | Farmers must have the app open to receive live updates. Planned next: web push via service worker. |
+| No pagination | Sufficient for pilot scale (< 200 listings/reservations per farmer). |
+| Quick quantity update opens inline (not modal) | Intentional for speed — avoids opening a modal just to change one number. |
+| Edit modal does not reload from DB after save | Uses local state update for instant UI. If another session edited the same listing, the local state may be stale until manual refresh. |
+
+---
+
 ## UX Audit + Farmer Mark-as-Seen Phase
 
 ### Overview

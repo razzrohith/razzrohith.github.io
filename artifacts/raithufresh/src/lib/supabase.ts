@@ -324,6 +324,37 @@ export async function updateListingStatus(
   return true;
 }
 
+/**
+ * Updates safe editable fields of a produce_listing.
+ * Protected fields (id, farmer_id, created_at) are never touched here.
+ * Farmer RLS ensures a farmer can only update their own listings.
+ */
+export async function updateListing(
+  listingId: string,
+  fields: Partial<{
+    produce_name: string;
+    category: "Fruit" | "Vegetable";
+    quantity_kg: number;
+    price_per_kg: number;
+    harvest_datetime: string;
+    pickup_location: string;
+    district: string;
+    quality_notes: string;
+    status: "active" | "sold" | "out_of_stock" | "reserved";
+  }>
+): Promise<boolean> {
+  if (!isSupabaseConfigured()) return false;
+  const { error } = await getSupabase()
+    .from("produce_listings")
+    .update(fields)
+    .eq("id", listingId);
+  if (error) {
+    console.warn("updateListing error:", error.message);
+    return false;
+  }
+  return true;
+}
+
 // ── Reservation helpers ─────────────────────────────────────────────────────
 
 /**

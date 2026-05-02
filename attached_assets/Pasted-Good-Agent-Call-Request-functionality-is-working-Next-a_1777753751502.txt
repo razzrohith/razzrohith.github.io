@@ -1,0 +1,115 @@
+Good. Agent Call Request functionality is working.
+
+Next, add an Admin Dashboard view for agent_call_requests.
+
+Important:
+Do not add map.
+Do not add authentication yet.
+Do not add delivery.
+Do not add payment.
+Do not create new tables unless required.
+Do not rebuild the app.
+Do not remove existing dashboard sections.
+Do not touch DealNest-style data.
+Keep the project focused only on fruits and vegetables.
+
+Goal:
+Admin should be able to monitor farmer assistance/callback requests created from the Agent Dashboard.
+
+Use existing Supabase table:
+agent_call_requests
+
+Fields:
+- id
+- farmer_name
+- farmer_phone
+- village
+- request_note
+- status
+- created_at
+
+Admin Dashboard requirements:
+
+1. Add Agent Requests section/tab/card
+
+Show all agent_call_requests from Supabase.
+
+Display:
+- Farmer name
+- Phone
+- Village
+- Request note
+- Status
+- Created date
+- Action buttons:
+  - Mark Pending
+  - Mark Called
+  - Mark Resolved
+
+2. Add analytics cards
+
+Add small admin analytics cards for:
+
+- Total callback requests
+- Pending requests
+- Called requests
+- Resolved requests
+
+These should load from Supabase if configured.
+
+If Supabase is not configured or fails, use mock/local fallback and do not crash.
+
+3. Status update
+
+Admin should be able to update request status:
+
+- pending
+- called
+- resolved
+
+Use existing RLS policy if it works.
+Do not weaken RLS further unless required.
+If blocked, report the exact RLS issue.
+
+4. Preserve current Admin Dashboard
+
+Do not remove existing:
+- Buyer/farmer/agent management
+- Listing view
+- Disputes placeholder
+- Existing analytics cards
+- Supabase counts
+- Mock fallback behavior
+
+5. Testing
+
+Test:
+
+- Admin Dashboard loads agent_call_requests from Supabase
+- Counts by status are correct
+- Status update works from Admin Dashboard
+- Agent Dashboard request list still works
+- Agent Dashboard request creation still works
+- Browse Produce still loads 15 Supabase listings
+- Waitlist form still saves
+- Reservation form still saves
+- Farmer Dashboard listing save still works
+- No console errors
+
+6. Documentation
+
+Update README with:
+- Admin can view agent callback requests
+- Admin can update request status
+- Current MVP security note:
+  "For MVP testing, anon role can update agent request status. This must be restricted to authenticated agent/admin roles before production."
+
+After completion, report:
+
+- Files changed
+- Admin Dashboard sections added
+- Whether agent request counts load correctly
+- Whether status update works
+- Tests run
+- Any RLS/security limitation
+- Any errors

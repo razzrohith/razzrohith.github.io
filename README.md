@@ -100,6 +100,37 @@ REVOKE ALL ON agent_call_requests FROM anon;
 
 ---
 
+## Admin Dashboard — Agent Requests view
+
+Admin can monitor all farmer assistance and callback requests created by agents.
+
+### What Admin can see and do
+
+- **Agent Callback Requests** analytics section (above the tabs) shows four live cards:
+  - **Total Requests** — total rows in `agent_call_requests`
+  - **Pending** — requests not yet acted on
+  - **Called** — agent has contacted the farmer
+  - **Resolved** — request fully handled
+- The **Agent Requests** tab lists every request with farmer name, phone, village, note, date, and current status badge
+- Admin can update status using **Mark Pending / Mark Called / Mark Resolved** buttons on each card
+- A **Refresh** button reloads all request data from Supabase
+- The **Agent Requests** tab shows a pending-count badge when there are unactioned requests
+
+### How to test Admin agent request monitoring
+
+1. Go to **Admin Dashboard** (`/admin`)
+2. The **Agent Callback Requests** section shows live counts — Total, Pending, Called, Resolved
+3. Click the **Agent Requests** tab
+4. All requests saved from the Agent Dashboard appear here
+5. Click **Mark Called** or **Mark Resolved** on any request — the status badge updates instantly and is persisted to Supabase
+6. Add a new request on the Agent Dashboard, then return here and click **Refresh** — the new request appears
+
+### MVP security note
+
+For MVP testing, the `anon` role can view and update agent request status from both the Agent Dashboard and Admin Dashboard. This must be restricted to authenticated agent/admin roles before going to production. See the RLS section above for the exact SQL to tighten this.
+
+---
+
 ## Testing
 
 ### Waitlist form

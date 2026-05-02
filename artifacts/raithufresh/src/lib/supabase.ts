@@ -85,3 +85,23 @@ export type SupabaseFarmer = {
   phone: string | null;
   verified: boolean;
 };
+
+export type AgentCallRequestStatus = "pending" | "called" | "resolved";
+
+export type AgentCallRequestInsert = {
+  farmer_name: string;
+  farmer_phone: string;
+  village?: string;
+  request_note?: string;
+  status: AgentCallRequestStatus;
+};
+
+export type AgentCallRequest = {
+  id: string;
+  farmer_name: string;
+  farmer_phone: string;
+  village: string | null;
+  request_note: string | null;
+  status: AgentCallRequestStatus;
+  created_at: string;
+};

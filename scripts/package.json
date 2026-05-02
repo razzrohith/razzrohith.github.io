@@ -9,6 +9,7 @@
     "db:seed": "tsx ./src/db-setup.ts seed",
     "db:setup": "tsx ./src/db-setup.ts setup",
     "db:verify": "tsx ./src/db-setup.ts verify",
+    "db:patch-rls": "tsx ./src/db-setup.ts patch supabase/patch-agent-rls.sql",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "devDependencies": {

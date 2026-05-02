@@ -42,6 +42,64 @@ This inserts:
 
 ---
 
+## Agent Call Requests
+
+The `agent_call_requests` table lets agents record farmer assistance and callback requests directly from the Agent Dashboard.
+
+### What it does
+
+- An agent fills in **Farmer Name**, **Farmer Phone**, optional **Village**, and an optional **Request Note**
+- On submit, a new row is inserted into `agent_call_requests` with `status = pending`
+- The **Callback Requests** section below the form loads all recent requests from Supabase (most recent first, up to 20)
+- Each request card shows: name, phone, village, note, date, and current status badge
+- The agent can update the status with the **Mark Called** / **Mark Resolved** / **Mark Pending** buttons without reloading the page
+
+### Status lifecycle
+
+```
+pending  →  called  →  resolved
+```
+
+Any transition is allowed (e.g. resolved → pending if needed).
+
+### RLS — MVP security note
+
+The `anon` role is granted SELECT, INSERT, and UPDATE (status column only) on `agent_call_requests`. This is intentional for the no-auth MVP so agents can use the dashboard without logging in.
+
+**Before going to production:** restrict these policies to an authenticated `agent` or `admin` role. The minimum safe production policy would be:
+
+```sql
+-- Allow insert only for authenticated users
+CREATE POLICY "auth_insert_call_requests" ON agent_call_requests
+  FOR INSERT TO authenticated WITH CHECK (true);
+
+-- Allow read for authenticated users
+CREATE POLICY "auth_read_call_requests" ON agent_call_requests
+  FOR SELECT TO authenticated USING (true);
+
+-- Allow status update for authenticated users only
+CREATE POLICY "auth_update_call_request_status" ON agent_call_requests
+  FOR UPDATE TO authenticated USING (true)
+  WITH CHECK (status IN ('pending', 'called', 'resolved'));
+
+-- Revoke anon grants
+REVOKE ALL ON agent_call_requests FROM anon;
+```
+
+### How to test the Agent Dashboard callback request
+
+1. Go to **Agent Dashboard** (`/agent`)
+2. Scroll to **Log Farmer Assistance Request**
+3. Fill in Farmer Name and Phone (10 digits) — Village and Note are optional
+4. Click **Save Callback Request**
+5. The new request appears in the **Callback Requests** list below with status **Pending**
+6. Click **Mark Called** → status changes to **Called** (confirmed live in Supabase)
+7. Click **Mark Resolved** → status changes to **Resolved**
+8. Use the **Refresh** button to reload the list from Supabase at any time
+9. Verify in Supabase → Table Editor → `agent_call_requests`
+
+---
+
 ## Testing
 
 ### Waitlist form

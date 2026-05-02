@@ -110,6 +110,27 @@ async function countRows(client: pg.Client): Promise<void> {
 }
 
 const command = process.argv[2];
+const extraArg = process.argv[3];
+
+async function runArbitraryFile(client: pg.Client, filePath: string): Promise<void> {
+  const absPath = path.resolve(process.cwd(), filePath);
+  if (!fs.existsSync(absPath)) {
+    console.error(`ERROR: SQL file not found: ${absPath}`);
+    process.exit(1);
+  }
+  const sql = fs.readFileSync(absPath, "utf-8");
+  const filename = path.basename(absPath);
+  console.log(`Running ${filename}...`);
+  try {
+    await client.query(sql);
+    console.log(`${filename} completed successfully.`);
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error(`ERROR running ${filename}: ${msg}`);
+    await client.end();
+    process.exit(1);
+  }
+}
 
 async function main() {
   const client = await getClient();
@@ -124,9 +145,15 @@ async function main() {
     } else if (command === "verify") {
       await verifyTables(client);
       await countRows(client);
+    } else if (command === "patch") {
+      if (!extraArg) {
+        console.error("Usage: tsx src/db-setup.ts patch <path/to/file.sql>");
+        process.exit(1);
+      }
+      await runArbitraryFile(client, extraArg);
     } else {
       console.error(`Unknown command: ${command}`);
-      console.error("Usage: tsx src/db-setup.ts schema|seed|setup|verify");
+      console.error("Usage: tsx src/db-setup.ts schema|seed|setup|verify|patch <file.sql>");
       process.exit(1);
     }
   } finally {

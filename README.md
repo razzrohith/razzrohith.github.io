@@ -42,6 +42,59 @@ This inserts:
 
 ---
 
+## Produce Detail Page — Live Supabase Data
+
+### What changed
+
+`ProduceDetailPage.tsx` previously used mock data only. It now loads the real listing from Supabase by ID.
+
+#### Data flow
+
+1. User clicks "View full details" on any listing card in Browse Produce.
+2. Browser navigates to `/produce/<supabase-uuid>`.
+3. ProduceDetailPage calls `getProduceListingById(id)` — a new helper in `supabase.ts`.
+4. The query fetches `produce_listings` joined with `farmers` using the existing RLS policies:
+   - Anon users: `public_read_active_listings` (status='active' only)
+   - Authenticated users: `auth_read_listings` (all statuses)
+5. Page renders with real produce name, price, quantity, harvest date, pickup location, quality notes, and farmer name/village/rating.
+
+#### Farmer phone
+
+Farmer phone is shown via the Contact Farmer button if the `farmers` table row contains a phone number. This is the farmer's own contact number — intentionally public in the direct-to-buyer marketplace model. If no phone is available, the button shows: "Please reserve first or visit the pickup location."
+
+Buyer phone numbers are never shown on this page.
+
+#### States
+
+| State | Condition | Display |
+|---|---|---|
+| Loading | Supabase fetch in progress | Spinner |
+| Found | Listing exists and RLS allows access | Full detail view |
+| Not found | ID missing, listing inactive (anon), or deleted | Error card + Back to Browse |
+| Mock fallback | Supabase not configured, or mock ID passed | Mock listing data |
+
+#### Reservation from detail page
+
+The Reserve Now button opens ReservationModal with the real Supabase listing ID. The reservation inserts into the `reservations` table using the correct `listing_id`. The Farmer Dashboard's reservation list will show it under the correct listing.
+
+#### Browse Produce link check
+
+All listing cards in Browse Produce already link to `/produce/${listing.id}` using the real Supabase UUID. No change needed there.
+
+#### Supabase helper added
+
+`getProduceListingById(id: string): Promise<SupabaseListing | null>`
+
+Added to `src/lib/supabase.ts`. Queries `produce_listings` with `farmers` join via `.maybeSingle()`. Returns null if RLS blocks access or the listing does not exist.
+
+#### Testing guidelines
+
+- Use only fake/mock data during all tests
+- No real personal data
+- No paid services, paid APIs, or paid Supabase add-ons are used
+
+---
+
 ## Security — Reservation DELETE Grant Cleanup (patch-reservation-delete-cleanup.sql)
 
 ### Changes applied

@@ -1,0 +1,143 @@
+Context:
+This is RaithuFresh, a Telangana-first fruits and vegetables marketplace for farmers, buyers, agents, and admins.
+
+Rules:
+- Focus only on fruits and vegetables.
+- Use only free tools, free tiers, open-source libraries, and mock/local alternatives.
+- Do not use paid services or paid APIs.
+- Do not touch DealNest/deals/coupons/stores/threads code or data.
+- Do not add map, delivery, payments, admin promotion tools, Edge Functions, or new UI features.
+- Do not use service_role key.
+- Do not expose secrets.
+- Do not weaken RLS.
+- Use only fake/mock names, phone numbers, emails, villages, and test details during testing.
+- Do not use real personal data.
+
+Task:
+Fix the Produce Detail page so it loads real Supabase listing data instead of mock-only data.
+
+Current issue:
+Browse Produce loads real Supabase produce_listings, but Produce Detail page still uses mock data only.
+
+Goal:
+When a user clicks a listing from Browse Produce, the Produce Detail page should load that exact listing from Supabase by ID.
+
+Requirements:
+
+1. Supabase helper
+
+In src/lib/supabase.ts, add or update a helper:
+
+getProduceListingById(id)
+
+It should return:
+- listing id
+- produce_name
+- category
+- quantity_kg
+- price_per_kg
+- harvest_datetime
+- pickup_location
+- district
+- distance_km
+- quality_notes
+- status
+- farmer info:
+  - farmer name
+  - phone if allowed by current policy/helper
+  - village
+  - district
+  - rating
+  - verified
+
+Use the existing public active listing policy.
+Do not expose buyer phone numbers.
+Do not weaken RLS.
+
+2. Produce Detail Page
+
+Update ProduceDetailPage so it:
+
+- Reads the listing id from the route.
+- Loads the listing from Supabase if configured.
+- Shows loading state.
+- Shows error state if fetch fails.
+- Shows not-found state if the listing does not exist or is not active.
+- Falls back to mock data only if Supabase is not configured or during local fallback mode.
+- Displays real listing details from Supabase.
+
+Show these fields:
+- Produce name
+- Category
+- Farmer name
+- Farmer village/district
+- Price per kg
+- Available quantity
+- Harvest date/time
+- Pickup location
+- Quality notes
+- Status
+- Distance if available
+
+3. Reservation compatibility
+
+Make sure the existing reservation flow still works from Produce Detail.
+
+When buyer reserves from the detail page:
+- Use the real Supabase listing id.
+- Insert into reservations table.
+- Use fake/mock buyer details during testing.
+- Payment method remains Cash or UPI directly to farmer.
+- No online payment flow.
+
+4. Contact Farmer button
+
+If farmer phone is safely available, show/contact that phone.
+If phone is not available because of RLS or data policy, show:
+"Please reserve first or visit the pickup location."
+
+Do not expose buyer phone numbers publicly.
+
+5. Browse Produce link check
+
+Make sure every listing card in Browse Produce links to the correct Produce Detail route using the Supabase listing id.
+
+6. Testing
+
+Use fake/mock data only.
+
+Test:
+- Browse Produce loads 15 active Supabase listings.
+- Clicking a listing opens the correct Produce Detail page.
+- Detail page shows the same produce name, price, quantity, farmer, and location.
+- Invalid listing id shows not-found state.
+- Reservation from Produce Detail inserts into reservations table.
+- Farmer Dashboard sees the reservation if it belongs to that farmer’s listing.
+- Public browsing still works.
+- Waitlist form still works.
+- Farmer Dashboard still works.
+- Agent Dashboard still works.
+- Admin Dashboard still works.
+- TypeScript has zero errors.
+- No console errors.
+- No secrets printed.
+- No paid services used.
+
+7. Documentation
+
+Update README with:
+- Produce Detail page now loads live Supabase listing data.
+- Mock fallback behavior.
+- Reservation from detail page uses real listing id.
+- Testing uses fake/mock data only.
+- No paid services are used.
+
+After completion, report:
+- Files changed
+- Supabase helper added/updated
+- Whether Produce Detail loads real Supabase listings
+- Whether reservation from detail page works
+- Whether Browse Produce links are correct
+- TypeScript result
+- Console errors, if any
+- Any remaining limitations

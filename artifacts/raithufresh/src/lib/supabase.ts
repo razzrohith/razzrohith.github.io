@@ -193,6 +193,27 @@ export async function getOrCreateFarmerForCurrentUser(
   return data as SupabaseFarmer;
 }
 
+/**
+ * Fetches a single produce_listing by id, joined with farmer info.
+ * Works for both anon (public_read_active_listings enforces status='active')
+ * and authenticated users (auth_read_listings allows all statuses).
+ * Returns null if listing does not exist or RLS blocks access.
+ */
+export async function getProduceListingById(id: string): Promise<SupabaseListing | null> {
+  if (!isSupabaseConfigured()) return null;
+  const { data, error } = await getSupabase()
+    .from("produce_listings")
+    .select("*, farmers(id, name, village, district, rating, phone, verified)")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (error) {
+    console.warn("getProduceListingById error:", error.message);
+    return null;
+  }
+  return data as SupabaseListing | null;
+}
+
 /** Fetches all produce_listings for a given farmer_id (any status). */
 export async function getFarmerListings(farmerId: string): Promise<SupabaseListing[]> {
   if (!isSupabaseConfigured()) return [];
@@ -360,6 +381,7 @@ export type SupabaseListing = {
     district: string | null;
     rating: number | null;
     phone: string | null;
+    verified?: boolean | null;
   } | null;
 };
 

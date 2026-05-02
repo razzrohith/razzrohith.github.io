@@ -42,6 +42,66 @@ This inserts:
 
 ---
 
+## Buyer Contact Channel Polish — WhatsApp + Phone Normalization
+
+### What changed
+
+#### 1. WhatsApp deep link (free, no API key)
+
+`ContactFarmerDialog` now includes a "Message on WhatsApp" button. It uses a `wa.me` deep link — a free, publicly documented WhatsApp URL scheme. No WhatsApp Business API, no SMS API, no paid service of any kind.
+
+Button behavior:
+- Opens in a new tab (`target="_blank"`)
+- Pre-fills the chat with a message including the produce name:
+  `"Hi, I saw your Mango (Banaganapalli) listing on RaithuFresh. Is it still available?"`
+- If no produce name is available, falls back to a generic message
+- Button only appears when the farmer phone normalizes to a valid Indian number
+- Closes the dialog on click
+
+#### 2. Phone normalization (`normalizePhoneE164`)
+
+A pure helper function inside `ContactFarmerDialog.tsx` — no database writes, no external service:
+
+| Input | Output | Used for |
+|---|---|---|
+| `9876543210` (10 digits) | `919876543210` | `wa.me/919876543210` |
+| `+919876543210` | `919876543210` | `tel:+919876543210` |
+| `91 98765 43210` | `919876543210` | display: `+91 98765 43210` |
+| `N/A`, `null`, short/long numbers | `null` | Shows fallback message |
+
+Rules:
+- Strips spaces, dashes, parentheses, and `+`
+- If 10 digits: prepends `91`
+- If already `91XXXXXXXXXX`: uses as-is
+- Anything else: treated as invalid — WhatsApp and tel: links hidden, fallback shown
+- **Database values are never modified**
+
+#### 3. Display formatting
+
+Phone is shown as `+91 98765 43210` (spaced) for readability. The `tel:` link uses `tel:+919876543210`. The Copy button writes `+919876543210` to clipboard.
+
+#### 4. Produce name passed through contact flow
+
+Both BrowsePage and ProduceDetailPage now pass `produceName` to `ContactFarmerDialog`:
+- BrowsePage: `listing.name` from the clicked listing card
+- ProduceDetailPage: `listing.name` from the loaded Supabase row
+
+#### 5. Privacy rules unchanged
+
+- Farmer phone: shown in contact dialog (intentionally public in direct-to-buyer marketplace)
+- Buyer phone: stored in `reservations.buyer_phone` — never passed to wa.me, tel:, or any public surface
+- No buyer data is pre-filled into WhatsApp messages
+
+#### 6. Files changed
+
+| File | Change |
+|---|---|
+| `src/components/ContactFarmerDialog.tsx` | Added `produceName` prop, `normalizePhoneE164`, `formatDisplay`, WhatsApp button, updated tel: and copy logic |
+| `src/pages/BrowsePage.tsx` | `contactTarget` type gains `produceName`; `handleContact` passes `listing.name`; dialog passes `produceName` |
+| `src/pages/ProduceDetailPage.tsx` | `ContactFarmerDialog` receives `produceName={listing.name}` |
+
+---
+
 ## Buyer Contact + Reservation Polish
 
 ### What changed

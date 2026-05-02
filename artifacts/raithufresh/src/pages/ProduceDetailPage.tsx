@@ -359,6 +359,7 @@ export default function ProduceDetailPage() {
         onClose={() => setContactOpen(false)}
         farmerName={farmerName}
         phone={farmerPhone}
+        produceName={listing.name}
       />
     </div>
   );

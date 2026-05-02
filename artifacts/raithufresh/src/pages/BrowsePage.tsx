@@ -37,7 +37,7 @@ export default function BrowsePage() {
   const [maxPrice, setMaxPrice] = useState("All");
   const [selectedListing, setSelectedListing] = useState<ProduceListing | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
-  const [contactTarget, setContactTarget] = useState<{ name: string; phone: string | null } | null>(null);
+  const [contactTarget, setContactTarget] = useState<{ name: string; phone: string | null; produceName: string } | null>(null);
 
   const [listings, setListings] = useState<ProduceListing[]>([]);
   const [farmerMap, setFarmerMap] = useState<FarmerMap>({});
@@ -106,7 +106,11 @@ export default function BrowsePage() {
 
   const handleContact = (listing: ProduceListing) => {
     const f = farmerMap[listing.farmerId];
-    setContactTarget({ name: f?.name ?? "Farmer", phone: f?.phone ?? null });
+    setContactTarget({
+      name: f?.name ?? "Farmer",
+      phone: f?.phone ?? null,
+      produceName: listing.name,
+    });
   };
 
   return (
@@ -246,6 +250,7 @@ export default function BrowsePage() {
         onClose={() => setContactTarget(null)}
         farmerName={contactTarget?.name ?? "Farmer"}
         phone={contactTarget?.phone ?? null}
+        produceName={contactTarget?.produceName}
       />
     </div>
   );

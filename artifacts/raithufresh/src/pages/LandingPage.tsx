@@ -7,6 +7,7 @@ import { motion } from "framer-motion";
 import {
   Leaf, Users, CheckCircle, ArrowRight, Tractor, MapPin,
   Star, BadgeCheck, Calendar, Loader2, ShoppingBag,
+  Phone, Banknote, ClipboardList, Search,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,6 +27,8 @@ import {
 } from "@/lib/supabase";
 
 // ── Static data ───────────────────────────────────────────────────────────────
+
+const STEP_ICONS = [ClipboardList, Search, Phone, Banknote] as const;
 
 const pilotSteps = [
   {
@@ -98,6 +101,20 @@ function StarRating({ rating }: { rating: number | null }) {
   );
 }
 
+function CategoryIcon({ category, size = 20 }: { category: string; size?: number }) {
+  const src = category === "Fruit" ? "/assets/icon-fruit.svg" : "/assets/icon-vegetable.svg";
+  return (
+    <img
+      src={src}
+      alt={category}
+      width={size}
+      height={size}
+      className="shrink-0"
+      style={{ width: size, height: size }}
+    />
+  );
+}
+
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function LandingPage() {
@@ -142,11 +159,18 @@ export default function LandingPage() {
     load();
   }, []);
 
-  // Listing count per farmer (derived from loaded listings)
+  // ── Derived data ─────────────────────────────────────────────────────────
+
   const listingCountByFarmer: Record<string, number> = {};
   landingListings.forEach((l) => {
     listingCountByFarmer[l.farmer_id] = (listingCountByFarmer[l.farmer_id] ?? 0) + 1;
   });
+
+  // Farmer of the Week — highest rated verified farmer
+  const farmerOfWeek: LandingFarmer | null = landingFarmers[0] ?? null;
+  const farmerOfWeekListings: SupabaseListing[] = farmerOfWeek
+    ? landingListings.filter((l) => l.farmer_id === farmerOfWeek.id).slice(0, 3)
+    : [];
 
   // ── Handlers ─────────────────────────────────────────────────────────────
 
@@ -188,48 +212,69 @@ export default function LandingPage() {
       <Navbar />
 
       {/* ── Hero ── */}
-      <section className="relative bg-gradient-to-br from-primary/10 via-background to-secondary/10 py-16 md:py-24 px-4">
-        <div className="max-w-4xl mx-auto text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-          >
-            <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-1.5 rounded-full text-sm font-medium mb-4">
-              <Leaf className="w-4 h-4" /> Now in Telangana — Pilot Phase
-            </div>
-            <h1 className="text-4xl md:text-6xl font-bold text-foreground mb-4 leading-tight">
-              Raithu<span className="text-primary">Fresh</span>
-            </h1>
-            <p className="text-xl md:text-2xl text-muted-foreground mb-2 font-medium">
-              Buy fresh fruits and vegetables directly from nearby farmers.
-            </p>
-            <p className="text-base text-muted-foreground mb-8 max-w-2xl mx-auto">
-              Connecting Telangana farmers with local buyers. No middlemen. Fair prices. Fresh produce.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <Button
-                size="lg"
-                className="text-base px-8"
-                onClick={() => scrollToWaitlistWithRole("Buyer")}
-              >
-                Join as Buyer
-              </Button>
-              <Button
-                size="lg"
-                variant="secondary"
-                className="text-base px-8"
-                onClick={() => scrollToWaitlistWithRole("Farmer")}
-              >
-                Join as Farmer
-              </Button>
-              <Link href="/browse">
-                <Button size="lg" variant="outline" className="text-base px-8 w-full sm:w-auto">
-                  Browse Produce <ArrowRight className="w-4 h-4 ml-1" />
+      <section className="relative bg-gradient-to-br from-primary/10 via-background to-secondary/10 py-16 md:py-20 px-4 overflow-hidden">
+        <div className="max-w-5xl mx-auto">
+          <div className="grid md:grid-cols-2 gap-10 items-center">
+
+            {/* Left: Text + CTAs */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+            >
+              <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-1.5 rounded-full text-sm font-medium mb-5">
+                <Leaf className="w-4 h-4" /> Now in Telangana — Pilot Phase
+              </div>
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground mb-4 leading-tight">
+                Raithu<span className="text-primary">Fresh</span>
+              </h1>
+              <p className="text-xl md:text-2xl text-muted-foreground mb-3 font-medium leading-snug">
+                Buy fresh fruits and vegetables directly from nearby farmers.
+              </p>
+              <p className="text-base text-muted-foreground mb-8 max-w-lg">
+                Connecting Telangana farmers with local buyers. No middlemen. Fair prices. Fresh produce.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Button
+                  size="lg"
+                  className="text-base px-7"
+                  onClick={() => scrollToWaitlistWithRole("Buyer")}
+                >
+                  Join as Buyer
                 </Button>
-              </Link>
-            </div>
-          </motion.div>
+                <Button
+                  size="lg"
+                  variant="secondary"
+                  className="text-base px-7"
+                  onClick={() => scrollToWaitlistWithRole("Farmer")}
+                >
+                  Join as Farmer
+                </Button>
+                <Link href="/browse">
+                  <Button size="lg" variant="outline" className="text-base px-7 w-full sm:w-auto">
+                    Browse Produce <ArrowRight className="w-4 h-4 ml-1" />
+                  </Button>
+                </Link>
+              </div>
+            </motion.div>
+
+            {/* Right: Hero illustration (desktop only) */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.94 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.6, delay: 0.18 }}
+              className="hidden md:flex items-center justify-center"
+            >
+              <img
+                src="/assets/hero-produce.svg"
+                alt="Fresh fruits and vegetables from Telangana farmers — mango, tomato, brinjal, banana, chili"
+                width={480}
+                height={380}
+                className="w-full max-w-md drop-shadow-sm select-none"
+                draggable={false}
+              />
+            </motion.div>
+          </div>
         </div>
       </section>
 
@@ -249,26 +294,144 @@ export default function LandingPage() {
               <p className="text-muted-foreground">Simple steps. No app needed. No online payment.</p>
             </div>
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
-              {pilotSteps.map((s, i) => (
-                <motion.div
-                  key={s.step}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: i * 0.1, duration: 0.4 }}
-                  className="bg-white rounded-xl p-5 border border-border shadow-sm text-center"
-                >
-                  <div className="w-10 h-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold text-lg mb-3 mx-auto">
-                    {s.step}
-                  </div>
-                  <h3 className="font-semibold text-foreground mb-1 text-sm">{s.title}</h3>
-                  <p className="text-muted-foreground text-xs leading-relaxed">{s.desc}</p>
-                </motion.div>
-              ))}
+              {pilotSteps.map((s, i) => {
+                const Icon = STEP_ICONS[i];
+                return (
+                  <motion.div
+                    key={s.step}
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: i * 0.1, duration: 0.4 }}
+                    className="bg-white rounded-xl p-5 border border-border shadow-sm text-center flex flex-col items-center gap-2"
+                  >
+                    <div className="w-11 h-11 rounded-full bg-primary/8 flex items-center justify-center mb-1">
+                      <Icon className="w-5 h-5 text-primary" />
+                    </div>
+                    <div className="w-7 h-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold text-sm">
+                      {s.step}
+                    </div>
+                    <h3 className="font-semibold text-foreground text-sm">{s.title}</h3>
+                    <p className="text-muted-foreground text-xs leading-relaxed">{s.desc}</p>
+                  </motion.div>
+                );
+              })}
             </div>
           </motion.div>
         </div>
       </section>
+
+      {/* ── Farmer of the Week ── */}
+      {!dataLoading && farmerOfWeek && (
+        <section className="py-14 px-4 bg-amber-50/60 border-y border-amber-100">
+          <div className="max-w-5xl mx-auto">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5 }}
+            >
+              {/* Header badge */}
+              <div className="flex items-center gap-3 mb-7">
+                <img
+                  src="/assets/icon-farmer-week.svg"
+                  alt="Farmer of the week award"
+                  width={52}
+                  height={52}
+                  className="shrink-0"
+                />
+                <div>
+                  <p className="text-xs font-semibold text-amber-600 uppercase tracking-widest mb-0.5">
+                    Farmer of the Week
+                  </p>
+                  <h2 className="text-2xl md:text-3xl font-bold text-foreground leading-tight">
+                    {farmerOfWeek.name}
+                  </h2>
+                </div>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-6">
+
+                {/* Farmer profile card */}
+                <div className="bg-white rounded-2xl p-6 border border-amber-100 shadow-sm flex flex-col gap-4">
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="text-sm text-muted-foreground flex items-center gap-1">
+                      <MapPin className="w-3.5 h-3.5 shrink-0" />
+                      {[farmerOfWeek.village, farmerOfWeek.district].filter(Boolean).join(", ")}
+                    </p>
+                    {farmerOfWeek.verified && (
+                      <div className="flex items-center gap-1 text-xs text-primary font-semibold shrink-0">
+                        <BadgeCheck className="w-4 h-4" />
+                        Verified
+                      </div>
+                    )}
+                  </div>
+                  <StarRating rating={farmerOfWeek.rating} />
+                  <p className="text-sm text-muted-foreground">
+                    {(() => {
+                      const c = listingCountByFarmer[farmerOfWeek.id] ?? 0;
+                      return c > 0
+                        ? `${c} active listing${c !== 1 ? "s" : ""} available now`
+                        : "No active listings right now";
+                    })()}
+                  </p>
+                  <div className="flex flex-col sm:flex-row gap-2 pt-1">
+                    <Link href={`/farmers/${farmerOfWeek.id}`} className="flex-1">
+                      <Button size="sm" className="w-full">
+                        View Farmer Profile
+                      </Button>
+                    </Link>
+                    <Link href={`/browse`} className="flex-1">
+                      <Button size="sm" variant="outline" className="w-full">
+                        Browse Their Produce
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+
+                {/* Farmer's top listings */}
+                {farmerOfWeekListings.length > 0 ? (
+                  <div className="flex flex-col gap-3">
+                    {farmerOfWeekListings.map((listing) => {
+                      const harvestDate = listing.harvest_datetime
+                        ? listing.harvest_datetime.split("T")[0]
+                        : null;
+                      return (
+                        <div
+                          key={listing.id}
+                          className="bg-white rounded-xl px-4 py-3 border border-amber-100 shadow-sm flex items-center justify-between gap-3"
+                        >
+                          <div className="flex items-center gap-3 min-w-0">
+                            <CategoryIcon category={listing.category} size={32} />
+                            <div className="min-w-0">
+                              <p className="font-medium text-foreground text-sm truncate">
+                                {listing.produce_name}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                Rs {listing.price_per_kg}/kg · {listing.quantity_kg} kg available
+                                {harvestDate ? ` · Harvest ${harvestDate}` : ""}
+                              </p>
+                            </div>
+                          </div>
+                          <Link href={`/produce/${listing.id}`} className="shrink-0">
+                            <Button size="sm" variant="ghost" className="text-xs h-7 px-2">
+                              View <ArrowRight className="w-3 h-3 ml-0.5" />
+                            </Button>
+                          </Link>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center bg-white rounded-2xl border border-amber-100 p-8 text-center text-muted-foreground text-sm">
+                    No active listings from this farmer right now.
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </div>
+        </section>
+      )}
 
       {/* ── Nearby Verified Farmers ── */}
       <section className="py-14 px-4 bg-white">
@@ -301,10 +464,16 @@ export default function LandingPage() {
                 <span>Loading farmers...</span>
               </div>
             ) : landingFarmers.length === 0 ? (
-              <div className="text-center py-14 text-muted-foreground bg-muted/30 rounded-xl">
-                <Tractor className="w-8 h-8 mx-auto mb-2 opacity-30" />
+              <div className="text-center py-14 text-muted-foreground bg-muted/30 rounded-xl flex flex-col items-center gap-2">
+                <img
+                  src="/assets/empty-produce.svg"
+                  alt="No farmers found"
+                  width={100}
+                  height={80}
+                  className="opacity-70"
+                />
                 <p className="text-sm">No verified farmers listed yet.</p>
-                <p className="text-xs mt-1">Check back soon as the pilot grows.</p>
+                <p className="text-xs">Check back soon as the pilot grows.</p>
               </div>
             ) : (
               <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -385,12 +554,18 @@ export default function LandingPage() {
                 <span>Loading listings...</span>
               </div>
             ) : landingListings.length === 0 ? (
-              <div className="text-center py-14 text-muted-foreground bg-white rounded-xl border border-border">
-                <ShoppingBag className="w-8 h-8 mx-auto mb-2 opacity-30" />
+              <div className="text-center py-14 text-muted-foreground bg-white rounded-xl border border-border flex flex-col items-center gap-2">
+                <img
+                  src="/assets/empty-produce.svg"
+                  alt="No listings found"
+                  width={100}
+                  height={80}
+                  className="opacity-70"
+                />
                 <p className="text-sm">No active listings right now.</p>
-                <p className="text-xs mt-1">Check back soon or browse all produce.</p>
+                <p className="text-xs">Check back soon or browse all produce.</p>
                 <Link href="/browse">
-                  <Button variant="outline" size="sm" className="mt-4">
+                  <Button variant="outline" size="sm" className="mt-2">
                     Browse All Produce
                   </Button>
                 </Link>
@@ -425,12 +600,14 @@ export default function LandingPage() {
                               </p>
                             )}
                           </div>
-                          <Badge
-                            variant={listing.category === "Fruit" ? "default" : "secondary"}
-                            className="shrink-0"
-                          >
-                            {listing.category}
-                          </Badge>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <CategoryIcon category={listing.category} size={18} />
+                            <Badge
+                              variant={listing.category === "Fruit" ? "default" : "secondary"}
+                            >
+                              {listing.category}
+                            </Badge>
+                          </div>
                         </div>
 
                         <div className="grid grid-cols-2 gap-2 text-sm">

@@ -135,6 +135,168 @@ All names, phones, villages, and IDs are fake/mock test data. No real personal d
 
 ---
 
+## Landing Visual Polish + Farmer Trust Phase
+
+### Overview
+
+This phase adds locally-created SVG visual assets and a "Farmer of the Week" trust section to the landing page.
+All assets are free, self-created, open-source only, and stored locally — no paid assets, no hotlinks, no copyrighted images.
+
+---
+
+### Local SVG Assets Created
+
+Stored in `artifacts/raithufresh/public/assets/`:
+
+| File | Purpose | Used in |
+|---|---|---|
+| `hero-produce.svg` | Hero illustration — mango, tomato, brinjal, banana, chili, leaves, small tomato on a platter background | Hero section (right column, desktop) |
+| `icon-fruit.svg` | Stylized mango/fruit icon for fruit category | Farmer of the Week listings, Fresh Listings cards |
+| `icon-vegetable.svg` | Stylized brinjal/vegetable icon for vegetable category | Farmer of the Week listings, Fresh Listings cards |
+| `icon-farmer-week.svg` | Gold star-burst award badge icon | Farmer of the Week section header |
+| `empty-produce.svg` | Empty basket illustration for zero-state sections | Nearby Verified Farmers empty state, Fresh Listings empty state |
+
+#### Asset design rules
+
+- All SVGs use the brand palette: primary `#308240`, amber, red, purple, green
+- Flat-design style — geometric shapes, no photorealistic rendering
+- All SVGs include `role="img"` and `aria-label` for accessibility
+- All `<img>` tags in the app include descriptive `alt` text
+- No external URLs, no hotlinks, no paid stock libraries
+- No emojis
+
+---
+
+### Hero Section Update
+
+The hero section is now a **2-column layout** on medium screens and above:
+
+| Column | Content |
+|---|---|
+| Left (60%) | Pilot badge, headline, tagline, description, 3 CTA buttons |
+| Right (40%) | `hero-produce.svg` illustration, visible on `md:` and above |
+
+Mobile: illustration is hidden (`hidden md:flex`), text + CTAs fill the full width.
+
+CTAs unchanged:
+- Join as Buyer → scrolls to waitlist, preselects Buyer
+- Join as Farmer → scrolls to waitlist, preselects Farmer
+- Browse Produce → navigates to `/browse`
+
+---
+
+### How the Pilot Works — Step Icons
+
+Each of the 4 step cards now has a contextual Lucide icon above the step number circle:
+
+| Step | Icon | Description |
+|---|---|---|
+| 1 | ClipboardList | Farmer lists produce |
+| 2 | Search | Buyer reserves nearby |
+| 3 | Phone | Buyer contacts farmer |
+| 4 | Banknote | Cash or UPI at pickup |
+
+Icons are rendered inside a soft green rounded circle above the numbered badge.
+
+---
+
+### Farmer of the Week Section
+
+A new highlighted section between "How the Pilot Works" and "Nearby Verified Farmers".
+
+**Data source**: Top-rated verified farmer from `landingFarmers[0]` (already sorted by `rating DESC` from Supabase).
+
+**Farmer's listings**: Derived client-side from `landingListings.filter(l => l.farmer_id === farmerOfWeek.id).slice(0, 3)` — no extra query.
+
+**Layout**:
+
+| Column | Content |
+|---|---|
+| Left | Gold star icon + "FARMER OF THE WEEK" label + farmer name, location, rating, verified badge, active listing count, View Farmer Profile button, Browse Their Produce button |
+| Right | Up to 3 of the farmer's active listings, each with category SVG icon, produce name, price, quantity, harvest date, View button |
+
+**Privacy**: Farmer phone is NOT shown in this section. No buyer or reservation data shown.
+
+**Fallback**: Section is hidden if `dataLoading` or `landingFarmers.length === 0`. No crash.
+
+---
+
+### Fresh Listings — Category Icons
+
+Each listing card in "Fresh Listings Near You" now shows a small SVG category icon alongside the category badge:
+
+| Category | Icon |
+|---|---|
+| Fruit | `icon-fruit.svg` (18×18px) |
+| Vegetable | `icon-vegetable.svg` (18×18px) |
+
+The `CategoryIcon` helper component handles this uniformly.
+
+---
+
+### Empty States Updated
+
+Both empty states now use `empty-produce.svg` (empty basket illustration) instead of plain Lucide icons:
+
+| Section | Trigger | Empty state |
+|---|---|---|
+| Nearby Verified Farmers | `landingFarmers.length === 0` | Empty basket illustration + text |
+| Fresh Listings Near You | `landingListings.length === 0` | Empty basket illustration + text + Browse button |
+
+---
+
+### Privacy Rules Confirmed
+
+| Data | Shown on landing | Reason |
+|---|---|---|
+| Farmer phone | No | Excluded from `getLandingFarmers()` SELECT list |
+| Buyer phone | No | Not queried |
+| Reservation data | No | Not queried |
+| Admin data | No | Not queried |
+| RLS | Unchanged | No RLS edits in this phase |
+| Secrets | Not printed | No secret logging |
+
+---
+
+### Free-Only Asset Rules
+
+| Rule | Status |
+|---|---|
+| No paid stock images | Confirmed — all SVGs self-created |
+| No copyrighted images | Confirmed |
+| No hotlinked images | Confirmed — all assets in `public/assets/` |
+| No paid APIs | Confirmed |
+| No paid services | Confirmed |
+| No emojis | Confirmed |
+
+---
+
+### Fake/Mock Testing Rule
+
+All test data (farmer names, villages, phone numbers, produce, IDs) is fake/mock. No real personal data is used in testing.
+
+---
+
+### TypeScript Result
+
+Exit 0 — zero errors after all changes.
+
+---
+
+### Files Changed
+
+| File | Change |
+|---|---|
+| `src/pages/LandingPage.tsx` | Added 2-column hero with SVG, step icons, Farmer of the Week section, category SVG icons in listing cards, updated empty states |
+| `public/assets/hero-produce.svg` | Created — hero produce illustration |
+| `public/assets/icon-fruit.svg` | Created — fruit category icon |
+| `public/assets/icon-vegetable.svg` | Created — vegetable category icon |
+| `public/assets/icon-farmer-week.svg` | Created — Farmer of the Week gold badge |
+| `public/assets/empty-produce.svg` | Created — empty basket illustration |
+| `README.md` | This section added |
+
+---
+
 ## Landing Page Conversion + Farmer Discovery
 
 ### Page Sections (in order)

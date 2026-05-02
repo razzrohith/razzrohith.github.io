@@ -160,6 +160,82 @@ For MVP testing, the `anon` role can view and update agent request status from b
 
 ---
 
+## Authentication
+
+RaithuFresh uses Supabase Auth (email + password). User roles are stored in the `user_profiles` table.
+
+### How auth works
+
+1. On signup, a Supabase auth user is created and a `user_profiles` row is inserted with the chosen role
+2. On login, the session is stored in the browser (localStorage via Supabase SDK)
+3. Auth state is tracked by `AuthContext` — provides `user`, `profile`, `role`, `signIn`, `signUp`, `signOut`
+4. The Navbar shows the user's name + role badge when logged in, and Log In / Sign Up buttons when logged out
+5. Protected routes check the user's role before rendering the page
+
+### Roles and access
+
+| Role | Accessible pages |
+|---|---|
+| `buyer` | Home, Browse Produce, Produce Detail |
+| `farmer` | Home, Browse, Produce Detail, **Farmer Dashboard** |
+| `agent` | Home, Browse, Produce Detail, **Agent Dashboard** |
+| `admin` | All pages including **Admin Dashboard** |
+
+Browse Produce and Produce Detail remain public — no login required to browse listings or view details. Reservation form is also public (no login required).
+
+If a user visits a protected page while logged out, they see "Please log in to continue."
+If a logged-in user visits a page their role does not permit, they see "You do not have access to this page."
+
+### How to create test users
+
+1. Go to the **Sign Up** page (`/signup`)
+2. Fill in: Full Name, Phone, Email, Password, Role (buyer / farmer / agent), optional Village
+3. Supabase sends a confirmation email — confirm it before logging in
+4. Log in at `/login`
+
+**To skip email confirmation for testing:** go to your Supabase project → Authentication → Settings → disable "Enable email confirmations".
+
+### How to manually make an admin user
+
+Admin accounts cannot be created via the signup form (the role selector only shows buyer, farmer, agent). To promote a user to admin:
+
+1. Go to your Supabase project → Table Editor → `user_profiles`
+2. Find the user's row by their UUID
+3. Update the `role` column to `admin`
+4. That user can now access the Admin Dashboard
+
+Or run SQL:
+```sql
+UPDATE user_profiles SET role = 'admin' WHERE id = '<user-uuid>';
+```
+
+### Auth SQL patch
+
+The `supabase/patch-auth.sql` file creates the `user_profiles` table and all required RLS policies. Run it with:
+```
+pnpm --filter @workspace/scripts run db:patch-auth
+```
+
+Or paste its contents into Supabase → SQL Editor.
+
+### Current MVP limitations
+
+- **Email confirmation** is required by default in Supabase — disable it in Supabase settings for faster testing
+- **Farmer Dashboard listings**: when a farmer logs in, the dashboard profile card shows their name and village from their profile, but the Supabase listing queries still use the demo farmer UUID (`11111111-0001-0001-0001-000000000001`). Real per-user listing management requires linking `auth.uid()` to the `farmers` table — documented as a future improvement
+- **Admin profile reads**: the admin can only read their own profile via RLS. Reading all user profiles requires either a Supabase Edge Function with service_role or app_metadata-based JWT checks — documented as pending
+- **Anon RLS still present**: the existing anon policies (added in previous iterations) remain alongside the new authenticated policies. Remove the anon policies and GRANTs before production
+
+### Production hardening checklist
+
+- [ ] Disable public anon INSERT/UPDATE on `agent_call_requests`, `produce_listings`, `reservations`, `waitlist_leads`
+- [ ] Restrict `GRANT UPDATE` on `agent_call_requests` to authenticated only
+- [ ] Add admin RLS using `auth.jwt() ->> 'app_metadata'` for reading all `user_profiles`
+- [ ] Enable email confirmation in Supabase Auth settings
+- [ ] Link `farmers.id` to `auth.uid()` so farmer listings are per-user
+- [ ] Move service-role operations to a Supabase Edge Function
+
+---
+
 ## Mock fallback
 
 If `VITE_SUPABASE_URL` or `VITE_SUPABASE_ANON_KEY` are missing or invalid, every page falls back to local mock data automatically — no crash, no broken UI. This means the app works fully in demo mode without any backend.

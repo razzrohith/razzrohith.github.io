@@ -1,0 +1,194 @@
+Good. Admin agent requests are working.
+
+Next, add Supabase Authentication and role-based access for RaithuFresh.
+
+Important:
+Do not add map.
+Do not add delivery.
+Do not add payments.
+Do not rebuild the UI.
+Do not remove existing pages.
+Do not break current Supabase-connected features.
+Do not touch DealNest-style data.
+Keep the project focused only on fruits and vegetables.
+
+Goal:
+Add basic login/signup and protect dashboards by role.
+
+Roles:
+- buyer
+- farmer
+- agent
+- admin
+
+Current issue:
+The app has real Supabase data now. Admin, Farmer, and Agent dashboards should not remain open to everyone.
+
+Use Supabase Auth.
+
+Required database changes:
+
+1. Create user_profiles table if missing
+
+Table: user_profiles
+
+Columns:
+- id UUID primary key references auth.users(id) on delete cascade
+- full_name text
+- phone text
+- role text check role in ('buyer', 'farmer', 'agent', 'admin')
+- village text
+- district text
+- created_at timestamp default now()
+
+2. RLS for user_profiles
+
+Enable RLS.
+
+Policies:
+- Users can read their own profile
+- Users can update their own profile
+- Users can insert their own profile after signup
+- Admin can read profiles later, but for MVP if no admin role check function exists, document it as pending
+
+3. Role helper
+
+Create a safe frontend helper:
+- getCurrentUser()
+- getCurrentUserProfile()
+- getCurrentUserRole()
+- signIn()
+- signUp()
+- signOut()
+
+Use existing Supabase client.
+
+Frontend requirements:
+
+1. Auth pages/components
+
+Add:
+- Login page or modal
+- Signup page or modal
+- Logout button
+- Current user display in header
+
+Signup form fields:
+- Full name
+- Phone
+- Email
+- Password
+- Role:
+  - Buyer
+  - Farmer
+  - Agent
+
+Do not allow public signup as Admin from frontend.
+
+Admin role should be assigned manually in Supabase for now.
+
+2. Route protection
+
+Protect pages:
+
+Buyer:
+- Browse Produce
+- Produce Detail
+Can remain public for browsing.
+Reservation can be public for now OR require login if easy. If requiring login breaks flow, leave reservation public and document it.
+
+Farmer Dashboard:
+- Require login
+- Allow only role = farmer or admin
+
+Agent Dashboard:
+- Require login
+- Allow only role = agent or admin
+
+Admin Dashboard:
+- Require login
+- Allow only role = admin
+
+If user is not logged in:
+Show:
+"Please log in to continue."
+
+If user has wrong role:
+Show:
+"You do not have access to this page."
+
+3. Farmer Dashboard change
+
+If logged-in farmer has a profile, use their profile details instead of hardcoded demo farmer where possible.
+
+If mapping auth user to farmers table is complex, keep demo farmer fallback but clearly document it.
+
+4. Agent Dashboard change
+
+Require agent/admin login to use agent callback requests.
+
+Do not weaken current RLS.
+
+If RLS blocks authenticated role access, add the minimum required policies.
+
+5. Admin Dashboard change
+
+Require admin login before showing:
+- users
+- farmers
+- listings
+- reservations later
+- agent requests
+
+Do not expose buyer phone numbers publicly.
+
+6. Header navigation
+
+Show:
+- Login / Signup when logged out
+- User name + role + Logout when logged in
+
+7. Testing
+
+Test:
+- Signup creates Supabase auth user
+- Signup creates user_profiles row
+- Login works
+- Logout works
+- Farmer user can access Farmer Dashboard
+- Farmer user cannot access Admin Dashboard
+- Agent user can access Agent Dashboard
+- Agent user cannot access Admin Dashboard
+- Admin user can access Admin Dashboard
+- Browse Produce still works
+- Waitlist form still works
+- Reservation flow still works
+- Agent request flow still works after login
+- Admin agent request tab still works for admin
+- PWA support still works
+- No console errors
+
+8. Documentation
+
+Update README with:
+- How auth works
+- How to create test users
+- How to manually make an admin user in Supabase
+- Current MVP limitations
+- What still needs production hardening
+
+Security note:
+Do not expose service role key.
+Do not use SUPABASE_DB_URL in frontend.
+Do not print secrets.
+Do not allow users to self-select admin role during signup.
+
+After completion, report:
+- Files changed
+- SQL changes made
+- Auth pages/components added
+- Route protection added
+- Test users created or instructions to create them
+- Which roles can access which pages
+- Any RLS issues
+- Any limitations

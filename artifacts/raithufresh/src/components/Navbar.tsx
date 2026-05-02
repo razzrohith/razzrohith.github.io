@@ -1,7 +1,17 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { Menu, X, Leaf } from "lucide-react";
+import { Menu, X, Leaf, LogOut, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
+
+const ROLE_COLORS: Record<string, string> = {
+  farmer: "bg-green-100 text-green-700 border-green-200",
+  agent: "bg-blue-100 text-blue-700 border-blue-200",
+  admin: "bg-purple-100 text-purple-700 border-purple-200",
+  buyer: "bg-amber-100 text-amber-700 border-amber-200",
+};
 
 const links = [
   { href: "/", label: "Home" },
@@ -14,6 +24,17 @@ const links = [
 export default function Navbar() {
   const [location] = useLocation();
   const [open, setOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const { user, profile, role, signOut } = useAuth();
+
+  const handleSignOut = async () => {
+    await signOut();
+    setOpen(false);
+    setUserMenuOpen(false);
+    toast.success("Logged out successfully.");
+  };
+
+  const displayName = profile?.full_name ?? user?.email?.split("@")[0] ?? "Account";
 
   return (
     <nav className="sticky top-0 z-50 bg-white border-b border-border shadow-sm">
@@ -38,9 +59,49 @@ export default function Navbar() {
               {l.label}
             </Link>
           ))}
-          <Link href="/#waitlist">
-            <Button size="sm" className="ml-2">Join Waitlist</Button>
-          </Link>
+
+          {user ? (
+            <div className="relative ml-2">
+              <button
+                onClick={() => setUserMenuOpen(!userMenuOpen)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium text-foreground hover:bg-muted transition-colors"
+              >
+                <span className="max-w-[120px] truncate">{displayName}</span>
+                {role && (
+                  <Badge
+                    className={`text-[10px] px-1.5 py-0 border ${ROLE_COLORS[role] ?? "bg-muted text-muted-foreground"}`}
+                  >
+                    {role}
+                  </Badge>
+                )}
+                <ChevronDown className="w-3.5 h-3.5 opacity-60" />
+              </button>
+              {userMenuOpen && (
+                <div className="absolute right-0 mt-1 w-44 bg-white border border-border rounded-xl shadow-md py-1 z-50">
+                  <div className="px-3 py-2 border-b border-border">
+                    <p className="text-xs font-medium text-foreground truncate">{displayName}</p>
+                    <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                  </div>
+                  <button
+                    onClick={handleSignOut}
+                    className="w-full text-left px-3 py-2 text-sm text-destructive hover:bg-muted flex items-center gap-2"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    Log Out
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 ml-2">
+              <Link href="/login">
+                <Button variant="outline" size="sm">Log In</Button>
+              </Link>
+              <Link href="/signup">
+                <Button size="sm">Sign Up</Button>
+              </Link>
+            </div>
+          )}
         </div>
 
         {/* Mobile hamburger */}
@@ -70,9 +131,37 @@ export default function Navbar() {
               {l.label}
             </Link>
           ))}
-          <Link href="/#waitlist" onClick={() => setOpen(false)}>
-            <Button size="sm" className="w-full mt-1">Join Waitlist</Button>
-          </Link>
+
+          {user ? (
+            <>
+              <div className="px-3 py-2 flex items-center gap-2 text-sm text-foreground border-t border-border mt-1 pt-2">
+                <span className="font-medium truncate max-w-[140px]">{displayName}</span>
+                {role && (
+                  <Badge
+                    className={`text-[10px] px-1.5 py-0 border ${ROLE_COLORS[role] ?? ""}`}
+                  >
+                    {role}
+                  </Badge>
+                )}
+              </div>
+              <button
+                onClick={handleSignOut}
+                className="flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-destructive hover:bg-muted text-left"
+              >
+                <LogOut className="w-4 h-4" />
+                Log Out
+              </button>
+            </>
+          ) : (
+            <>
+              <Link href="/login" onClick={() => setOpen(false)}>
+                <Button variant="outline" size="sm" className="w-full mt-1">Log In</Button>
+              </Link>
+              <Link href="/signup" onClick={() => setOpen(false)}>
+                <Button size="sm" className="w-full mt-1">Sign Up</Button>
+              </Link>
+            </>
+          )}
         </div>
       )}
     </nav>

@@ -14,6 +14,7 @@ import Navbar from "@/components/Navbar";
 import { mockFarmers, mockListings, mockReservations } from "@/data/mockData";
 import { ProduceListing } from "@/lib/types";
 import { isSupabaseConfigured, getSupabase } from "@/lib/supabase";
+import { useAuth } from "@/contexts/AuthContext";
 
 const listingSchema = z.object({
   name: z.string().min(2, "Produce name is required"),
@@ -31,6 +32,7 @@ const demoFarmer = mockFarmers[0];
 const DEMO_FARMER_UUID = "11111111-0001-0001-0001-000000000001";
 
 export default function FarmerDashboard() {
+  const { profile } = useAuth();
   const [listings, setListings] = useState<ProduceListing[]>(
     mockListings.filter((l) => l.farmerId === demoFarmer.id)
   );
@@ -39,6 +41,11 @@ export default function FarmerDashboard() {
   const [submitting, setSubmitting] = useState(false);
 
   const reservations = mockReservations.filter((r) => r.farmerId === demoFarmer.id);
+
+  // Use auth profile if available, fall back to demo farmer values
+  const displayName = profile?.full_name ?? demoFarmer.name;
+  const displayVillage = profile?.village ?? demoFarmer.village;
+  const displayPhone = demoFarmer.phone; // phone stays from demo; auth profile phone not shown publicly
 
   const { register, handleSubmit, setValue, reset, formState: { errors } } = useForm<ListingForm>({
     resolver: zodResolver(listingSchema),
@@ -113,10 +120,10 @@ export default function FarmerDashboard() {
             <User className="w-7 h-7 text-primary" />
           </div>
           <div className="flex-1">
-            <h2 className="text-lg font-bold text-foreground">{demoFarmer.name}</h2>
+            <h2 className="text-lg font-bold text-foreground">{displayName}</h2>
             <div className="flex flex-wrap gap-3 mt-1 text-sm text-muted-foreground">
-              <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5" />{demoFarmer.village}</span>
-              <span className="flex items-center gap-1"><Phone className="w-3.5 h-3.5" />+91 {demoFarmer.phone}</span>
+              {displayVillage && <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5" />{displayVillage}</span>}
+              <span className="flex items-center gap-1"><Phone className="w-3.5 h-3.5" />+91 {displayPhone}</span>
               <span className="flex items-center gap-1">
                 <Star className="w-3.5 h-3.5 fill-secondary text-secondary" />{demoFarmer.rating} rating
               </span>

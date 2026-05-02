@@ -12,6 +12,7 @@ import FarmerDashboard from "@/pages/FarmerDashboard";
 import AgentDashboard from "@/pages/AgentDashboard";
 import AdminDashboard from "@/pages/AdminDashboard";
 import FarmerProfilePage from "@/pages/FarmerProfilePage";
+import BuyerDashboard from "@/pages/BuyerDashboard";
 import LoginPage from "@/pages/LoginPage";
 import SignupPage from "@/pages/SignupPage";
 import InstallBanner from "@/components/InstallBanner";
@@ -50,6 +51,14 @@ function Router() {
         {() => (
           <ProtectedRoute allowedRoles={["admin"]}>
             <AdminDashboard />
+          </ProtectedRoute>
+        )}
+      </Route>
+
+      <Route path="/buyer">
+        {() => (
+          <ProtectedRoute allowedRoles={["buyer", "admin"]}>
+            <BuyerDashboard />
           </ProtectedRoute>
         )}
       </Route>

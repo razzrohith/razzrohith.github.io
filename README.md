@@ -135,6 +135,174 @@ All names, phones, villages, and IDs are fake/mock test data. No real personal d
 
 ---
 
+## Buyer Account Reservation Link + Buyer Dashboard Phase
+
+### Overview
+
+This phase allows logged-in buyers to track their own reservation history in a protected `/buyer` dashboard. Guest reservation flow continues to work unchanged.
+
+---
+
+### Files Changed
+
+| File | Change |
+|---|---|
+| `supabase/patch-buyer-reservation-link.sql` | Adds `buyer_user_id` column + index + RLS policies to `reservations` |
+| `src/lib/supabase.ts` | Added `BuyerReservation` type and `getReservationsForCurrentBuyer()` helper |
+| `src/components/ReservationModal.tsx` | Auth-aware: pre-fills buyer name, attaches `buyer_user_id`, shows different success message |
+| `src/pages/BuyerDashboard.tsx` | New protected page at `/buyer` with reservation history, status counts, Contact Farmer |
+| `src/App.tsx` | Added `/buyer` protected route (`buyer`, `admin` roles) |
+| `src/components/Navbar.tsx` | Added "Buyer Dashboard" link in user menu dropdown (desktop) and mobile menu |
+
+---
+
+### Database Patch — `patch-buyer-reservation-link.sql`
+
+Run once against the Supabase Postgres database. All statements are idempotent (safe to re-run).
+
+| Change | Details |
+|---|---|
+| Column added | `buyer_user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL` — nullable, defaults to NULL for old/guest rows |
+| Index | `idx_reservations_buyer_user_id WHERE buyer_user_id IS NOT NULL` for fast buyer dashboard queries |
+| RLS: buyer SELECT | `buyers_select_own_reservations` — authenticated users see only rows where `buyer_user_id = auth.uid()` |
+| RLS: authenticated INSERT | `buyers_insert_own_reservations` — allows `buyer_user_id = auth.uid()` OR NULL (backward compat) |
+| Untouched | Existing anon INSERT policy (guest buyers), farmer SELECT/UPDATE policies, admin policies |
+
+---
+
+### Guest vs Logged-In Reservation Behavior
+
+| Scenario | `buyer_user_id` | Success message |
+|---|---|---|
+| Guest (not logged in) | NULL (anon INSERT policy applies) | "... Log in next time to track your reservation history." |
+| Logged-in buyer | `auth.uid()` (authenticated INSERT policy applies) | "... You can track it from your Buyer Dashboard." + Go to Buyer Dashboard button |
+
+---
+
+### `getReservationsForCurrentBuyer()` Helper
+
+```ts
+getReservationsForCurrentBuyer(): Promise<BuyerReservation[]>
+```
+
+- Calls `getSupabase().auth.getUser()` to get the current user — returns `[]` if not logged in
+- Queries `reservations WHERE buyer_user_id = auth.uid()` — enforced both client-side and server-side via RLS
+- Joins `produce_listings(produce_name, category, price_per_kg, pickup_location, farmers(name, village, district, phone))`
+- Farmer phone included for ContactFarmerDialog in the Buyer Dashboard (authenticated context, own reservations only)
+- `buyer_phone` NOT selected — buyers know their own phone
+
+---
+
+### `BuyerReservation` Type
+
+```ts
+export type BuyerReservation = {
+  id: string;
+  listing_id: string;
+  buyer_name: string;
+  quantity_kg: number;
+  status: ReservationStatus;
+  payment_method: string | null;
+  created_at: string;
+  produce_listings?: {
+    produce_name: string;
+    category: string;
+    price_per_kg: number;
+    pickup_location: string | null;
+    farmers?: {
+      name: string;
+      village: string | null;
+      district: string | null;
+      phone: string | null;      // for ContactFarmerDialog only
+    } | null;
+  } | null;
+};
+```
+
+---
+
+### Buyer Dashboard (`/buyer`)
+
+Protected route — allowed roles: `buyer`, `admin`.
+
+| Section | Details |
+|---|---|
+| Header | Buyer name (from profile or email), email |
+| Status tiles | Pending / Confirmed / Completed / Cancelled counts |
+| Reservation cards | Produce name + category SVG icon, farmer name + location, quantity, estimated total, pickup location, reserved date, payment method |
+| Actions per card | View Listing (→ `/produce/:id`), Contact Farmer (opens ContactFarmerDialog — only if farmer phone available) |
+| Empty state | `empty-produce.svg` illustration + Browse Produce button |
+
+---
+
+### ReservationModal Changes
+
+- Imports `useAuth()` — no extra API call (reuses existing auth state)
+- Pre-fills buyer name from `profile.full_name` when modal opens
+- On submit: attaches `buyer_user_id = user.id` to the insert payload when logged in
+- Tracks `submittedAsLoggedIn` to show the correct success message
+- Success screen for logged-in buyers: includes a "Go to Buyer Dashboard" button
+
+---
+
+### Navbar Changes
+
+| Location | Change |
+|---|---|
+| Desktop user dropdown | "Buyer Dashboard" link with ClipboardList icon, visible when role = buyer or admin |
+| Mobile menu | "Buyer Dashboard" link, same role condition, active-state highlighted |
+
+---
+
+### Privacy / Security
+
+| Rule | Status |
+|---|---|
+| Buyer sees only their own reservations | Enforced by RLS `buyer_user_id = auth.uid()` AND client-side `.eq("buyer_user_id", user.id)` |
+| Other buyers' reservations not visible | Yes — RLS blocks cross-buyer access |
+| Buyer cannot update reservation status | No UPDATE policy exists for buyer role |
+| Farmer can still see reservations for their listings | Existing farmer SELECT policy unchanged |
+| Admin can still see all reservations | Existing admin SELECT policy unchanged |
+| Guest users cannot read reservations | No anon SELECT policy on reservations table |
+| Buyer phone not exposed publicly | `buyer_phone` not included in `getReservationsForCurrentBuyer` query |
+| Farmer phone exposed only in authenticated context | Only available via ContactFarmerDialog when viewing own reservations |
+| service_role key | Not used |
+| Secrets | Not printed |
+
+---
+
+### Fake/Mock Testing Rule
+
+All test names, phones, villages, and IDs are fake/mock data. No real personal data used.
+
+Test buyer: Ravi Test Buyer, phone: 9876500001, email: fakebuyer@example.com (mock only).
+
+---
+
+### No Paid Services
+
+All icons are Lucide or local SVGs. No paid images, no external image hotlinks, no paid APIs.
+
+---
+
+### TypeScript Result
+
+Exit 0 — zero errors.
+
+---
+
+### Remaining Buyer Dashboard Limitations
+
+| Limitation | Notes |
+|---|---|
+| Buyer cannot cancel their own reservation | Status update requires farmer action — by design (MVP) |
+| Old guest reservations with `buyer_user_id = NULL` | Not visible in Buyer Dashboard — shown to farmer and admin as before |
+| No pagination | Reservation history shows all records in descending order |
+| No filter by status | All statuses shown together — filter tabs can be added in a future phase |
+| Buyer profile edit | Name and email not editable from dashboard — future phase |
+
+---
+
 ## Produce Detail Conversion + Farmer Cross-Sell Phase
 
 ### Overview

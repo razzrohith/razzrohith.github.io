@@ -1,14 +1,18 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ProduceListing } from "@/lib/types";
 import { CheckCircle } from "lucide-react";
 import { isSupabaseConfigured, getSupabase } from "@/lib/supabase";
+import { useAuth } from "@/contexts/AuthContext";
+import { Link } from "wouter";
 
 const schema = z.object({
   quantityKg: z.coerce.number().min(1, "Enter at least 1 kg"),
@@ -25,16 +29,26 @@ interface Props {
 }
 
 export default function ReservationModal({ open, onClose, listing }: Props) {
+  const { user, profile } = useAuth();
   const [success, setSuccess] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [submittedAsLoggedIn, setSubmittedAsLoggedIn] = useState(false);
 
   const {
     register,
     handleSubmit,
     setError,
+    setValue,
     formState: { errors },
     reset,
   } = useForm<FormValues>({ resolver: zodResolver(schema) });
+
+  // Pre-fill buyer name from profile when modal opens and user is logged in
+  useEffect(() => {
+    if (open && profile?.full_name) {
+      setValue("buyerName", profile.full_name);
+    }
+  }, [open, profile, setValue]);
 
   const onSubmit = async (data: FormValues) => {
     if (!listing) return;
@@ -46,19 +60,25 @@ export default function ReservationModal({ open, onClose, listing }: Props) {
       return;
     }
 
+    const wasLoggedIn = !!user;
+    setSubmittedAsLoggedIn(wasLoggedIn);
     setSubmitting(true);
+
     try {
       if (isSupabaseConfigured()) {
-        const { error } = await getSupabase()
-          .from("reservations")
-          .insert({
-            listing_id: listing.id,
-            buyer_name: data.buyerName,
-            buyer_phone: data.buyerPhone,
-            quantity_kg: data.quantityKg,
-            status: "pending",
-            payment_method: "Cash or UPI directly to farmer",
-          });
+        const payload: Record<string, unknown> = {
+          listing_id: listing.id,
+          buyer_name: data.buyerName,
+          buyer_phone: data.buyerPhone,
+          quantity_kg: data.quantityKg,
+          status: "pending",
+          payment_method: "Cash or UPI directly to farmer",
+        };
+        if (wasLoggedIn && user) {
+          payload.buyer_user_id = user.id;
+        }
+
+        const { error } = await getSupabase().from("reservations").insert(payload);
         if (error) console.warn("Supabase reservation error:", error.message);
       }
     } catch (e) {
@@ -71,6 +91,7 @@ export default function ReservationModal({ open, onClose, listing }: Props) {
 
   const handleClose = () => {
     setSuccess(false);
+    setSubmittedAsLoggedIn(false);
     reset();
     onClose();
   };
@@ -133,13 +154,21 @@ export default function ReservationModal({ open, onClose, listing }: Props) {
             <CheckCircle className="w-14 h-14 text-primary" />
             <h3 className="text-lg font-semibold text-foreground">Reservation Request Sent</h3>
             <p className="text-muted-foreground text-sm leading-relaxed">
-              Your reservation request has been sent to the farmer. Please contact the farmer
-              before coming for pickup to confirm availability.
+              {submittedAsLoggedIn
+                ? "Your reservation request has been sent to the farmer. You can track it from your Buyer Dashboard."
+                : "Reservation request sent. Contact the farmer before pickup to confirm availability. Log in next time to track your reservation history."}
             </p>
             <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 text-sm text-amber-800 w-full text-left">
               <span className="font-medium">Payment:</span> Cash or UPI directly to the farmer at
               pickup. No online payment required.
             </div>
+            {submittedAsLoggedIn && (
+              <Link href="/buyer" onClick={handleClose} className="w-full">
+                <Button variant="outline" className="w-full">
+                  Go to Buyer Dashboard
+                </Button>
+              </Link>
+            )}
             <Button onClick={handleClose} className="w-full">
               Done
             </Button>

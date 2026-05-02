@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { Menu, X, Leaf, LogOut, ChevronDown } from "lucide-react";
+import { Menu, X, Leaf, LogOut, ChevronDown, ClipboardList } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
@@ -77,11 +77,21 @@ export default function Navbar() {
                 <ChevronDown className="w-3.5 h-3.5 opacity-60" />
               </button>
               {userMenuOpen && (
-                <div className="absolute right-0 mt-1 w-44 bg-white border border-border rounded-xl shadow-md py-1 z-50">
+                <div className="absolute right-0 mt-1 w-48 bg-white border border-border rounded-xl shadow-md py-1 z-50">
                   <div className="px-3 py-2 border-b border-border">
                     <p className="text-xs font-medium text-foreground truncate">{displayName}</p>
                     <p className="text-xs text-muted-foreground truncate">{user.email}</p>
                   </div>
+                  {(role === "buyer" || role === "admin") && (
+                    <Link
+                      href="/buyer"
+                      onClick={() => setUserMenuOpen(false)}
+                      className="w-full text-left px-3 py-2 text-sm text-foreground hover:bg-muted flex items-center gap-2"
+                    >
+                      <ClipboardList className="w-4 h-4 text-primary" />
+                      Buyer Dashboard
+                    </Link>
+                  )}
                   <button
                     onClick={handleSignOut}
                     className="w-full text-left px-3 py-2 text-sm text-destructive hover:bg-muted flex items-center gap-2"
@@ -144,6 +154,20 @@ export default function Navbar() {
                   </Badge>
                 )}
               </div>
+              {(role === "buyer" || role === "admin") && (
+                <Link
+                  href="/buyer"
+                  onClick={() => setOpen(false)}
+                  className={`px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-2 ${
+                    location === "/buyer"
+                      ? "bg-primary text-primary-foreground"
+                      : "text-foreground hover:bg-muted"
+                  }`}
+                >
+                  <ClipboardList className="w-4 h-4" />
+                  Buyer Dashboard
+                </Link>
+              )}
               <button
                 onClick={handleSignOut}
                 className="flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-destructive hover:bg-muted text-left"

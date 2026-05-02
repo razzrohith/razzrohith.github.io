@@ -640,6 +640,59 @@ export type AdminReservation = {
   } | null;
 };
 
+/**
+ * Reservation record joined with listing + farmer details for the buyer's own dashboard.
+ * buyer_phone is intentionally omitted — buyers know their own phone.
+ * farmer phone IS included for pickup coordination (shown via ContactFarmerDialog only).
+ */
+export type BuyerReservation = {
+  id: string;
+  listing_id: string;
+  buyer_name: string;
+  quantity_kg: number;
+  status: ReservationStatus;
+  payment_method: string | null;
+  created_at: string;
+  produce_listings?: {
+    produce_name: string;
+    category: string;
+    price_per_kg: number;
+    pickup_location: string | null;
+    farmers?: {
+      name: string;
+      village: string | null;
+      district: string | null;
+      phone: string | null;
+    } | null;
+  } | null;
+};
+
+/**
+ * Fetches all reservations for the currently logged-in buyer.
+ * RLS enforces buyer_user_id = auth.uid() server-side — buyers can only see their own.
+ * Farmer phone is included for ContactFarmerDialog (pickup coordination).
+ * buyer_phone is intentionally NOT selected — buyers know their own phone.
+ */
+export async function getReservationsForCurrentBuyer(): Promise<BuyerReservation[]> {
+  if (!isSupabaseConfigured()) return [];
+  const { data: { user } } = await getSupabase().auth.getUser();
+  if (!user) return [];
+
+  const { data, error } = await getSupabase()
+    .from("reservations")
+    .select(
+      "id, listing_id, buyer_name, quantity_kg, status, payment_method, created_at, produce_listings(produce_name, category, price_per_kg, pickup_location, farmers(name, village, district, phone))"
+    )
+    .eq("buyer_user_id", user.id)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.warn("getReservationsForCurrentBuyer error:", error.message);
+    return [];
+  }
+  return (data ?? []) as unknown as BuyerReservation[];
+}
+
 export type AgentCallRequestStatus = "pending" | "called" | "resolved";
 
 export type AgentCallRequestInsert = {

@@ -1,0 +1,228 @@
+Context:
+This is RaithuFresh, a Telangana-first fruits and vegetables marketplace for farmers, buyers, agents, and admins.
+
+Rules:
+- Focus only on fruits and vegetables.
+- Use only free tools, free tiers, open-source libraries, and mock/local alternatives.
+- Do not use paid services or paid APIs.
+- Do not use paid stock images.
+- Do not use copyrighted brand images.
+- Do not hotlink images from random websites.
+- Do not touch DealNest/deals/coupons/stores/threads code or data.
+- Do not add map, delivery, payments, admin promotion tools, Edge Functions, or paid services.
+- Do not use service_role key.
+- Do not expose secrets.
+- Do not weaken RLS.
+- Use only fake/mock names, phone numbers, emails, villages, and test details during testing.
+- Do not use real personal data.
+
+Visual assets / UI realism rule:
+Where useful, use existing local SVG assets or create small self-made local SVG assets only.
+Store assets locally in public/assets if new assets are needed.
+Add alt text wherever images are rendered.
+Do not use external image hotlinks.
+
+Task:
+Run a Buyer Account Reservation Link + Buyer Dashboard phase.
+
+Current state:
+- Browse Produce loads live Supabase listings.
+- Produce Detail loads live Supabase listing data.
+- Reservation flow works from Browse, Detail, and Farmer Profile.
+- Farmer Dashboard shows reservations for the farmer’s own listings.
+- Admin Dashboard shows all reservations.
+- Buyer phone is not public.
+- Buyer reservations are currently not linked to logged-in buyer accounts.
+
+Goal:
+Allow logged-in buyers to see their own reservation history safely.
+
+Tasks:
+
+1. Database patch
+
+Create:
+
+supabase/patch-buyer-reservation-link.sql
+
+Add nullable column to reservations:
+
+- buyer_user_id UUID references auth.users(id) on delete set null
+
+Requirements:
+- Add column safely only if missing.
+- Add index on buyer_user_id if useful.
+- Keep old guest reservations working with buyer_user_id = null.
+- Do not break existing reservation inserts.
+
+RLS:
+Add policies so:
+- Logged-in buyer can SELECT only reservations where buyer_user_id = auth.uid().
+- Logged-in buyer can INSERT reservations with buyer_user_id = auth.uid().
+- Guest/anon reservation insert remains allowed for MVP if current flow supports guest buyers.
+- Buyers should not see other buyers’ reservations.
+- Buyers should not see farmer/admin reservation data.
+- Buyers should not update reservation status.
+- Farmers/admins keep their existing reservation access.
+
+Do not weaken existing farmer/admin policies.
+
+2. Update reservation insert flow
+
+Update ReservationModal so:
+
+If user is logged in:
+- Set buyer_user_id = auth.uid()
+- Pre-fill buyer name/phone from user profile if available
+- Buyer can still edit name/phone before submit if needed
+
+If user is not logged in:
+- Keep guest reservation flow working
+- buyer_user_id remains null
+
+Payment text remains:
+"Cash or UPI directly to farmer."
+
+No online payments.
+
+3. Add Buyer Dashboard route
+
+Create public/protected route:
+
+/buyer
+
+Protected:
+- allowed roles: buyer, admin
+
+Buyer Dashboard should show:
+- Buyer profile summary
+- Reservation history cards/table
+- Status counts:
+  - Pending
+  - Confirmed
+  - Completed
+  - Cancelled
+- Each reservation card:
+  - Produce name
+  - Farmer name
+  - Farmer village/district
+  - Quantity reserved
+  - Status
+  - Payment method
+  - Created date
+  - View Listing button
+  - Contact Farmer button if farmer phone is available safely through listing/farmer join
+
+Buyer can view only their own reservations.
+
+4. Add Supabase helpers
+
+In src/lib/supabase.ts, add helpers:
+
+- getReservationsForCurrentBuyer()
+- createReservation() or update existing reservation insert helper if present
+
+Reservation history should include listing/farmer details if possible:
+- produce_name
+- price_per_kg
+- pickup_location
+- farmer name
+- farmer village/district
+- farmer phone if allowed for contact flow
+
+Do not expose other buyers’ phone numbers.
+
+5. Header/navigation
+
+Add Buyer Dashboard link where appropriate:
+- If logged-in role = buyer, show Buyer Dashboard in nav/dropdown.
+- Admin can also access if route allows.
+
+Do not clutter mobile nav.
+
+6. Guest reservation behavior
+
+Keep guest buyers able to reserve if current MVP supports it.
+
+After guest reservation:
+- Success message should say:
+  "Reservation request sent. Log in next time to track your reservation history."
+
+For logged-in buyer:
+- Success message should say:
+  "Reservation request sent. You can track it from your Buyer Dashboard."
+
+7. Visual polish
+
+Use existing local SVG assets where helpful:
+- empty-produce.svg for empty reservation history
+- icon-fruit.svg / icon-vegetable.svg for reservation cards
+
+No paid images.
+No external images.
+
+8. Privacy/security
+
+Verify:
+- Buyer can see only their own reservations.
+- Buyer cannot see other buyers’ reservations.
+- Buyer cannot see admin-only data.
+- Buyer cannot update reservation status.
+- Farmer can still see reservations for their own listings.
+- Admin can still see all reservations.
+- Guest users cannot read reservations.
+- Buyer phone is not public.
+- No secrets printed.
+- No RLS weakening.
+
+9. Testing
+
+Use fake/mock data only.
+
+Fake buyer:
+- Name: Ravi Test Buyer
+- Phone: 9876500001
+- Email: fakebuyer@example.com
+
+Test:
+- Guest reservation still works.
+- Logged-in buyer reservation saves buyer_user_id.
+- Buyer Dashboard loads only that buyer’s reservations.
+- Buyer Dashboard does not show another buyer’s reservations.
+- Buyer cannot update reservation status.
+- Farmer Dashboard still shows reservations for farmer’s own listings.
+- Admin Dashboard still shows all reservations.
+- Browse Produce still works.
+- Produce Detail still works.
+- Farmer Profile still works.
+- Contact Farmer still works.
+- WhatsApp/tel/copy still work.
+- Waitlist form still works.
+- PWA files still exist.
+- TypeScript has zero errors.
+- No console errors.
+- No secrets printed.
+- No paid services used.
+
+10. Documentation
+
+Update README with:
+- buyer_user_id reservation linking
+- Buyer Dashboard route /buyer
+- Guest reservation behavior
+- Logged-in buyer reservation tracking
+- Privacy rules
+- Fake/mock testing rule
+- No paid services used
+
+After completion, report:
+- Files changed
+- SQL patch added and run
+- RLS policies added/changed
+- Whether guest reservations still work
+- Whether logged-in buyer reservations save buyer_user_id
+- Whether Buyer Dashboard loads only own reservations
+- Whether farmer/admin reservation access still works
+- TypeScript result
+- Console errors, if any
+- Remaining Buyer Dashboard limitations

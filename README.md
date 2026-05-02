@@ -42,6 +42,74 @@ This inserts:
 
 ---
 
+## Buyer Sharing + Detail UX
+
+### What changed
+
+#### 1. Share Listing — Produce Detail
+
+A "Share Listing" button sits in the top-right of the detail page header (next to Back to Browse). Clicking it:
+1. Uses the free browser Web Share API if available (on mobile, opens the native share sheet)
+2. Falls back to `navigator.clipboard.writeText()` — copies the listing URL and shows a success toast
+3. If clipboard is also unavailable, shows a toast with the full URL as text
+
+The shared text includes produce name, price/kg, village/district, and the listing URL:
+> "Fresh Mango (Banaganapalli) available on RaithuFresh for Rs 80/kg near Shadnagar, Rangareddy. View listing: https://..."
+
+No paid sharing service is used.
+
+#### 2. Share button on Browse Produce cards
+
+Each listing card on the Browse page has a small share icon button (square, outline) at the right of the action row. It uses the same `shareListing()` helper from `src/lib/share.ts`. The share content uses the farmer's village from the farmerMap.
+
+#### 3. Before You Come for Pickup — buyer notes
+
+A "Before You Come for Pickup" card appears on the detail page between Pickup Directions and the Reserve section. It contains four simple plain-language points:
+
+- Contact the farmer before traveling to confirm the produce is still available.
+- Confirm the exact quantity you need — the farmer may already have partial reservations.
+- Payment is Cash or UPI directly to the farmer at pickup. No online payment is collected by RaithuFresh.
+- RaithuFresh does not handle delivery in this version. Pickup is arranged directly with the farmer.
+
+#### 4. Reservation safety improvements
+
+- If listing status is not "Available", the Reserve section is replaced with a clear warning card showing the status and a "Browse other listings" link. Reservation is blocked.
+- The quantity field clamps input between 1 and `listing.quantityKg` (`Math.min` / `Math.max`) with `min` / `max` HTML attributes.
+- The ReservationModal has a runtime check that also blocks submission if quantity exceeds available.
+
+#### 5. Similar produce section
+
+Below the reserve section, a "Similar Fruits/Vegetables Nearby" card shows up to 3 listings from Supabase with the same category, excluding the current listing. Each row shows:
+- Produce name
+- Price per kg
+- Village, district
+- "View Details" button linking to `/produce/{id}`
+
+If the Supabase query returns nothing (no similar, or Supabase not configured), the section is hidden. No AI, no paid recommendations API.
+
+#### 6. Privacy rules
+
+- Farmer phone: shown only in the Contact Farmer dialog (explicitly opt-in, never displayed on the listing card or detail card)
+- Buyer phone: stored in `reservations.buyer_phone` — never exposed on public pages, never pre-filled into share text or WhatsApp messages
+- No RLS changes made
+
+#### 7. Files changed
+
+| File | Change |
+|---|---|
+| `src/lib/share.ts` | New utility — Web Share API → clipboard → toast fallback |
+| `src/pages/ProduceDetailPage.tsx` | Share button, Buyer Notes card, Similar listings section, `similarListings` state + effect |
+| `src/pages/BrowsePage.tsx` | Share2 import, `shareListing` import, `handleShare`, share icon button on each card |
+
+#### 8. No paid services
+
+- Web Share API: free browser API, no key required
+- Clipboard API: free browser API, no key required
+- Similar listings: free Supabase query, no AI or paid recommendation engine
+- All test data: fake/mock names, villages, phone numbers, prices
+
+---
+
 ## Buyer Contact Channel Polish — WhatsApp + Phone Normalization
 
 ### What changed

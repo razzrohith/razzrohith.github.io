@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import {
   ArrowLeft, MapPin, Calendar, Star, Phone,
   Package, FileText, Navigation, Loader2, AlertCircle,
+  Share2, Info, CheckCircle2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -14,7 +15,10 @@ import ReservationModal from "@/components/ReservationModal";
 import ContactFarmerDialog from "@/components/ContactFarmerDialog";
 import { mockListings, mockFarmers } from "@/data/mockData";
 import { ProduceListing } from "@/lib/types";
-import { isSupabaseConfigured, getProduceListingById, SupabaseListing } from "@/lib/supabase";
+import {
+  isSupabaseConfigured, getProduceListingById, getSupabase, SupabaseListing,
+} from "@/lib/supabase";
+import { shareListing } from "@/lib/share";
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -49,6 +53,13 @@ type FarmerInfo = {
   verified: boolean;
 };
 
+type SimilarItem = {
+  id: string;
+  name: string;
+  pricePerKg: number;
+  location: string;
+};
+
 // ── Component ────────────────────────────────────────────────────────────────
 
 export default function ProduceDetailPage() {
@@ -61,13 +72,15 @@ export default function ProduceDetailPage() {
   const [reserveQty, setReserveQty] = useState(1);
   const [modalOpen, setModalOpen] = useState(false);
   const [contactOpen, setContactOpen] = useState(false);
+  const [similar, setSimilar] = useState<SimilarItem[]>([]);
+
+  // ── Load main listing ─────────────────────────────────────────────────────
 
   useEffect(() => {
     async function load() {
       if (!id) { setNotFound(true); setLoading(false); return; }
 
       if (!isSupabaseConfigured()) {
-        // Mock fallback
         const ml = mockListings.find((l) => l.id === id);
         const mf = ml ? mockFarmers.find((f) => f.id === ml.farmerId) : null;
         if (!ml || !mf) { setNotFound(true); } else {
@@ -84,7 +97,6 @@ export default function ProduceDetailPage() {
       try {
         const row = await getProduceListingById(id);
         if (!row) {
-          // Not in Supabase — try mock fallback (seed data uses non-UUID ids)
           const ml = mockListings.find((l) => l.id === id);
           const mf = ml ? mockFarmers.find((f) => f.id === ml.farmerId) : null;
           if (ml && mf) {
@@ -117,6 +129,47 @@ export default function ProduceDetailPage() {
     }
     load();
   }, [id]);
+
+  // ── Load similar listings ─────────────────────────────────────────────────
+
+  useEffect(() => {
+    if (!listing || !isSupabaseConfigured()) return;
+
+    async function loadSimilar() {
+      try {
+        const { data } = await getSupabase()
+          .from("produce_listings")
+          .select("id, produce_name, price_per_kg, pickup_location, farmers(village, district)")
+          .eq("status", "active")
+          .eq("category", listing!.category)
+          .neq("id", listing!.id)
+          .limit(3);
+
+        if (!data || data.length === 0) return;
+
+        const items: SimilarItem[] = (data as unknown as Array<{
+          id: string;
+          produce_name: string;
+          price_per_kg: number | string;
+          pickup_location: string | null;
+          farmers: { village: string | null; district: string | null } | null;
+        }>).map((row) => ({
+          id: row.id,
+          name: row.produce_name,
+          pricePerKg: Number(row.price_per_kg),
+          location: [
+            row.farmers?.village,
+            row.farmers?.district,
+          ].filter(Boolean).join(", "),
+        }));
+
+        setSimilar(items);
+      } catch {
+        // Similar listings are best-effort — silently skip on error
+      }
+    }
+    loadSimilar();
+  }, [listing]);
 
   // ── Loading ──────────────────────────────────────────────────────────────
 
@@ -163,19 +216,39 @@ export default function ProduceDetailPage() {
   const farmerRating = farmer?.rating ?? 0;
   const farmerPhone = farmer?.phone ?? null;
   const farmerVerified = farmer?.verified ?? false;
+  const isAvailable = listing.status === "Available";
 
   const handleContact = () => setContactOpen(true);
+
+  const handleShare = () =>
+    shareListing({
+      name: listing.name,
+      pricePerKg: listing.pricePerKg,
+      location: farmerLocation,
+      id: listing.id,
+    });
 
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
       <div className="max-w-2xl mx-auto px-4 py-8">
-        <Link
-          href="/browse"
-          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground mb-5 hover:text-foreground transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4" /> Back to Browse
-        </Link>
+        <div className="flex items-center justify-between mb-5">
+          <Link
+            href="/browse"
+            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" /> Back to Browse
+          </Link>
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-1.5"
+            onClick={handleShare}
+          >
+            <Share2 className="w-4 h-4" />
+            Share Listing
+          </Button>
+        </div>
 
         <motion.div
           initial={{ opacity: 0, y: 16 }}
@@ -268,7 +341,7 @@ export default function ProduceDetailPage() {
                   Status:{" "}
                   <span
                     className={`font-medium ${
-                      listing.status === "Available" ? "text-primary" : "text-destructive"
+                      isAvailable ? "text-primary" : "text-destructive"
                     }`}
                   >
                     {listing.status}
@@ -294,8 +367,29 @@ export default function ProduceDetailPage() {
             </p>
           </div>
 
-          {/* Reserve section */}
-          {listing.status === "Available" && (
+          {/* Before Pickup — Buyer Notes */}
+          <div className="bg-card border border-border rounded-2xl p-5 mb-4 shadow-sm">
+            <div className="flex items-center gap-2 mb-3">
+              <Info className="w-4 h-4 text-primary" />
+              <h3 className="font-semibold text-foreground">Before You Come for Pickup</h3>
+            </div>
+            <ul className="space-y-2">
+              {[
+                "Contact the farmer before traveling to confirm the produce is still available.",
+                "Confirm the exact quantity you need — the farmer may already have partial reservations.",
+                "Payment is Cash or UPI directly to the farmer at pickup. No online payment is collected by RaithuFresh.",
+                "RaithuFresh does not handle delivery in this version. Pickup is arranged directly with the farmer.",
+              ].map((note) => (
+                <li key={note} className="flex items-start gap-2.5 text-sm text-muted-foreground">
+                  <CheckCircle2 className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+                  {note}
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Reserve section — only if Available */}
+          {isAvailable ? (
             <div className="bg-card border border-border rounded-2xl p-5 mb-4 shadow-sm">
               <h3 className="font-semibold text-foreground mb-3">Reserve This Produce</h3>
               <div className="mb-4">
@@ -330,10 +424,9 @@ export default function ProduceDetailPage() {
                 </Button>
               </div>
             </div>
-          )}
-
-          {listing.status !== "Available" && (
+          ) : (
             <div className="bg-card border border-border rounded-2xl p-5 mb-4 shadow-sm text-center">
+              <AlertCircle className="w-6 h-6 text-destructive mx-auto mb-2" />
               <p className="text-muted-foreground text-sm">
                 This listing is currently{" "}
                 <span className="font-medium text-destructive">{listing.status}</span> and cannot
@@ -344,6 +437,36 @@ export default function ProduceDetailPage() {
                   Browse other listings
                 </Button>
               </Link>
+            </div>
+          )}
+
+          {/* Similar produce */}
+          {similar.length > 0 && (
+            <div className="bg-card border border-border rounded-2xl p-5 mb-4 shadow-sm">
+              <h3 className="font-semibold text-foreground mb-3">
+                Similar {listing.category === "Fruit" ? "Fruits" : "Vegetables"} Nearby
+              </h3>
+              <div className="space-y-3">
+                {similar.map((s) => (
+                  <div
+                    key={s.id}
+                    className="flex items-center justify-between gap-3 py-2 border-b border-border last:border-0"
+                  >
+                    <div>
+                      <p className="text-sm font-medium text-foreground">{s.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        Rs {s.pricePerKg}/kg
+                        {s.location ? ` · ${s.location}` : ""}
+                      </p>
+                    </div>
+                    <Link href={`/produce/${s.id}`}>
+                      <Button size="sm" variant="outline" className="shrink-0">
+                        View Details
+                      </Button>
+                    </Link>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </motion.div>

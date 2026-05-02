@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "wouter";
 import { motion } from "framer-motion";
-import { Search, MapPin, Calendar, Phone, Loader2 } from "lucide-react";
+import { Search, MapPin, Calendar, Phone, Loader2, Share2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -12,6 +12,7 @@ import ContactFarmerDialog from "@/components/ContactFarmerDialog";
 import { mockListings, mockFarmers } from "@/data/mockData";
 import { ProduceListing } from "@/lib/types";
 import { isSupabaseConfigured, getSupabase, SupabaseListing } from "@/lib/supabase";
+import { shareListing } from "@/lib/share";
 
 function mapSupabaseListing(row: SupabaseListing): ProduceListing {
   return {
@@ -110,6 +111,16 @@ export default function BrowsePage() {
       name: f?.name ?? "Farmer",
       phone: f?.phone ?? null,
       produceName: listing.name,
+    });
+  };
+
+  const handleShare = (listing: ProduceListing) => {
+    const f = farmerMap[listing.farmerId];
+    shareListing({
+      name: listing.name,
+      pricePerKg: listing.pricePerKg,
+      location: f?.village ?? "",
+      id: listing.id,
     });
   };
 
@@ -226,6 +237,15 @@ export default function BrowsePage() {
                         <Button size="sm" variant="outline" className="flex-1" onClick={() => handleContact(listing)}>
                           <Phone className="w-3.5 h-3.5 mr-1" />
                           Contact
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="shrink-0 px-2"
+                          onClick={() => handleShare(listing)}
+                          title="Share this listing"
+                        >
+                          <Share2 className="w-3.5 h-3.5" />
                         </Button>
                       </div>
                       <Link href={`/produce/${listing.id}`} className="text-xs text-center text-primary underline underline-offset-2">

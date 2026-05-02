@@ -15,12 +15,13 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import Navbar from "@/components/Navbar";
-import { mockFarmers, mockListings, mockReservations } from "@/data/mockData";
+import { mockFarmers, mockListings } from "@/data/mockData";
 import { ProduceListing } from "@/lib/types";
 import {
-  isSupabaseConfigured, SupabaseFarmer, SupabaseListing,
+  isSupabaseConfigured, SupabaseFarmer, SupabaseListing, SupabaseReservation, ReservationStatus,
   getOrCreateFarmerForCurrentUser, getFarmerListings,
   createFarmerListing, updateListingStatus,
+  getReservationsForFarmer, updateReservationStatus,
 } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -41,6 +42,23 @@ type ListingForm = z.infer<typeof listingSchema>;
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
 const MOCK_FARMER = mockFarmers[0];
+
+const RESERVATION_STATUS_STYLES: Record<string, string> = {
+  pending:   "bg-yellow-100 text-yellow-700 border-yellow-200",
+  confirmed: "bg-blue-100  text-blue-700  border-blue-200",
+  completed: "bg-green-100 text-green-700 border-green-200",
+  cancelled: "bg-red-100   text-red-700   border-red-200",
+};
+
+function ReservationStatusBadge({ status }: { status: string }) {
+  return (
+    <Badge
+      className={`text-xs border ${RESERVATION_STATUS_STYLES[status] ?? "bg-muted text-muted-foreground"}`}
+    >
+      {status.charAt(0).toUpperCase() + status.slice(1)}
+    </Badge>
+  );
+}
 
 function supabaseStatusToLocal(
   status: string
@@ -92,16 +110,17 @@ export default function FarmerDashboard() {
   const [categoryValue, setCategoryValue] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  // Mock reservations (reservation linking to real farmers is a future feature)
-  const reservations = mockReservations.filter(
-    (r) => r.farmerId === MOCK_FARMER.id
-  );
+  // Reservations state — live from Supabase when configured, otherwise empty
+  const [reservations, setReservations] = useState<SupabaseReservation[]>([]);
+  const [reservationsLoading, setReservationsLoading] = useState(false);
+  const [reservationsError, setReservationsError] = useState<string | null>(null);
+  const [updatingReservation, setUpdatingReservation] = useState<string | null>(null);
 
   // ── Load farmer row and listings ─────────────────────────────────────────
 
   const loadFarmerData = useCallback(async () => {
     if (!isSupabaseConfigured() || !user || !profile) {
-      // Demo mode: use mock data
+      // Demo mode: use mock data for listings, empty reservations
       setListings(mockListings.filter((l) => l.farmerId === MOCK_FARMER.id));
       setListingsLoaded(true);
       return;
@@ -113,20 +132,45 @@ export default function FarmerDashboard() {
       setFarmerRow(farmer);
 
       if (farmer) {
-        const sbListings = await getFarmerListings(farmer.id);
+        // Load listings and reservations in parallel
+        const [sbListings, sbReservations] = await Promise.all([
+          getFarmerListings(farmer.id),
+          getReservationsForFarmer(farmer.id),
+        ]);
         setListings(sbListings.map(supabaseToLocal));
+        setReservations(sbReservations);
       } else {
-        // Could not get/create farmer row
         setListings([]);
+        setReservations([]);
       }
     } catch (e) {
       console.warn("Error loading farmer data:", e);
       setListings([]);
+      setReservations([]);
     } finally {
       setFarmerLoading(false);
       setListingsLoaded(true);
     }
   }, [user, profile]);
+
+  // ── Reservation status update ─────────────────────────────────────────────
+
+  const handleReservationStatus = async (
+    reservationId: string,
+    newStatus: ReservationStatus
+  ) => {
+    setUpdatingReservation(reservationId);
+    const ok = await updateReservationStatus(reservationId, newStatus);
+    setUpdatingReservation(null);
+    if (ok) {
+      setReservations((prev) =>
+        prev.map((r) => (r.id === reservationId ? { ...r, status: newStatus } : r))
+      );
+      toast.success(`Reservation marked as ${newStatus}.`);
+    } else {
+      toast.error("Could not update reservation status. Try again.");
+    }
+  };
 
   useEffect(() => {
     loadFarmerData();
@@ -509,44 +553,107 @@ export default function FarmerDashboard() {
           )}
         </div>
 
-        {/* Buyer Reservations — still uses mock data in MVP */}
+        {/* Buyer Reservations — live from Supabase */}
         <div>
           <h2 className="text-lg font-semibold text-foreground mb-4">Buyer Reservations</h2>
-          {reservations.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground bg-card border border-border rounded-2xl">
-              No reservations yet.
+
+          {/* Loading */}
+          {reservationsLoading && (
+            <div className="flex items-center justify-center py-10 text-muted-foreground gap-2 bg-card border border-border rounded-2xl">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Loading reservations...
             </div>
-          ) : (
+          )}
+
+          {/* Error */}
+          {!reservationsLoading && reservationsError && (
+            <div className="text-center py-8 text-destructive bg-card border border-destructive/20 rounded-2xl">
+              {reservationsError}
+            </div>
+          )}
+
+          {/* Empty */}
+          {!reservationsLoading && !reservationsError && reservations.length === 0 && (
+            <div className="text-center py-8 text-muted-foreground bg-card border border-border rounded-2xl">
+              {isSupabaseConfigured()
+                ? "No buyer reservations yet. Reservations will appear here when buyers reserve your listings."
+                : "Reservations are unavailable in demo mode."}
+            </div>
+          )}
+
+          {/* Reservation cards */}
+          {!reservationsLoading && !reservationsError && reservations.length > 0 && (
             <div className="space-y-3">
               {reservations.map((r) => {
-                const produce = mockListings.find((l) => l.id === r.produceId);
+                const produceName = r.produce_listings?.produce_name ?? "Unknown produce";
+                const isUpdating = updatingReservation === r.id;
+                const isTerminal = r.status === "completed" || r.status === "cancelled";
+
                 return (
-                  <div
+                  <motion.div
                     key={r.id}
-                    className="bg-card border border-border rounded-2xl p-4 shadow-sm flex flex-col sm:flex-row items-start sm:items-center gap-3"
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="bg-card border border-border rounded-2xl p-4 shadow-sm"
                   >
-                    <div className="flex-1">
-                      <div className="font-medium text-foreground">{r.buyerName}</div>
-                      <div className="text-sm text-muted-foreground">
-                        Wants {r.quantityKg} kg of {produce?.name} · Phone: +91{" "}
-                        {r.buyerPhone}
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap mb-1">
+                          <span className="font-medium text-foreground">{r.buyer_name}</span>
+                          <ReservationStatusBadge status={r.status} />
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          {r.quantity_kg} kg of <span className="font-medium text-foreground">{produceName}</span>
+                          {" · "}+91 {r.buyer_phone}
+                        </div>
+                        {r.payment_method && (
+                          <div className="text-xs text-muted-foreground mt-0.5">
+                            Payment: {r.payment_method}
+                          </div>
+                        )}
+                        <div className="text-xs text-muted-foreground mt-0.5">
+                          Received: {new Date(r.created_at).toLocaleDateString("en-IN", {
+                            day: "numeric", month: "short", year: "numeric",
+                          })}
+                        </div>
                       </div>
-                      <div className="text-xs text-muted-foreground mt-0.5">
-                        Date: {r.date}
-                      </div>
+
+                      {/* Action buttons — vary by status */}
+                      {!isTerminal && (
+                        <div className="flex gap-2 flex-wrap shrink-0">
+                          {r.status === "pending" && (
+                            <Button
+                              size="sm"
+                              disabled={isUpdating}
+                              onClick={() => handleReservationStatus(r.id, "confirmed")}
+                            >
+                              {isUpdating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle className="w-3.5 h-3.5 mr-1" />}
+                              Confirm
+                            </Button>
+                          )}
+                          {r.status === "confirmed" && (
+                            <Button
+                              size="sm"
+                              disabled={isUpdating}
+                              onClick={() => handleReservationStatus(r.id, "completed")}
+                            >
+                              {isUpdating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle className="w-3.5 h-3.5 mr-1" />}
+                              Complete
+                            </Button>
+                          )}
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={isUpdating}
+                            onClick={() => handleReservationStatus(r.id, "cancelled")}
+                          >
+                            {isUpdating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Package className="w-3.5 h-3.5 mr-1" />}
+                            Cancel
+                          </Button>
+                        </div>
+                      )}
                     </div>
-                    <Badge
-                      className={`${
-                        r.status === "Completed"
-                          ? "bg-green-100 text-green-700"
-                          : r.status === "Cancelled"
-                          ? "bg-red-100 text-red-700"
-                          : "bg-yellow-100 text-yellow-700"
-                      }`}
-                    >
-                      {r.status}
-                    </Badge>
-                  </div>
+                  </motion.div>
                 );
               })}
             </div>

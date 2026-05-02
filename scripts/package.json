@@ -12,6 +12,7 @@
     "db:patch-rls": "tsx ./src/db-setup.ts patch supabase/patch-agent-rls.sql",
     "db:patch-auth": "tsx ./src/db-setup.ts patch /home/runner/workspace/supabase/patch-auth.sql",
     "db:patch-farmer-link": "tsx ./src/db-setup.ts patch /home/runner/workspace/supabase/patch-farmer-auth-link.sql",
+    "db:patch-farmer-reservations": "tsx ./src/db-setup.ts patch /home/runner/workspace/supabase/patch-farmer-reservations.sql",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "devDependencies": {

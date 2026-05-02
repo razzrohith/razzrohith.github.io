@@ -246,6 +246,73 @@ export async function updateListingStatus(
   return true;
 }
 
+// ── Reservation helpers ─────────────────────────────────────────────────────
+
+/**
+ * Fetches all reservations for a farmer's own listings, joined with listing details.
+ * Uses two queries: first get listing IDs, then get reservations for those IDs.
+ * RLS on the reservations table enforces farmer ownership server-side.
+ */
+export async function getReservationsForFarmer(
+  farmerId: string
+): Promise<SupabaseReservation[]> {
+  if (!isSupabaseConfigured()) return [];
+
+  // Step 1: get this farmer's listing IDs
+  const { data: listings, error: listingsError } = await getSupabase()
+    .from("produce_listings")
+    .select("id")
+    .eq("farmer_id", farmerId);
+
+  if (listingsError) {
+    console.warn("getReservationsForFarmer — listings error:", listingsError.message);
+    return [];
+  }
+  if (!listings || listings.length === 0) return [];
+
+  const listingIds = (listings as { id: string }[]).map((l) => l.id);
+
+  // Step 2: get reservations for those listings, joined with listing details
+  const { data, error } = await getSupabase()
+    .from("reservations")
+    .select(
+      "id, listing_id, buyer_name, buyer_phone, quantity_kg, status, payment_method, created_at, produce_listings(produce_name, price_per_kg, pickup_location, harvest_datetime)"
+    )
+    .in("listing_id", listingIds)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.warn("getReservationsForFarmer — reservations error:", error.message);
+    return [];
+  }
+  // PostgREST join typing is an array type at compile time, but the actual data
+  // for a many-to-one join (reservation.listing_id → produce_listings.id) is a
+  // single object at runtime. Cast through unknown to satisfy the type checker.
+  return (data ?? []) as unknown as SupabaseReservation[];
+}
+
+/**
+ * Updates the status of a reservation. RLS ensures the farmer can only update
+ * reservations linked to their own listings. Column-level GRANT restricts the
+ * update to the status column only.
+ */
+export async function updateReservationStatus(
+  reservationId: string,
+  status: "pending" | "confirmed" | "cancelled" | "completed"
+): Promise<boolean> {
+  if (!isSupabaseConfigured()) return false;
+  const { error } = await getSupabase()
+    .from("reservations")
+    .update({ status })
+    .eq("id", reservationId);
+
+  if (error) {
+    console.warn("updateReservationStatus error:", error.message);
+    return false;
+  }
+  return true;
+}
+
 // ── Table types ─────────────────────────────────────────────────────────────
 
 export type WaitlistInsert = {
@@ -306,6 +373,25 @@ export type SupabaseFarmer = {
   verified: boolean;
   assisted_mode: boolean;
   user_id: string | null;
+};
+
+export type ReservationStatus = "pending" | "confirmed" | "cancelled" | "completed";
+
+export type SupabaseReservation = {
+  id: string;
+  listing_id: string;
+  buyer_name: string;
+  buyer_phone: string;
+  quantity_kg: number;
+  status: ReservationStatus;
+  payment_method: string | null;
+  created_at: string;
+  produce_listings?: {
+    produce_name: string;
+    price_per_kg: number;
+    pickup_location: string | null;
+    harvest_datetime: string | null;
+  } | null;
 };
 
 export type AgentCallRequestStatus = "pending" | "called" | "resolved";

@@ -42,6 +42,45 @@ This inserts:
 
 ---
 
+## Farmer Reservations
+
+Farmers can now manage buyer reservations directly from the Farmer Dashboard — live from Supabase.
+
+### How it works
+
+- When a buyer reserves a listing via the Reservation Modal, a row is inserted into `reservations` (public INSERT policy, no auth required for buyers).
+- On the Farmer Dashboard, the **Buyer Reservations** section loads all reservations for that farmer's own listings from Supabase (using `getReservationsForFarmer`).
+- Each reservation card shows: buyer name, quantity, produce name, buyer phone, payment method, received date, and status badge.
+- The farmer can update the status with action buttons:
+  - **Pending** → [Confirm] [Cancel]
+  - **Confirmed** → [Complete] [Cancel]
+  - **Completed / Cancelled** — no actions (terminal state)
+
+### Status lifecycle
+
+```
+pending  →  confirmed  →  completed
+   ↓             ↓
+cancelled     cancelled
+```
+
+### Security model
+
+SQL patch: `supabase/patch-farmer-reservations.sql`
+
+- `farmer_read_own_reservations` — SELECT only on reservations where `listing_id → produce_listings.farmer_id → farmers.user_id = auth.uid()`
+- `farmer_update_own_reservation_status` — UPDATE only for own listings; column-level GRANT restricts update to `status` only
+- Buyer INSERT is unchanged (anon policy from `schema.sql`)
+- Admin count: degrades gracefully to 0 for MVP (admin needs own RLS policy in a future iteration)
+
+### Apply the patch
+
+```bash
+pnpm --filter @workspace/scripts run db:patch-farmer-reservations
+```
+
+---
+
 ## Agent Call Requests
 
 The `agent_call_requests` table lets agents record farmer assistance and callback requests directly from the Agent Dashboard.

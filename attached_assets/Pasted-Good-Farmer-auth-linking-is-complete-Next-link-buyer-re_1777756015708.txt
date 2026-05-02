@@ -1,0 +1,181 @@
+Good. Farmer auth linking is complete.
+
+Next, link buyer reservations to the logged-in farmer’s own produce listings.
+
+Important:
+Do not add map.
+Do not add delivery.
+Do not add payments.
+Do not add admin reservations tab yet.
+Do not rebuild the UI.
+Do not remove existing auth, PWA, Supabase, RLS, or dashboard functionality.
+Do not touch DealNest-style data.
+Keep the project focused only on fruits and vegetables.
+
+Testing instruction:
+Use only fake/mock test data.
+Use fake farmer names, fake buyer names, fake phone numbers, fake villages/towns, and fake reservation details.
+Do not use real personal data during testing.
+
+Current state:
+- Farmer auth linking is working.
+- farmers.user_id links to auth.users(id).
+- Farmer Dashboard loads the logged-in farmer row.
+- New listings use the logged-in farmer’s farmer_id.
+- Buyer Reservations section still uses mock/static data.
+
+Goal:
+Make the Farmer Dashboard Buyer Reservations section load real rows from the reservations table, but only for listings that belong to the logged-in farmer.
+
+Database tables involved:
+- farmers
+- produce_listings
+- reservations
+
+Reservation fields:
+- id
+- listing_id
+- buyer_name
+- buyer_phone
+- quantity_kg
+- status
+- payment_method
+- created_at
+
+Step 1 — RLS patch
+
+Create a new SQL patch:
+
+supabase/patch-farmer-reservations.sql
+
+Add secure authenticated policies so:
+
+1. Logged-in farmer can SELECT reservations only where:
+   reservations.listing_id belongs to a produce_listings row
+   and that listing belongs to a farmers row
+   and farmers.user_id = auth.uid()
+
+2. Logged-in farmer can UPDATE reservation status only for reservations connected to their own listings.
+
+Allowed reservation status values:
+- pending
+- confirmed
+- cancelled
+- completed
+
+Do not allow farmers to update:
+- buyer_name
+- buyer_phone
+- quantity_kg
+- listing_id
+- payment_method
+
+Only allow status update if possible.
+
+Do not weaken public access.
+Do not expose all reservations publicly.
+Do not allow one farmer to see another farmer’s reservations.
+
+If column-level update grants are needed, use the minimum safe grant, such as UPDATE(status) only.
+
+Step 2 — Supabase helpers/types
+
+Update src/lib/supabase.ts.
+
+Add types/helpers if needed:
+
+- Reservation
+- FarmerReservationView or similar
+- getReservationsForCurrentFarmer(farmerId)
+- updateReservationStatus(reservationId, status)
+
+When loading reservations, include listing details if possible:
+- produce_name
+- price_per_kg
+- pickup_location
+- harvest_datetime
+
+If join is difficult, do two safe queries:
+1. Get current farmer’s listing IDs
+2. Get reservations where listing_id is in those IDs
+
+Step 3 — Farmer Dashboard UI
+
+Replace the mock Buyer Reservations section with live Supabase data.
+
+Display each reservation with:
+- Buyer name
+- Buyer phone
+- Produce name
+- Quantity reserved
+- Reservation status
+- Payment method
+- Created date
+- Action buttons:
+  - Mark Confirmed
+  - Mark Completed
+  - Mark Cancelled
+
+Show clear empty state:
+"No buyer reservations yet."
+
+Show loading state:
+"Loading reservations..."
+
+Show error state if Supabase fails:
+"Could not load reservations. Please try again."
+
+Keep mock/local fallback only if Supabase is not configured.
+
+Step 4 — Reservation flow compatibility
+
+Make sure the existing Produce Detail reservation form still works.
+
+When a buyer reserves produce:
+- It should insert into reservations.
+- That reservation should appear in the correct farmer’s Farmer Dashboard.
+- Use fake/mock buyer details during testing.
+
+Step 5 — Testing
+
+Test with fake/mock data only:
+
+1. Create or use a fake farmer account.
+2. Add a fake produce listing from Farmer Dashboard.
+3. From Browse or Produce Detail, create a fake buyer reservation for that listing.
+4. Log in as that farmer.
+5. Confirm the reservation appears in Farmer Dashboard.
+6. Confirm another farmer cannot see that reservation.
+7. Mark reservation as Confirmed.
+8. Mark reservation as Completed.
+9. Mark reservation as Cancelled.
+10. Verify status changes persist in Supabase.
+11. Browse Produce still loads active listings.
+12. Waitlist form still works.
+13. Agent Dashboard still works.
+14. Admin Dashboard still works.
+15. No console errors.
+16. No secrets printed.
+
+Step 6 — Documentation
+
+Update README with:
+- How farmer reservation visibility works
+- How RLS protects reservations
+- How to test using fake/mock buyer details
+- Current MVP limitations
+
+Security note:
+Buyer phone numbers should only be visible to the farmer who owns the listing and later to admins after admin reservation access is built.
+Do not expose buyer phone numbers publicly.
+
+After completion, report:
+- Files changed
+- SQL patch added and run
+- RLS policies added/changed
+- Whether Farmer Dashboard loads real reservations
+- Whether reservation status updates work
+- Whether reservation appears only for the correct farmer
+- Exact fake/mock test data used
+- Tests run
+- Any RLS issues or limitations

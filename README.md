@@ -135,6 +135,115 @@ All names, phones, villages, and IDs are fake/mock test data. No real personal d
 
 ---
 
+## Browse Discovery Upgrade
+
+### Search
+
+The search box on Browse Produce matches against all of the following fields simultaneously (client-side, no paid search service):
+
+| Field searched | Example |
+|---|---|
+| Produce name | `mango`, `tomato`, `brinjal` |
+| Farmer name | `Ramaiah`, `Lakshmi` |
+| Village | `Shadnagar`, `Vikarabad` |
+| District | `Rangareddy`, `Khammam` |
+| Category | `fruit`, `vegetable` |
+| Pickup location | `Shadnagar Main Market` |
+
+The search box has an inline clear (X) button. The search placeholder reads "Search by produce, farmer, village, district...".
+
+### Location Filter
+
+A district dropdown is populated dynamically from the loaded farmer data — no hardcoded list. Options:
+
+- **All Districts** (default) — no filter
+- Each unique district from loaded farmers (e.g. Rangareddy, Vikarabad, Narayanpet, Siddipet, Nizamabad, Khammam, Warangal, Karimnagar)
+
+### Freshness Filter
+
+Filters by `harvest_datetime` (compared to today's date in the browser):
+
+| Option | Logic |
+|---|---|
+| Any Harvest Date | no filter |
+| Harvested Today | `harvest_date === today` |
+| Within 2 Days | `daysSinceHarvest <= 2` |
+| Within This Week | `daysSinceHarvest <= 7` |
+
+Missing `harvest_datetime` values are handled safely (listing excluded only for strict freshness filters; not crashed).
+
+### Sort Options
+
+| Sort | Logic |
+|---|---|
+| Recently Added (default) | original Supabase order (`created_at DESC`) |
+| Nearest First | `distance_km` ascending |
+| Lowest Price | `price_per_kg` ascending |
+| Highest Quantity | `quantity_kg` descending |
+| Freshest Harvest | `harvest_datetime` descending |
+
+Missing sort fields are handled safely with fallback values.
+
+### Active Filter Summary
+
+A summary line appears above the listing grid:
+
+- `Showing 15 fruit and vegetable listings`
+- `Showing 5 fruit listings near Rangareddy`
+- `3 results for "mango" near Rangareddy, harvested this week`
+- `Showing 0 vegetable listings near Khammam`
+
+A **Clear filters** button appears next to the summary whenever any filter is active. It resets all filters including search, category, location, freshness, max price, and sort.
+
+### Max Price Filter (retained from v1)
+
+- Any Price
+- Up to Rs 25/kg
+- Up to Rs 50/kg
+- Up to Rs 80/kg
+
+### Empty State
+
+When no listings match, a centered message appears:
+
+> **No matching produce found**
+> Try changing your search or filters.
+
+A **Clear all filters** button is shown below the message.
+
+### Privacy Rules
+
+- Farmer phone appears only inside the Contact Farmer dialog (explicitly opened by buyer). Never in the listing cards.
+- Buyer phone (`reservations.buyer_phone`) is never shown on Browse.
+- No reservation data appears on Browse.
+- No RLS policies were changed.
+- No secrets are printed anywhere.
+
+### All Buyer Actions Preserved
+
+| Action | Status |
+|---|---|
+| Reserve | Works — opens ReservationModal with correct `listing_id` |
+| Contact Farmer | Works — opens ContactFarmerDialog with farmer phone + produce name |
+| WhatsApp wa.me | Works — from ContactFarmerDialog |
+| Tap-to-call | Works — from ContactFarmerDialog |
+| Copy phone | Works — from ContactFarmerDialog |
+| Share listing | Works — Web Share API → clipboard → toast fallback |
+| View full details | Works — links to `/produce/:id` |
+| Farmer profile link | Works — farmer name links to `/farmers/:id` |
+
+### No Paid Services
+
+All filtering, searching, and sorting is client-side JavaScript on data already loaded from Supabase. No Algolia, Elasticsearch, or paid search API is used.
+
+### Files Changed
+
+| File | Change |
+|---|---|
+| `src/pages/BrowsePage.tsx` | Full rewrite — added multi-field search, district filter, freshness filter, sort, summary line, clear filters, improved empty state |
+
+---
+
 ## Buyer Sharing + Detail UX
 
 ### What changed

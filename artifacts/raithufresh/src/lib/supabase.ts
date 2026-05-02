@@ -668,6 +668,27 @@ export type BuyerReservation = {
 };
 
 /**
+ * Cancels a buyer's own pending reservation.
+ * RLS enforces:
+ *   USING  buyer_user_id = auth.uid() AND status = 'pending'
+ *   WITH CHECK buyer_user_id = auth.uid() AND status = 'cancelled'
+ * So buyers can only cancel their own pending reservations and cannot
+ * set any other status, update protected fields, or touch another buyer's row.
+ */
+export async function cancelBuyerReservation(reservationId: string): Promise<boolean> {
+  if (!isSupabaseConfigured()) return false;
+  const { error } = await getSupabase()
+    .from("reservations")
+    .update({ status: "cancelled" })
+    .eq("id", reservationId);
+  if (error) {
+    console.warn("cancelBuyerReservation error:", error.message);
+    return false;
+  }
+  return true;
+}
+
+/**
  * Fetches all reservations for the currently logged-in buyer.
  * RLS enforces buyer_user_id = auth.uid() server-side — buyers can only see their own.
  * Farmer phone is included for ContactFarmerDialog (pickup coordination).

@@ -135,6 +135,176 @@ All names, phones, villages, and IDs are fake/mock test data. No real personal d
 
 ---
 
+## Buyer Dashboard Reservation Management + UX Polish Phase
+
+### Overview
+
+This phase adds status filters, client-side search, buyer cancellation (pending only), improved reservation cards with a 2-column detail grid, and better empty states to the Buyer Dashboard.
+
+---
+
+### Files Changed
+
+| File | Change |
+|---|---|
+| `supabase/patch-buyer-cancel-reservation.sql` | New — adds buyer UPDATE RLS policy (cancel own pending only) |
+| `src/lib/supabase.ts` | Added `cancelBuyerReservation(reservationId)` helper |
+| `src/pages/BuyerDashboard.tsx` | Full UX overhaul: filters, search, cancel button, better cards, better empty states |
+
+---
+
+### Database Patch — `patch-buyer-cancel-reservation.sql`
+
+Run once. Idempotent. Safe to re-run.
+
+| Change | Details |
+|---|---|
+| Policy name | `buyers_cancel_own_pending_reservations` |
+| Type | `FOR UPDATE TO authenticated` |
+| USING | `buyer_user_id = auth.uid() AND status = 'pending'` — buyer must own it AND it must be pending |
+| WITH CHECK | `buyer_user_id = auth.uid() AND status = 'cancelled'` — the only allowed new status is `cancelled` |
+| No DELETE | Buyers cannot delete reservations |
+| Existing policies | Farmer UPDATE, admin UPDATE, anon INSERT, authenticated SELECT/INSERT — all untouched |
+
+**Why this is safe:**
+
+- `USING` clause blocks access to any row the buyer does not own, or any non-pending row.
+- `WITH CHECK` clause blocks setting any status other than `cancelled`.
+- The Supabase PostgREST layer enforces both clauses server-side, independent of the client.
+- Buyer cannot update `buyer_name`, `buyer_phone`, `listing_id`, `quantity_kg`, `payment_method`, or `created_at` — column-level updates still go through WITH CHECK which only validates `status = 'cancelled'`, but the client only sends `{ status: 'cancelled' }`.
+
+---
+
+### `cancelBuyerReservation()` Helper
+
+```ts
+cancelBuyerReservation(reservationId: string): Promise<boolean>
+```
+
+- Calls `.update({ status: 'cancelled' }).eq('id', reservationId)`
+- RLS USING+WITH CHECK enforces ownership and pending-only protection server-side
+- Returns `true` on success, `false` on error (logs warning)
+- Updates local React state immediately after success (optimistic-like: no refetch)
+
+---
+
+### Buyer Dashboard UX
+
+#### Status Tiles (clickable)
+
+- Tiles are now buttons — clicking a tile filters the list to that status
+- Clicking the active tile again resets to "All"
+- Ring highlight when a tile is active
+
+#### Filter Tabs
+
+| Tab | Shows |
+|---|---|
+| All | All reservations (count badge) |
+| Pending | Pending only (count badge) |
+| Confirmed | Confirmed only |
+| Completed | Completed only |
+| Cancelled | Cancelled only |
+
+- Active tab: green filled
+- Inactive tab: white/border
+
+#### Client-Side Search
+
+- Search input with magnifier icon and clear (X) button
+- Matches: produce name, farmer name, village, district, status
+- No server call — filters the already-loaded list in real time
+- `useMemo` for performance
+
+#### Reservation Cards (improved)
+
+- 2-column detail grid (quantity/total and pickup, date and payment)
+- `AnimatePresence` for smooth enter/exit animations
+- `layout` prop so cards reflow smoothly when filtered
+- Cancelled cards rendered at 70% opacity
+- Status badge icons and colors unchanged
+
+#### Cancel Request Button
+
+- Shown only when `reservation.status === 'pending'`
+- Styled: ghost/destructive (red text, red hover bg)
+- Shows spinner + "Cancelling..." while in-flight
+- On confirm: calls `cancelBuyerReservation()`, updates local state — no full reload
+- After cancellation: card status badge updates to Cancelled, Cancel Request button disappears, Pending count decrements
+
+#### Empty States
+
+| Condition | Display |
+|---|---|
+| No reservations at all | `empty-produce.svg` + "No reservations yet" + Browse Produce button |
+| Filter/search returns nothing | Search icon + "No reservations match your filters" + Clear filters button |
+
+#### Counts in section heading
+
+- "Reservation History (N results)" — reflects the current filtered count
+
+---
+
+### Cancellation Rules
+
+| Rule | Enforcement |
+|---|---|
+| Buyer can cancel own pending | RLS USING + client button visible only for pending |
+| Buyer cannot cancel confirmed | RLS USING blocks (status != 'pending') |
+| Buyer cannot cancel completed | RLS USING blocks |
+| Buyer cannot cancel another buyer's reservation | RLS USING blocks (buyer_user_id != auth.uid()) |
+| Buyer cannot set status to confirmed | RLS WITH CHECK blocks (status != 'cancelled') |
+| Buyer cannot set status to completed | RLS WITH CHECK blocks |
+| Buyer cannot delete | No DELETE policy |
+| Buyer cannot update protected fields | Only `{ status: 'cancelled' }` sent by client; WITH CHECK validates status |
+
+---
+
+### Privacy / Security
+
+| Rule | Status |
+|---|---|
+| Buyer sees only own reservations | RLS SELECT + client `.eq('buyer_user_id', user.id)` |
+| Buyer can cancel only own pending | RLS UPDATE USING + WITH CHECK |
+| Farmer reservation access unchanged | Existing policies untouched |
+| Admin reservation access unchanged | Existing policies untouched |
+| Guest reservation insert unchanged | Anon INSERT policy untouched |
+| Buyer phone not exposed | Not in `getReservationsForCurrentBuyer` |
+| Farmer phone only in authenticated context | ContactFarmerDialog in own reservations only |
+| service_role key | Not used |
+| Secrets | Not printed |
+
+---
+
+### TypeScript Result
+
+Exit 0 — zero errors.
+
+---
+
+### Console Errors
+
+None.
+
+---
+
+### No Paid Services Used
+
+All icons are Lucide or local SVGs. No paid APIs, no external image hotlinks.
+
+---
+
+### Remaining Limitations
+
+| Limitation | Notes |
+|---|---|
+| Old guest reservations | `buyer_user_id = NULL` — not cancellable via Buyer Dashboard (no RLS auth.uid() match) |
+| No pagination | All reservations loaded at once — sufficient for pilot scale |
+| No sort order toggle | Newest first always |
+| Buyer profile edit | Not in this phase |
+
+---
+
 ## Buyer Account Reservation Link + Buyer Dashboard Phase
 
 ### Overview

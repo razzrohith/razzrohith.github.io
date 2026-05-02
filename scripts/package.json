@@ -14,6 +14,7 @@
     "db:patch-farmer-link": "tsx ./src/db-setup.ts patch /home/runner/workspace/supabase/patch-farmer-auth-link.sql",
     "db:patch-farmer-reservations": "tsx ./src/db-setup.ts patch /home/runner/workspace/supabase/patch-farmer-reservations.sql",
     "db:patch-admin-reservations": "tsx ./src/db-setup.ts patch /home/runner/workspace/supabase/patch-admin-reservations.sql",
+    "db:patch-user-role-security": "tsx ./src/db-setup.ts patch /home/runner/workspace/supabase/patch-user-role-security.sql",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "devDependencies": {

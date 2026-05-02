@@ -42,6 +42,96 @@ This inserts:
 
 ---
 
+## Security — Role Self-Escalation Prevention
+
+### Problem (fixed)
+
+`patch-auth.sql` originally issued a broad table-level grant:
+
+```sql
+GRANT SELECT, INSERT, UPDATE ON user_profiles TO anon, authenticated;
+```
+
+The `UPDATE` grant covered **all columns**, including `role`. Any authenticated user could have self-promoted to admin by sending:
+
+```sql
+UPDATE user_profiles SET role = 'admin' WHERE id = auth.uid();
+```
+
+### Fix applied
+
+SQL patch: `supabase/patch-user-role-security.sql`
+
+```sql
+-- Remove broad UPDATE
+REVOKE UPDATE ON user_profiles FROM anon;
+REVOKE UPDATE ON user_profiles FROM authenticated;
+
+-- Grant UPDATE on safe columns only
+GRANT UPDATE(full_name, phone, village, district) ON user_profiles TO authenticated;
+```
+
+Column-level `GRANT UPDATE(...)` in PostgreSQL means only the listed columns can be changed. Any attempt to `UPDATE role` (or `id` or `created_at`) is rejected at the privilege layer before RLS even runs.
+
+The RLS UPDATE policy (`auth.uid() = id`) is kept and tightened with an explicit `WITH CHECK`:
+
+```sql
+CREATE POLICY "users_update_own_profile" ON user_profiles
+  FOR UPDATE TO authenticated
+  USING (auth.uid() = id)
+  WITH CHECK (auth.uid() = id);
+```
+
+### What is allowed after the patch
+
+| Operation | Authenticated user | Anon |
+|---|---|---|
+| SELECT own profile | Allowed (RLS) | Blocked (no anon policy) |
+| INSERT own profile at signup (includes role) | Allowed (RLS) | Blocked |
+| UPDATE full_name, phone, village, district | Allowed (column GRANT + RLS) | Blocked |
+| UPDATE role | **Blocked (column GRANT)** | Blocked |
+| UPDATE id | Blocked (column GRANT) | Blocked |
+| UPDATE created_at | Blocked (column GRANT) | Blocked |
+
+### Admin role assignment (MVP)
+
+Admin role must be assigned **manually** via the Supabase Dashboard:
+
+1. Go to Table Editor → `user_profiles`
+2. Find the user's row
+3. Set `role` = `admin`
+4. Save
+
+Alternatively use the Supabase service_role key from a server context (never from the frontend).
+
+### Testing with fake/mock users
+
+When testing role escalation prevention, use fake data only:
+
+| Fake user | Email | Phone |
+|---|---|---|
+| Ravi Test Buyer | fakebuyer@example.com | 9876500001 |
+| Ramesh Test Farmer | fakefarmer@example.com | 9876500002 |
+| Suresh Test Agent | fakeagent@example.com | 9876500003 |
+
+Expected: any attempt to `UPDATE user_profiles SET role = 'admin'` from these accounts returns a PostgreSQL privilege error. The role remains unchanged.
+
+### Production recommendation
+
+For production, move admin role checks from `user_profiles.role` to `auth.jwt() -> app_metadata.role`, set via:
+- Supabase service_role key (backend only)
+- An Edge Function triggered by an admin action
+
+This fully removes `user_profiles` from the admin-access trust chain and eliminates any residual risk from table-level grants.
+
+### Apply the patch
+
+```bash
+pnpm --filter @workspace/scripts run db:patch-user-role-security
+```
+
+---
+
 ## Admin Reservations Tab
 
 Admin users can view and manage all buyer reservations across the platform from the Admin Dashboard.

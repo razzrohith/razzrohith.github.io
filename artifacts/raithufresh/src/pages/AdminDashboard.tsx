@@ -5,6 +5,7 @@ import {
   Users, Tractor, ShoppingBag, Package, TrendingUp,
   CheckCircle, Ban, AlertCircle, Phone, PhoneCall,
   Clock, CheckCircle2, RefreshCw, ClipboardList,
+  Loader2, Search,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -14,6 +15,8 @@ import { mockFarmers, mockBuyers, mockAgents, mockListings, mockReservations } f
 import {
   isSupabaseConfigured, getSupabase,
   AgentCallRequest, AgentCallRequestStatus,
+  AdminReservation, ReservationStatus,
+  getAllReservationsForAdmin, updateAdminReservationStatus,
 } from "@/lib/supabase";
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -34,7 +37,32 @@ type CallRequestCounts = {
 
 type UserStatus = { [id: string]: "Active" | "Suspended" };
 
+type ReservationCounts = {
+  total: number;
+  pending: number;
+  confirmed: number;
+  completed: number;
+  cancelled: number;
+  totalKg: number;
+};
+
 // ── Helpers ────────────────────────────────────────────────────────────────
+
+const RES_STATUS_COLORS: Record<ReservationStatus, string> = {
+  pending:   "bg-yellow-100 text-yellow-700 border-yellow-200",
+  confirmed: "bg-blue-100   text-blue-700   border-blue-200",
+  completed: "bg-green-100  text-green-700  border-green-200",
+  cancelled: "bg-red-100    text-red-700    border-red-200",
+};
+
+const RES_STATUS_LABELS: Record<ReservationStatus, string> = {
+  pending:   "Pending",
+  confirmed: "Confirmed",
+  completed: "Completed",
+  cancelled: "Cancelled",
+};
+
+const ALL_RES_STATUSES: ReservationStatus[] = ["pending", "confirmed", "completed", "cancelled"];
 
 const STATUS_LABELS: Record<AgentCallRequestStatus, string> = {
   pending: "Pending",
@@ -76,6 +104,14 @@ export default function AdminDashboard() {
     Object.fromEntries(mockBuyers.map((b) => [b.id, "Active" as const]))
   );
 
+  // ── Admin reservations state ──────────────────────────────────────────────
+  const [adminReservations, setAdminReservations] = useState<AdminReservation[]>([]);
+  const [reservationsLoading, setReservationsLoading] = useState(false);
+  const [reservationsError, setReservationsError] = useState<string | null>(null);
+  const [updatingReservationId, setUpdatingReservationId] = useState<string | null>(null);
+  const [reservationSearch, setReservationSearch] = useState("");
+  const [reservationStatusFilter, setReservationStatusFilter] = useState<"all" | ReservationStatus>("all");
+
   // ── Load DB counts ───────────────────────────────────────────────────────
 
   useEffect(() => {
@@ -101,6 +137,46 @@ export default function AdminDashboard() {
     }
     loadCounts();
   }, []);
+
+  // ── Load admin reservations ───────────────────────────────────────────────
+
+  const loadAdminReservations = useCallback(async () => {
+    if (!isSupabaseConfigured()) return;
+    setReservationsLoading(true);
+    setReservationsError(null);
+    try {
+      const rows = await getAllReservationsForAdmin();
+      setAdminReservations(rows);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Unknown error";
+      setReservationsError(`Could not load reservations: ${msg}`);
+    } finally {
+      setReservationsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadAdminReservations();
+  }, [loadAdminReservations]);
+
+  // ── Admin reservation status update ──────────────────────────────────────
+
+  const handleAdminReservationStatus = async (
+    id: string,
+    newStatus: ReservationStatus
+  ) => {
+    setUpdatingReservationId(id);
+    const ok = await updateAdminReservationStatus(id, newStatus);
+    setUpdatingReservationId(null);
+    if (ok) {
+      setAdminReservations((prev) =>
+        prev.map((r) => (r.id === id ? { ...r, status: newStatus } : r))
+      );
+      toast.success(`Reservation marked as ${RES_STATUS_LABELS[newStatus]}.`);
+    } else {
+      toast.error("Status update failed. Try again.");
+    }
+  };
 
   // ── Load agent call requests ─────────────────────────────────────────────
 
@@ -208,6 +284,30 @@ export default function AdminDashboard() {
   const verifyFarmer = (name: string) =>
     toast.success(`${name} verified as a trusted farmer`);
 
+  // ── Derived reservation counts ────────────────────────────────────────────
+
+  const reservationCounts: ReservationCounts = {
+    total:     adminReservations.length,
+    pending:   adminReservations.filter((r) => r.status === "pending").length,
+    confirmed: adminReservations.filter((r) => r.status === "confirmed").length,
+    completed: adminReservations.filter((r) => r.status === "completed").length,
+    cancelled: adminReservations.filter((r) => r.status === "cancelled").length,
+    totalKg:   adminReservations.reduce((sum, r) => sum + r.quantity_kg, 0),
+  };
+
+  // Filtered + searched reservations for the Reservations tab
+  const filteredReservations = adminReservations.filter((r) => {
+    if (reservationStatusFilter !== "all" && r.status !== reservationStatusFilter) return false;
+    if (reservationSearch.trim()) {
+      const q = reservationSearch.toLowerCase();
+      const buyer   = r.buyer_name.toLowerCase();
+      const produce = r.produce_listings?.produce_name?.toLowerCase() ?? "";
+      const farmer  = r.produce_listings?.farmers?.name?.toLowerCase() ?? "";
+      if (!buyer.includes(q) && !produce.includes(q) && !farmer.includes(q)) return false;
+    }
+    return true;
+  });
+
   // ── Analytics cards ──────────────────────────────────────────────────────
 
   const analyticsCards = [
@@ -234,15 +334,23 @@ export default function AdminDashboard() {
     },
     {
       label: "Reservations",
-      value: dbCounts ? dbCounts.reservations : mockReservations.length,
-      sub: dbCounts ? "from database" : "mock data",
+      value: reservationCounts.total > 0
+        ? reservationCounts.total
+        : dbCounts
+          ? dbCounts.reservations
+          : mockReservations.length,
+      sub: reservationCounts.total > 0
+        ? "from database"
+        : dbCounts ? "from database" : "mock data",
       icon: ShoppingBag,
       color: "bg-purple-50 text-purple-700 border-purple-100",
     },
     {
-      label: "Reserved Qty (mock)",
-      value: `${mockReservations.reduce((a, r) => a + r.quantityKg, 0)} kg`,
-      sub: "mock data",
+      label: "Reserved Quantity",
+      value: reservationCounts.totalKg > 0
+        ? `${reservationCounts.totalKg} kg`
+        : `${mockReservations.reduce((a, r) => a + r.quantityKg, 0)} kg`,
+      sub: reservationCounts.totalKg > 0 ? "from database" : "mock data",
       icon: TrendingUp,
       color: "bg-orange-50 text-orange-700 border-orange-100",
     },
@@ -376,6 +484,14 @@ export default function AdminDashboard() {
             <TabsTrigger value="buyers">Buyers ({mockBuyers.length})</TabsTrigger>
             <TabsTrigger value="agents">Agents ({mockAgents.length})</TabsTrigger>
             <TabsTrigger value="listings">Listings ({mockListings.length})</TabsTrigger>
+            <TabsTrigger value="reservations">
+              Reservations
+              {reservationCounts.pending > 0 && (
+                <span className="ml-1.5 inline-flex items-center justify-center w-4 h-4 text-[10px] font-bold rounded-full bg-yellow-500 text-white">
+                  {reservationCounts.pending}
+                </span>
+              )}
+            </TabsTrigger>
             <TabsTrigger value="agent-requests">
               Agent Requests
               {callCounts && callCounts.pending > 0 && (
@@ -574,6 +690,184 @@ export default function AdminDashboard() {
                 );
               })}
             </div>
+          </TabsContent>
+
+          {/* Reservations */}
+          <TabsContent value="reservations">
+
+            {/* Reservation analytics mini-cards */}
+            <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 mb-5">
+              {[
+                { label: "Total",     value: reservationCounts.total,     color: "bg-slate-50  text-slate-700  border-slate-100"  },
+                { label: "Pending",   value: reservationCounts.pending,   color: "bg-yellow-50 text-yellow-700 border-yellow-100" },
+                { label: "Confirmed", value: reservationCounts.confirmed, color: "bg-blue-50   text-blue-700   border-blue-100"   },
+                { label: "Completed", value: reservationCounts.completed, color: "bg-green-50  text-green-700  border-green-100"  },
+                { label: "Cancelled", value: reservationCounts.cancelled, color: "bg-red-50    text-red-700    border-red-100"    },
+                { label: "Total kg",  value: `${reservationCounts.totalKg} kg`, color: "bg-purple-50 text-purple-700 border-purple-100" },
+              ].map((c) => (
+                <div key={c.label} className={`rounded-xl border p-3 ${c.color}`}>
+                  <div className="text-lg font-bold leading-none">{c.value}</div>
+                  <div className="text-xs opacity-70 mt-1">{c.label}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Search + filter bar */}
+            <div className="flex flex-col sm:flex-row gap-2 mb-4">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                <input
+                  type="text"
+                  placeholder="Search buyer, farmer, or produce..."
+                  value={reservationSearch}
+                  onChange={(e) => setReservationSearch(e.target.value)}
+                  className="w-full pl-8 pr-3 py-2 text-sm border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary/30"
+                />
+              </div>
+              <div className="flex gap-1.5 flex-wrap">
+                {(["all", ...ALL_RES_STATUSES] as const).map((s) => (
+                  <button
+                    key={s}
+                    onClick={() => setReservationStatusFilter(s)}
+                    className={`px-3 py-1.5 text-xs rounded-full border transition-colors ${
+                      reservationStatusFilter === s
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "border-border text-muted-foreground hover:border-primary hover:text-primary"
+                    }`}
+                  >
+                    {s === "all" ? "All" : RES_STATUS_LABELS[s]}
+                  </button>
+                ))}
+              </div>
+              {isSupabaseConfigured() && (
+                <button
+                  onClick={loadAdminReservations}
+                  disabled={reservationsLoading}
+                  className="text-xs text-muted-foreground hover:text-primary flex items-center gap-1 transition-colors shrink-0"
+                >
+                  <RefreshCw className={`w-3 h-3 ${reservationsLoading ? "animate-spin" : ""}`} />
+                  Refresh
+                </button>
+              )}
+            </div>
+
+            {/* Loading */}
+            {reservationsLoading && (
+              <div className="bg-card border border-border rounded-2xl p-10 text-center">
+                <Loader2 className="w-6 h-6 text-muted-foreground mx-auto mb-2 animate-spin opacity-40" />
+                <p className="text-sm text-muted-foreground">Loading reservations...</p>
+              </div>
+            )}
+
+            {/* Error */}
+            {!reservationsLoading && reservationsError && (
+              <div className="bg-card border border-destructive/20 rounded-2xl p-8 text-center text-destructive text-sm">
+                {reservationsError}
+              </div>
+            )}
+
+            {/* Not configured */}
+            {!reservationsLoading && !reservationsError && !isSupabaseConfigured() && (
+              <div className="bg-card border border-border rounded-2xl p-8 text-center">
+                <ShoppingBag className="w-10 h-10 text-muted-foreground mx-auto mb-3 opacity-40" />
+                <h3 className="font-semibold text-foreground mb-1">Supabase Not Configured</h3>
+                <p className="text-sm text-muted-foreground">
+                  Connect Supabase to view live reservations.
+                </p>
+              </div>
+            )}
+
+            {/* Empty */}
+            {!reservationsLoading && !reservationsError && isSupabaseConfigured() && filteredReservations.length === 0 && (
+              <div className="bg-card border border-border rounded-2xl p-8 text-center">
+                <ShoppingBag className="w-10 h-10 text-muted-foreground mx-auto mb-3 opacity-40" />
+                <h3 className="font-semibold text-foreground mb-1">
+                  {adminReservations.length === 0 ? "No Reservations Yet" : "No Matching Reservations"}
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  {adminReservations.length === 0
+                    ? "Buyer reservations will appear here once listings are reserved."
+                    : "Try a different search or filter."}
+                </p>
+              </div>
+            )}
+
+            {/* Reservation cards */}
+            {!reservationsLoading && !reservationsError && filteredReservations.length > 0 && (
+              <div className="space-y-3">
+                {filteredReservations.map((r) => {
+                  const produceName = r.produce_listings?.produce_name ?? "Unknown produce";
+                  const pricePerKg  = r.produce_listings?.price_per_kg;
+                  const farmerName  = r.produce_listings?.farmers?.name ?? "Unknown farmer";
+                  const village     = r.produce_listings?.farmers?.village;
+                  const district    = r.produce_listings?.farmers?.district;
+                  const farmerLoc   = [village, district].filter(Boolean).join(", ") || null;
+                  const isUpdating  = updatingReservationId === r.id;
+
+                  return (
+                    <motion.div
+                      key={r.id}
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="bg-card border border-border rounded-2xl p-4 shadow-sm"
+                    >
+                      <div className="flex flex-col sm:flex-row gap-3">
+                        {/* Left: details */}
+                        <div className="flex-1 min-w-0 space-y-0.5">
+                          <div className="flex items-center gap-2 flex-wrap mb-1">
+                            <span className="font-semibold text-foreground text-sm">{r.buyer_name}</span>
+                            <span
+                              className={`inline-flex items-center text-xs font-medium px-2 py-0.5 rounded-full border ${RES_STATUS_COLORS[r.status]}`}
+                            >
+                              {RES_STATUS_LABELS[r.status]}
+                            </span>
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            +91 {r.buyer_phone}
+                            {r.payment_method && <span> · {r.payment_method}</span>}
+                          </div>
+                          <div className="text-sm">
+                            <span className="font-medium text-foreground">{r.quantity_kg} kg</span>
+                            {" of "}
+                            <span className="font-medium text-foreground">{produceName}</span>
+                            {pricePerKg && (
+                              <span className="text-muted-foreground"> · Rs {pricePerKg}/kg</span>
+                            )}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            Farmer: {farmerName}
+                            {farmerLoc && <span> · {farmerLoc}</span>}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            Received: {new Date(r.created_at).toLocaleDateString("en-IN", {
+                              day: "numeric", month: "short", year: "numeric",
+                            })}
+                          </div>
+                        </div>
+
+                        {/* Right: action buttons */}
+                        <div className="flex flex-wrap gap-1.5 sm:flex-col sm:justify-start sm:items-end shrink-0">
+                          {ALL_RES_STATUSES.filter((s) => s !== r.status).map((s) => (
+                            <button
+                              key={s}
+                              onClick={() => handleAdminReservationStatus(r.id, s)}
+                              disabled={isUpdating}
+                              className="text-xs px-3 py-1.5 rounded-full border border-border text-muted-foreground hover:border-primary hover:text-primary transition-colors disabled:opacity-50 whitespace-nowrap"
+                            >
+                              {isUpdating ? (
+                                <Loader2 className="w-3 h-3 animate-spin inline" />
+                              ) : (
+                                `Mark ${RES_STATUS_LABELS[s]}`
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            )}
           </TabsContent>
 
           {/* Agent Requests */}

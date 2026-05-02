@@ -394,6 +394,70 @@ export type SupabaseReservation = {
   } | null;
 };
 
+// ── Admin reservation helpers ────────────────────────────────────────────────
+
+/**
+ * Fetches all reservations for admin users, with a three-level join:
+ * reservations → produce_listings → farmers.
+ * RLS ensures only admin users (user_profiles.role = 'admin') can call this.
+ */
+export async function getAllReservationsForAdmin(): Promise<AdminReservation[]> {
+  if (!isSupabaseConfigured()) return [];
+  const { data, error } = await getSupabase()
+    .from("reservations")
+    .select(
+      "id, buyer_name, buyer_phone, quantity_kg, status, payment_method, created_at, produce_listings(produce_name, price_per_kg, farmers(name, village, district))"
+    )
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.warn("getAllReservationsForAdmin error:", error.message);
+    return [];
+  }
+  return (data ?? []) as unknown as AdminReservation[];
+}
+
+/**
+ * Admin-facing reservation status update. RLS ensures only admin users
+ * (user_profiles.role = 'admin') can call this. Column-level GRANT restricts
+ * the update to the status column only.
+ */
+export async function updateAdminReservationStatus(
+  reservationId: string,
+  status: ReservationStatus
+): Promise<boolean> {
+  if (!isSupabaseConfigured()) return false;
+  const { error } = await getSupabase()
+    .from("reservations")
+    .update({ status })
+    .eq("id", reservationId);
+
+  if (error) {
+    console.warn("updateAdminReservationStatus error:", error.message);
+    return false;
+  }
+  return true;
+}
+
+export type AdminReservation = {
+  id: string;
+  buyer_name: string;
+  buyer_phone: string;
+  quantity_kg: number;
+  status: ReservationStatus;
+  payment_method: string | null;
+  created_at: string;
+  produce_listings?: {
+    produce_name: string;
+    price_per_kg: number;
+    farmers?: {
+      name: string;
+      village: string | null;
+      district: string | null;
+    } | null;
+  } | null;
+};
+
 export type AgentCallRequestStatus = "pending" | "called" | "resolved";
 
 export type AgentCallRequestInsert = {

@@ -42,6 +42,89 @@ This inserts:
 
 ---
 
+## Admin Reservations Tab
+
+Admin users can view and manage all buyer reservations across the platform from the Admin Dashboard.
+
+### What admin can see
+
+The Admin Dashboard now includes a **Reservations** tab that shows:
+- Buyer name and phone number
+- Produce name and price per kg
+- Farmer name, village, and district
+- Quantity reserved (kg)
+- Payment method
+- Reservation status (pending / confirmed / completed / cancelled)
+- Received date
+
+### Analytics cards inside the tab
+
+| Card | Source |
+|---|---|
+| Total reservations | Live from Supabase |
+| Pending | Live from Supabase |
+| Confirmed | Live from Supabase |
+| Completed | Live from Supabase |
+| Cancelled | Live from Supabase |
+| Total kg reserved | Live from Supabase |
+
+The top Platform Overview cards for "Reservations" and "Reserved Quantity" also update from live data when Supabase is connected.
+
+### Admin actions
+
+- **Mark Pending** — move any reservation back to pending
+- **Mark Confirmed** — confirm a reservation
+- **Mark Completed** — mark as fulfilled
+- **Mark Cancelled** — cancel a reservation
+
+Status updates are persisted to Supabase immediately.
+
+### Filters
+
+- **Status filter**: All / Pending / Confirmed / Completed / Cancelled (pill buttons)
+- **Search**: by buyer name, farmer name, or produce name (client-side)
+
+### How admin reservation RLS works
+
+SQL patch: `supabase/patch-admin-reservations.sql`
+
+- `admin_read_all_reservations` — SELECT allowed when `user_profiles.role = 'admin'`
+- `admin_update_reservation_status` — UPDATE only the `status` column when admin
+- Column-level `GRANT UPDATE(status)` enforces that no other column can be changed, even if the RLS USING clause passes
+
+Farmer policies remain unchanged:
+- Farmers still see only their own reservations
+- Farmers can only update status on their own listings
+
+Buyer phone security:
+- Visible only to the owning farmer and to admin users
+- Not accessible by anon users, regular buyers, or other farmers
+
+### Apply the patch
+
+```bash
+pnpm --filter @workspace/scripts run db:patch-admin-reservations
+```
+
+### How to test with fake/mock buyer data
+
+When creating test reservations via the Reservation Modal on Browse Produce, use fake data such as:
+
+| Field | Example |
+|---|---|
+| Buyer name | Ravi Kumar / Suresh Rao / Anitha Devi |
+| Buyer phone | 9876500001 / 9876500002 / 9876500003 |
+| Quantity | 10 / 25 / 50 kg |
+| Payment method | Cash on Pickup / UPI / Bank Transfer |
+
+Do not use real personal names or phone numbers during testing.
+
+### MVP limitation
+
+Admin access is gated on `user_profiles.role = 'admin'`. In production, this should be hardened with JWT claims (`app_metadata.role = 'admin'`) or a server-side Postgres function so clients cannot manipulate their own `user_profiles` row to escalate privileges. The anon key grants table access; the RLS policy is the only gate.
+
+---
+
 ## Farmer Reservations
 
 Farmers can now manage buyer reservations directly from the Farmer Dashboard — live from Supabase.

@@ -1,0 +1,202 @@
+Good. Farmer Dashboard now shows real reservations for the logged-in farmer’s own listings.
+
+Next, add an Admin Reservations tab to the Admin Dashboard.
+
+Important:
+Do not add real-time listener yet.
+Do not add map.
+Do not add delivery.
+Do not add payments.
+Do not rebuild the UI.
+Do not remove existing auth, PWA, Supabase, RLS, Farmer Dashboard, Agent Dashboard, or Admin Dashboard features.
+Do not touch DealNest-style data.
+Keep the project focused only on fruits and vegetables.
+
+Testing instruction:
+Use only fake/mock test data.
+Use fake farmer names, fake buyer names, fake phone numbers, fake villages/towns, and fake reservation details.
+Do not use real personal data during testing.
+
+Current state:
+- Supabase is connected.
+- Authentication is working.
+- Role-based routes are working.
+- Admin Dashboard is admin-only.
+- Farmer Dashboard now shows real reservations only for the logged-in farmer’s own listings.
+- reservations table has buyer_name, buyer_phone, quantity_kg, status, payment_method, created_at.
+- produce_listings links reservations to farmers through listing_id.
+
+Goal:
+Add an Admin Dashboard Reservations tab where admin users can view and manage all buyer reservations across the platform.
+
+Step 1 — Database/RLS check
+
+Check whether the current admin user can SELECT all reservations.
+
+If admin cannot read all reservations because RLS blocks it, create a new SQL patch:
+
+supabase/patch-admin-reservations.sql
+
+Add the minimum required authenticated admin policies.
+
+Preferred approach:
+Use user_profiles.role = 'admin' to allow admin access.
+
+Admin should be able to:
+- SELECT all reservations
+- UPDATE only reservation status
+
+Admin should not need to update:
+- buyer_name
+- buyer_phone
+- quantity_kg
+- listing_id
+- payment_method
+
+Use minimum safe GRANTs where possible:
+- GRANT SELECT on reservations to authenticated
+- GRANT UPDATE(status) on reservations to authenticated
+
+RLS policy should allow only users whose user_profiles.role = 'admin'.
+
+Do not expose reservations publicly.
+Do not allow anon to read all reservations.
+Do not allow regular buyers/farmers/agents to read all reservations.
+Do not weaken existing farmer reservation policies.
+
+Step 2 — Supabase helpers/types
+
+Update src/lib/supabase.ts if needed.
+
+Add helpers:
+- getAllReservationsForAdmin()
+- updateAdminReservationStatus(reservationId, status)
+
+Admin reservation data should include:
+- reservation id
+- buyer name
+- buyer phone
+- quantity kg
+- status
+- payment method
+- created date
+- listing produce name
+- listing price per kg
+- farmer name
+- farmer village
+- farmer district
+
+If a deep join is difficult, use safe multiple queries.
+
+Step 3 — Admin Dashboard UI
+
+Add a new Admin Dashboard tab:
+
+Reservations
+
+Inside it, show all reservations in a clean table/card layout.
+
+Display:
+- Buyer name
+- Buyer phone
+- Produce name
+- Farmer name
+- Farmer village/district
+- Quantity reserved
+- Payment method
+- Reservation status
+- Created date
+- Action buttons:
+  - Mark Pending
+  - Mark Confirmed
+  - Mark Completed
+  - Mark Cancelled
+
+Add filters:
+- Status filter: all / pending / confirmed / completed / cancelled
+- Search by buyer name, farmer name, or produce name
+
+Add empty state:
+"No reservations yet."
+
+Add loading state:
+"Loading reservations..."
+
+Add error state:
+"Could not load reservations."
+
+Step 4 — Analytics cards
+
+Add reservation analytics cards in Admin Dashboard:
+
+- Total reservations
+- Pending reservations
+- Confirmed reservations
+- Completed reservations
+- Cancelled reservations
+- Total reserved kg
+
+Use Supabase data if configured.
+Use mock/local fallback only if Supabase is not configured.
+
+Step 5 — Preserve existing Admin Dashboard
+
+Do not remove:
+- Existing analytics cards
+- Farmers tab
+- Buyers tab
+- Agents tab
+- Listings tab
+- Agent Requests tab
+- Disputes placeholder
+- Existing Supabase counts
+
+Step 6 — Testing
+
+Use fake/mock data only.
+
+Test:
+1. Admin user can open Admin Dashboard.
+2. Non-admin user cannot open Admin Dashboard.
+3. Admin Reservations tab loads all reservations.
+4. Admin can search reservations.
+5. Admin can filter by status.
+6. Admin can update reservation status.
+7. Status update persists in Supabase.
+8. Farmer Dashboard still shows only that farmer’s own reservations.
+9. A farmer cannot see another farmer’s reservations.
+10. Browse Produce still loads active listings.
+11. Waitlist form still works.
+12. Reservation flow still works.
+13. Agent Dashboard still works.
+14. Agent Requests tab still works.
+15. No console errors.
+16. No secrets printed.
+
+Step 7 — Documentation
+
+Update README with:
+- Admin Reservations tab
+- What admin can see
+- How admin reservation RLS works
+- How to test using fake/mock buyer data
+- Current MVP limitation:
+  Admin access currently depends on user_profiles.role = 'admin'. In production, this should be hardened with JWT claims or server-side functions.
+
+Security note:
+Buyer phone numbers should only be visible to:
+- the farmer who owns the reserved listing
+- admin users
+
+Do not expose buyer phone numbers publicly.
+
+After completion, report:
+- Files changed
+- SQL patch added and run, if needed
+- RLS policies added/changed
+- Whether Admin Reservations tab loads real reservations
+- Whether status update works
+- Whether farmer privacy still works
+- Exact fake/mock test data used
+- Tests run
+- Any RLS issues or limitations

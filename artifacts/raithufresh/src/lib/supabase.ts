@@ -447,6 +447,59 @@ export type SupabaseReservation = {
   } | null;
 };
 
+// ── Landing page helpers ─────────────────────────────────────────────────────
+
+/**
+ * Fetches up to 6 verified farmers for the landing page farmer discovery section.
+ * Returns only public-safe fields — NO phone number.
+ * Ordered by rating descending so the best-rated farmers appear first.
+ */
+export async function getLandingFarmers(): Promise<LandingFarmer[]> {
+  if (!isSupabaseConfigured()) return [];
+  const { data, error } = await getSupabase()
+    .from("farmers")
+    .select("id, name, village, district, rating, verified")
+    .eq("verified", true)
+    .order("rating", { ascending: false, nullsFirst: false })
+    .limit(6);
+  if (error) {
+    console.warn("getLandingFarmers error:", error.message);
+    return [];
+  }
+  return (data ?? []) as LandingFarmer[];
+}
+
+/**
+ * Fetches up to 15 active produce listings for the landing page preview section.
+ * Returns only status=active (enforced by RLS for anon users).
+ * The caller can slice to 6 for display and use the full set for listing counts.
+ */
+export async function getLandingListings(): Promise<SupabaseListing[]> {
+  if (!isSupabaseConfigured()) return [];
+  const { data, error } = await getSupabase()
+    .from("produce_listings")
+    .select(
+      "id, farmer_id, produce_name, category, price_per_kg, quantity_kg, harvest_datetime, pickup_location, district, distance_km, quality_notes, status, farmers(id, name, village, district, rating, phone, verified)"
+    )
+    .eq("status", "active")
+    .order("created_at", { ascending: false })
+    .limit(15);
+  if (error) {
+    console.warn("getLandingListings error:", error.message);
+    return [];
+  }
+  return (data ?? []) as unknown as SupabaseListing[];
+}
+
+export type LandingFarmer = {
+  id: string;
+  name: string;
+  village: string | null;
+  district: string | null;
+  rating: number | null;
+  verified: boolean;
+};
+
 // ── Admin reservation helpers ────────────────────────────────────────────────
 
 /**

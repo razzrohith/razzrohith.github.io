@@ -135,6 +135,134 @@ All names, phones, villages, and IDs are fake/mock test data. No real personal d
 
 ---
 
+## Landing Page Conversion + Farmer Discovery
+
+### Page Sections (in order)
+
+| Section | Description |
+|---|---|
+| Hero | RaithuFresh tagline, 3 CTAs: Join as Buyer / Join as Farmer / Browse Produce |
+| How the Pilot Works | 4-step visual flow |
+| Nearby Verified Farmers | Live Supabase data — 6 verified farmers |
+| Fresh Listings Near You | Live Supabase data — 6 active listings preview |
+| The Problem | Problem for farmers and buyers explained |
+| Why RaithuFresh? | Benefits side-by-side with CTA buttons in each card |
+| Join the Waitlist | Improved form with validation, success state, double-submit prevention |
+| Footer | Links to Browse, Join as Farmer, Join as Buyer |
+
+---
+
+### How the Pilot Works (4 Steps)
+
+| Step | Title | Description |
+|---|---|---|
+| 1 | Farmer Lists Produce | Farmer adds fruits or vegetables — quantity, price, pickup location |
+| 2 | Buyer Reserves Nearby | Buyer browses active listings and reserves the quantity needed |
+| 3 | Buyer Contacts Farmer | Buyer calls or messages the farmer directly before pickup |
+| 4 | Cash or UPI at Pickup | Payment directly to the farmer. No online payment. |
+
+---
+
+### Nearby Verified Farmers Section
+
+Loaded from Supabase using `getLandingFarmers()` helper.
+
+- Returns up to 6 verified farmers (`verified = true`)
+- Ordered by `rating DESC`
+- Fields shown: name, village, district, rating (star display), Verified badge, active listing count
+- Active listing count is derived client-side from the loaded listings (no extra query)
+- **Phone is never shown** on the farmer cards — only available inside the Contact Farmer dialog (from the Produce Detail or Farmer Profile page)
+- Each card has a "View Farmer Profile" button → `/farmers/:id`
+
+Fallback states:
+- Loading spinner while fetching
+- "No verified farmers listed yet" if array is empty or Supabase is not configured
+
+---
+
+### Fresh Listings Near You Section
+
+Loaded from Supabase using `getLandingListings()` helper.
+
+- Returns up to 15 active listings (`status = 'active'`)
+- Displays first 6 on the landing page
+- Shows "See all 15 listings →" button if more than 6 are available
+- Fields shown: produce name, category badge, price per kg, quantity, harvest date, village/district
+- **No farmer phone shown** on listing cards
+- Each card has "View Details" → `/produce/:id`
+
+Fallback states:
+- Loading spinner while fetching
+- "No active listings right now" message with Browse button
+
+---
+
+### CTA Flow
+
+| Button | Location | Behavior |
+|---|---|---|
+| Join as Buyer (hero) | Hero | Scrolls to waitlist and preselects Buyer role |
+| Join as Farmer (hero) | Hero | Scrolls to waitlist and preselects Farmer role |
+| Browse Produce (hero) | Hero | Navigates to `/browse` |
+| Join as Farmer (benefits) | Benefits card | Scrolls to waitlist and preselects Farmer role |
+| Join as Buyer (benefits) | Benefits card | Scrolls to waitlist and preselects Buyer role |
+| Join as Farmer (footer) | Footer | Scrolls to waitlist and preselects Farmer role |
+| Join as Buyer (footer) | Footer | Scrolls to waitlist and preselects Buyer role |
+
+---
+
+### Waitlist Form Improvements
+
+| Feature | Status |
+|---|---|
+| Clear field-level validation messages | Added — shown in red below each invalid field |
+| Success message after submit | Shows name, thank-you message, Browse button |
+| Double-submit prevention | `disabled={submitting}` + guard in `onSubmit` |
+| Supabase insert | Inserts into `waitlist_leads` if configured |
+| Local fallback | Sets `submitted = true` even if Supabase fails |
+| Role preselection from hero CTAs | Role pre-filled when scrolled from CTA button |
+| Spinner while saving | Loader2 spinner shown on submit button |
+| Role dropdown descriptions | e.g. "Buyer — I want to buy fresh produce" |
+
+---
+
+### Supabase Helpers Added
+
+| Helper | Table | Access |
+|---|---|---|
+| `getLandingFarmers()` | `farmers` | Anon — returns `id, name, village, district, rating, verified` only (NO phone) |
+| `getLandingListings()` | `produce_listings` + `farmers` join | Anon — `status = 'active'` enforced by RLS |
+
+Both helpers return empty arrays on failure — never crash the page.
+
+### Type Added
+
+`LandingFarmer` — public-safe subset of `SupabaseFarmer`, intentionally excludes `phone`, `user_id`, and `assisted_mode`.
+
+---
+
+### Privacy Rules
+
+- Farmer phone: **NOT shown** on landing page farmer cards or listing cards. Only accessible via the Contact Farmer dialog on Produce Detail or Farmer Profile pages.
+- Buyer phone: never shown on any public page.
+- Reservations: never shown on the landing page.
+- Admin data: never shown on the landing page.
+- No RLS changes.
+- No secrets printed.
+
+### No Paid Services
+
+All landing page data is loaded from the free-tier Supabase backend using the anon key. No paid analytics, ads, maps, or APIs are used.
+
+### Files Changed
+
+| File | Change |
+|---|---|
+| `src/lib/supabase.ts` | Added `getLandingFarmers()`, `getLandingListings()`, `LandingFarmer` type |
+| `src/pages/LandingPage.tsx` | Full rewrite — all new sections, improved waitlist, role-aware CTAs |
+
+---
+
 ## Browse Discovery Upgrade
 
 ### Search

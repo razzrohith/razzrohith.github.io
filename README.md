@@ -42,6 +42,62 @@ This inserts:
 
 ---
 
+## Security — Reservation Update Hardening (patch-reservation-update-security.sql)
+
+### Changes applied
+
+SQL patch: `supabase/patch-reservation-update-security.sql`
+
+#### reservations — UPDATE restricted to status only
+
+| Column | Farmer UPDATE | Admin UPDATE | Notes |
+|---|---|---|---|
+| status | Yes (own listing's reservations, domain enforced) | Yes (domain enforced) | Only updatable column |
+| **id** | **No** | **No** | Protected — primary key |
+| **listing_id** | **No** | **No** | Protected — reservation ownership anchor |
+| **buyer_name** | **No** | **No** | Protected — buyer-submitted data |
+| **buyer_phone** | **No** | **No** | Protected — buyer-submitted data |
+| **quantity_kg** | **No** | **No** | Protected — buyer-submitted data |
+| **payment_method** | **No** | **No** | Protected — hardcoded at insert time |
+| **created_at** | **No** | **No** | Protected — immutable audit timestamp |
+
+Grants revoked:
+- `REVOKE UPDATE ON reservations FROM anon`
+- `REVOKE UPDATE ON reservations FROM authenticated` (table-level, all columns)
+- `REVOKE DELETE ON reservations FROM anon` (leftover cleanup)
+
+Grant added:
+- `GRANT UPDATE(status) ON reservations TO authenticated`
+
+RLS UPDATE policies recreated (idempotent, WITH CHECK enforced):
+- `farmer_update_own_reservation_status` — farmer sees only reservations for own listings, status domain enforced
+- `admin_update_reservation_status` — admin (role='admin') can update any reservation status, domain enforced
+
+Both layers now enforce the status restriction independently:
+1. Column privilege layer: only the `status` column has an UPDATE grant — any attempt to write to any other column is rejected at the PostgreSQL privilege level before RLS runs.
+2. RLS WITH CHECK layer: status must be in `('pending','confirmed','cancelled','completed')`.
+
+#### produce_listings — leftover authenticated DELETE removed
+
+The `authenticated` role retained a table-level DELETE grant from the original schema. No DELETE RLS policy existed, so it was functionally blocked. It is now revoked at the grant level as well.
+
+Grant revoked:
+- `REVOKE DELETE ON produce_listings FROM authenticated`
+
+Farmers mark listings as sold/out_of_stock via status update — no delete is needed.
+
+#### Testing guidelines
+
+- Use only fake/mock data during all tests (fake buyer names, fake phone numbers)
+- No real personal data
+- No paid services, paid APIs, paid Supabase add-ons, or paid Replit features are used
+
+### Apply the patch
+
+Paste `supabase/patch-reservation-update-security.sql` into Supabase SQL Editor → Run.
+
+---
+
 ## Security — Produce Listing Update Hardening (patch-produce-listing-update-security.sql)
 
 ### Changes applied

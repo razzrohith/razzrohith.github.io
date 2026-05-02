@@ -5,10 +5,18 @@
   "type": "module",
   "scripts": {
     "hello": "tsx ./src/hello.ts",
+    "db:schema": "tsx ./src/db-setup.ts schema",
+    "db:seed": "tsx ./src/db-setup.ts seed",
+    "db:setup": "tsx ./src/db-setup.ts setup",
+    "db:verify": "tsx ./src/db-setup.ts verify",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "devDependencies": {
     "@types/node": "catalog:",
     "tsx": "catalog:"
+  },
+  "dependencies": {
+    "@types/pg": "^8.18.0",
+    "pg": "^8.20.0"
   }
 }

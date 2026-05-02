@@ -1,0 +1,96 @@
+Yes, add PWA support for RaithuFresh.
+
+Goal:
+Make the current RaithuFresh responsive web app installable from mobile browsers like a native app, especially Android Chrome first.
+
+Important:
+Do not rebuild the app.
+Do not change the existing UI design unless needed for PWA setup.
+Do not remove existing pages, mock data, forms, filters, dashboards, or reservation flow.
+Keep the project focused only on fruits and vegetables.
+
+Add the following:
+
+1. PWA Manifest
+Create a proper web app manifest with:
+- App name: RaithuFresh
+- Short name: RaithuFresh
+- Description: Buy fresh fruits and vegetables directly from nearby farmers.
+- Start URL: /
+- Display mode: standalone
+- Theme color: green/fresh agriculture theme matching the app
+- Background color matching the app
+- Orientation: portrait-primary
+- Icons:
+  - 192x192
+  - 512x512
+  - maskable icon if possible
+
+2. App Icons
+Create simple placeholder app icons if no real logo exists yet.
+Use a clean green farmer/fresh produce style.
+Do not use copyrighted images.
+If generating icons in code/assets, keep them simple and replaceable later.
+
+3. HTML Meta Tags
+Update index.html with:
+- manifest link
+- theme-color
+- apple-mobile-web-app-capable
+- apple-mobile-web-app-title
+- apple status bar style
+- favicon link
+- proper mobile viewport if missing
+
+4. Service Worker
+Add a basic service worker that:
+- Caches app shell files
+- Supports offline loading of the main app
+- Shows an offline fallback if needed
+- Does not break normal live development
+- Does not aggressively cache mock data in a way that causes stale UI problems during development
+
+5. Offline Page
+Add a simple offline fallback page or offline state:
+Text:
+"You are offline. Please reconnect to view fresh produce listings."
+
+6. Install Prompt
+Add a small non-intrusive install banner or button:
+- Show only when install is available
+- Text: "Install RaithuFresh"
+- Let user dismiss it
+- Do not annoy user repeatedly
+
+7. Mobile Testing
+Make sure:
+- App still works on desktop
+- App still works on mobile layout
+- Browse Produce page works
+- Farmer Dashboard works
+- Agent Dashboard works
+- Admin Dashboard works
+- Reservation modal/flow still works
+- No console errors
+
+8. Documentation
+Update README with:
+- How to run locally
+- How to test PWA
+- How to install on Android Chrome
+- Current PWA limitations
+- What needs to be replaced later, like real logo/icons
+
+Expected final output:
+- RaithuFresh can be installed from mobile browser
+- App opens in standalone mode after install
+- Basic offline fallback works
+- Existing app features remain unchanged
+- No broken routes
+- No console errors
+
+After completion, report:
+- Files created/changed
+- What PWA features were added
+- How to test install locally
+- Any limitations

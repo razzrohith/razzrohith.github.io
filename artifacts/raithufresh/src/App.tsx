@@ -9,6 +9,7 @@ import ProduceDetailPage from "@/pages/ProduceDetailPage";
 import FarmerDashboard from "@/pages/FarmerDashboard";
 import AgentDashboard from "@/pages/AgentDashboard";
 import AdminDashboard from "@/pages/AdminDashboard";
+import InstallBanner from "@/components/InstallBanner";
 
 const queryClient = new QueryClient();
 
@@ -34,6 +35,7 @@ function App() {
           <Router />
         </WouterRouter>
         <Toaster richColors position="top-center" />
+        <InstallBanner />
       </TooltipProvider>
     </QueryClientProvider>
   );

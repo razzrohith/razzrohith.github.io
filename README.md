@@ -42,6 +42,50 @@ This inserts:
 
 ---
 
+## Buyer Flow Cleanup — Browse Contact + Privacy
+
+### What changed
+
+#### 1. BrowsePage Contact Farmer — now uses live Supabase farmer phone
+
+**Before:** The Contact button in Browse Produce called `mockFarmers.find(mf => mf.id === listing.farmerId)` regardless of whether Supabase was configured. For real Supabase listings, the mock lookup always failed (UUIDs never match mock IDs), so every Contact click showed the fallback message.
+
+**After:** The `FarmerMap` type now includes `phone: string | null`. The Supabase fetch already joined `farmers(phone)` — that value is now stored in farmerMap and used directly in `handleContact`.
+
+```ts
+// Before (broken for Supabase listings)
+const f = mockFarmers.find((mf) => mf.id === listing.farmerId);
+
+// After (uses real Supabase farmer phone)
+const f = farmerMap[listing.farmerId];
+```
+
+- If farmer has a phone number in Supabase: toast shows `FarmerName: +91 XXXXXXXXXX`
+- If farmer phone is null/missing: toast shows `"Please reserve first or visit the pickup location."`
+- Mock fallback (no Supabase): uses `mockFarmers` phone — behavior unchanged
+
+#### 2. Farmer helper — no mock fallback for live listings
+
+The `farmer(id)` display helper in BrowsePage previously fell back to `mockFarmers.find(...)` for any farmerId not found in farmerMap. For Supabase listings, all farmers are in farmerMap (populated by the join). The fallback is now removed to prevent mock data leaking into live mode.
+
+#### 3. Buyer phone privacy
+
+Buyer phone (`buyer_phone`) is collected only in `ReservationModal` and stored in the `reservations` table. It is:
+
+- **Shown to**: the farmer who owns the listing (in Farmer Dashboard reservation cards — needed for pickup coordination)
+- **Shown to**: admin users (in Admin Dashboard — for support/moderation)
+- **Never shown on**: BrowsePage, ProduceDetailPage, LandingPage, or any public page
+- **Never logged** to console
+- **Never passed** to farmer phone display logic — farmer phone and buyer phone are separate data paths
+
+The RLS policy on `reservations` (`farmer_see_own_reservations`) enforces this at the DB level.
+
+#### 4. Farmer phone — intentionally public in listing contact flow
+
+Farmers list their own produce. Their phone number is the contact point for buyers. Showing it via the Contact button is the intended direct-to-buyer behavior of the marketplace. Farmer phone is fetched from the `farmers` table join and shown only in the Contact toast and Farmer Dashboard profile — never from the `reservations` table.
+
+---
+
 ## Produce Detail Page — Live Supabase Data
 
 ### What changed

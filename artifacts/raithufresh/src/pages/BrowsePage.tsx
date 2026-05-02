@@ -29,7 +29,7 @@ function mapSupabaseListing(row: SupabaseListing): ProduceListing {
   };
 }
 
-type FarmerMap = Record<string, { name: string; village: string }>;
+type FarmerMap = Record<string, { name: string; village: string; phone: string | null }>;
 
 export default function BrowsePage() {
   const [search, setSearch] = useState("");
@@ -47,7 +47,7 @@ export default function BrowsePage() {
       if (!isSupabaseConfigured()) {
         setListings(mockListings.filter((l) => l.status === "Available"));
         const fm: FarmerMap = {};
-        mockFarmers.forEach((f) => { fm[f.id] = { name: f.name, village: f.village }; });
+        mockFarmers.forEach((f) => { fm[f.id] = { name: f.name, village: f.village, phone: f.phone }; });
         setFarmerMap(fm);
         setLoading(false);
         return;
@@ -71,6 +71,7 @@ export default function BrowsePage() {
             fm[row.farmer_id] = {
               name: row.farmers.name,
               village: row.farmers.village ?? "",
+              phone: row.farmers.phone ?? null,
             };
           }
         });
@@ -79,7 +80,7 @@ export default function BrowsePage() {
         console.warn("Supabase load failed, using mock data:", e);
         setListings(mockListings.filter((l) => l.status === "Available"));
         const fm: FarmerMap = {};
-        mockFarmers.forEach((f) => { fm[f.id] = { name: f.name, village: f.village }; });
+        mockFarmers.forEach((f) => { fm[f.id] = { name: f.name, village: f.village, phone: f.phone }; });
         setFarmerMap(fm);
       } finally {
         setLoading(false);
@@ -88,7 +89,7 @@ export default function BrowsePage() {
     load();
   }, []);
 
-  const farmer = (id: string) => farmerMap[id] ?? mockFarmers.find((f) => f.id === id) ?? null;
+  const farmer = (id: string) => farmerMap[id] ?? null;
 
   const filtered = listings.filter((l) => {
     if (search && !l.name.toLowerCase().includes(search.toLowerCase())) return false;
@@ -103,10 +104,11 @@ export default function BrowsePage() {
   };
 
   const handleContact = (listing: ProduceListing) => {
-    const f = mockFarmers.find((mf) => mf.id === listing.farmerId);
+    const f = farmerMap[listing.farmerId];
+    const name = f?.name ?? "Farmer";
     const phone = f?.phone;
-    if (phone) toast.success(`Farmer ${farmer(listing.farmerId)?.name}: +91 ${phone}`);
-    else toast.info("Contact the farmer by visiting their pickup location.");
+    if (phone) toast.success(`${name}: +91 ${phone}`);
+    else toast.info("Please reserve first or visit the pickup location.");
   };
 
   return (

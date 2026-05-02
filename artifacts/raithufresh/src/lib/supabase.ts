@@ -491,6 +491,56 @@ export async function getLandingListings(): Promise<SupabaseListing[]> {
   return (data ?? []) as unknown as SupabaseListing[];
 }
 
+export type LandingStats = {
+  verifiedFarmers: number;
+  activeListings: number;
+  districtsCovered: number;
+  fruitListings: number;
+  vegetableListings: number;
+};
+
+/**
+ * Fetches aggregate stats for the landing page trust strip.
+ * Public-safe: no phone, no buyer data, no reservations, no admin data.
+ * Two parallel queries: verified farmer count + active listing breakdown.
+ */
+export async function getLandingStats(): Promise<LandingStats> {
+  const empty: LandingStats = {
+    verifiedFarmers: 0,
+    activeListings: 0,
+    districtsCovered: 0,
+    fruitListings: 0,
+    vegetableListings: 0,
+  };
+  if (!isSupabaseConfigured()) return empty;
+  try {
+    const sb = getSupabase();
+    const [
+      { count: farmerCount },
+      { data: listingRows },
+    ] = await Promise.all([
+      sb.from("farmers")
+        .select("*", { count: "exact", head: true })
+        .eq("verified", true),
+      sb.from("produce_listings")
+        .select("category, district")
+        .eq("status", "active"),
+    ]);
+    const rows = (listingRows ?? []) as { category: string; district: string | null }[];
+    const districts = new Set(rows.map((r) => r.district).filter(Boolean));
+    return {
+      verifiedFarmers: farmerCount ?? 0,
+      activeListings: rows.length,
+      districtsCovered: districts.size,
+      fruitListings: rows.filter((r) => r.category === "Fruit").length,
+      vegetableListings: rows.filter((r) => r.category === "Vegetable").length,
+    };
+  } catch (e) {
+    console.warn("getLandingStats error:", e);
+    return empty;
+  }
+}
+
 export type LandingFarmer = {
   id: string;
   name: string;

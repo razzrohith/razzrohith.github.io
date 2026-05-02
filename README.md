@@ -135,6 +135,121 @@ All names, phones, villages, and IDs are fake/mock test data. No real personal d
 
 ---
 
+## Landing Trust Indicators + Live Stats Phase
+
+### Overview
+
+This phase adds a live stats strip between the hero and "How the Pilot Works" sections.
+All stats are computed from public-safe Supabase data using a new `getLandingStats()` helper.
+No schema changes, no paid services, no private data exposed.
+
+---
+
+### Trust Strip — What It Shows
+
+Positioned between the hero and the pilot steps sections.
+
+| Stat Card | Data Source | Icon |
+|---|---|---|
+| Verified Farmers | `farmers WHERE verified = true` — exact count | `BadgeCheck` (Lucide) |
+| Active Listings | `produce_listings WHERE status = 'active'` — row count | `ShoppingBag` (Lucide) |
+| Districts | Unique `district` values from active listings | `MapPin` (Lucide) |
+| Fruit Listings | Active listings where `category = 'Fruit'` | `icon-fruit.svg` |
+| Vegetable Listings | Active listings where `category = 'Vegetable'` | `icon-vegetable.svg` |
+
+Trust wording shown above the stat cards:
+> "Built for local pickup. Farmers list fresh fruits and vegetables, buyers reserve and contact directly."
+
+**Loading state**: Each stat shows `"—"` while data is loading (no spinner, no flash).
+
+**Error/Supabase-unconfigured state**: Stats default to `0`. Page never crashes.
+
+---
+
+### `getLandingStats()` Helper
+
+Added to `src/lib/supabase.ts`. Runs two parallel queries on load:
+
+| Query | Purpose |
+|---|---|
+| `SELECT *, { count: "exact", head: true } FROM farmers WHERE verified = true` | Gets total verified farmer count (no rows returned, just count header) |
+| `SELECT category, district FROM produce_listings WHERE status = 'active'` | Gets all active listing rows (for breakdown by category and unique districts) |
+
+Stats derived client-side from the two queries:
+- `verifiedFarmers` — from the count header of query 1
+- `activeListings` — `rows.length` from query 2
+- `districtsCovered` — `new Set(rows.map(r => r.district).filter(Boolean)).size`
+- `fruitListings` — `rows.filter(r => r.category === "Fruit").length`
+- `vegetableListings` — `rows.filter(r => r.category === "Vegetable").length`
+
+Returns `LandingStats` type with all fields defaulting to `0` on any error.
+
+**Privacy rules confirmed for `getLandingStats()`:**
+- No `phone` field selected
+- No `buyer_name`, `buyer_phone`, or reservation data queried
+- No `user_profiles` or `user_id` exposed
+- No `service_role` key used
+- RLS unchanged
+
+---
+
+### `LandingStats` Type
+
+```ts
+export type LandingStats = {
+  verifiedFarmers: number;
+  activeListings: number;
+  districtsCovered: number;
+  fruitListings: number;
+  vegetableListings: number;
+};
+```
+
+---
+
+### Integration in LandingPage
+
+`getLandingStats()` runs in parallel with `getLandingFarmers()` and `getLandingListings()` inside the existing `Promise.all()` on mount — no extra loading cycle.
+
+```ts
+const [farmers, listings, stats] = await Promise.all([
+  getLandingFarmers(),
+  getLandingListings(),
+  getLandingStats(),
+]);
+```
+
+The `landingStats` state is `LandingStats | null` — null while loading, populated after.
+
+---
+
+### Fake/Mock Testing Rule
+
+All test data (farmer names, villages, produce, IDs) is fake/mock. No real personal data used.
+
+---
+
+### Free-Only Rule
+
+No paid services, no paid APIs, no external image hotlinks. All icons are Lucide or local SVGs.
+
+---
+
+### TypeScript Result
+
+Exit 0 — zero errors.
+
+---
+
+### Files Changed
+
+| File | Change |
+|---|---|
+| `src/lib/supabase.ts` | Added `LandingStats` type and `getLandingStats()` helper |
+| `src/pages/LandingPage.tsx` | Added `landingStats` state, wired into `Promise.all`, inserted trust strip section |
+
+---
+
 ## Landing Visual Polish + Farmer Trust Phase
 
 ### Overview

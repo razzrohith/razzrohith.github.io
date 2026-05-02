@@ -22,7 +22,9 @@ import {
   getSupabase,
   getLandingFarmers,
   getLandingListings,
+  getLandingStats,
   LandingFarmer,
+  LandingStats,
   SupabaseListing,
 } from "@/lib/supabase";
 
@@ -135,6 +137,7 @@ export default function LandingPage() {
   // ── Landing data ─────────────────────────────────────────────────────────
   const [landingFarmers, setLandingFarmers] = useState<LandingFarmer[]>([]);
   const [landingListings, setLandingListings] = useState<SupabaseListing[]>([]);
+  const [landingStats, setLandingStats] = useState<LandingStats | null>(null);
   const [dataLoading, setDataLoading] = useState(true);
 
   useEffect(() => {
@@ -144,12 +147,14 @@ export default function LandingPage() {
         return;
       }
       try {
-        const [farmers, listings] = await Promise.all([
+        const [farmers, listings, stats] = await Promise.all([
           getLandingFarmers(),
           getLandingListings(),
+          getLandingStats(),
         ]);
         setLandingFarmers(farmers);
         setLandingListings(listings);
+        setLandingStats(stats);
       } catch (e) {
         console.warn("Landing data load failed:", e);
       } finally {
@@ -274,6 +279,103 @@ export default function LandingPage() {
                 draggable={false}
               />
             </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Trust Indicators Strip ── */}
+      <section className="py-8 px-4 bg-white border-b border-border">
+        <div className="max-w-4xl mx-auto">
+          <p className="text-center text-sm text-muted-foreground mb-6">
+            Built for local pickup. Farmers list fresh fruits and vegetables, buyers reserve and contact directly.
+          </p>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+
+            {/* Verified Farmers */}
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0, duration: 0.35 }}
+              className="flex flex-col items-center gap-1.5 bg-primary/5 rounded-xl p-4 text-center"
+            >
+              <BadgeCheck className="w-6 h-6 text-primary" />
+              <span className="text-2xl font-bold text-primary leading-none">
+                {dataLoading ? "—" : (landingStats?.verifiedFarmers ?? 0)}
+              </span>
+              <span className="text-xs text-muted-foreground leading-tight">Verified Farmers</span>
+            </motion.div>
+
+            {/* Active Listings */}
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.06, duration: 0.35 }}
+              className="flex flex-col items-center gap-1.5 bg-primary/5 rounded-xl p-4 text-center"
+            >
+              <ShoppingBag className="w-6 h-6 text-primary" />
+              <span className="text-2xl font-bold text-primary leading-none">
+                {dataLoading ? "—" : (landingStats?.activeListings ?? 0)}
+              </span>
+              <span className="text-xs text-muted-foreground leading-tight">Active Listings</span>
+            </motion.div>
+
+            {/* Districts Covered */}
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.12, duration: 0.35 }}
+              className="flex flex-col items-center gap-1.5 bg-primary/5 rounded-xl p-4 text-center col-span-2 sm:col-span-1"
+            >
+              <MapPin className="w-6 h-6 text-primary" />
+              <span className="text-2xl font-bold text-primary leading-none">
+                {dataLoading ? "—" : (landingStats?.districtsCovered ?? 0)}
+              </span>
+              <span className="text-xs text-muted-foreground leading-tight">Districts</span>
+            </motion.div>
+
+            {/* Fruit Listings */}
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.18, duration: 0.35 }}
+              className="flex flex-col items-center gap-1.5 bg-amber-50 rounded-xl p-4 text-center"
+            >
+              <img
+                src="/assets/icon-fruit.svg"
+                alt="Fruit"
+                width={24}
+                height={24}
+              />
+              <span className="text-2xl font-bold text-amber-600 leading-none">
+                {dataLoading ? "—" : (landingStats?.fruitListings ?? 0)}
+              </span>
+              <span className="text-xs text-muted-foreground leading-tight">Fruit Listings</span>
+            </motion.div>
+
+            {/* Vegetable Listings */}
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.24, duration: 0.35 }}
+              className="flex flex-col items-center gap-1.5 bg-violet-50 rounded-xl p-4 text-center"
+            >
+              <img
+                src="/assets/icon-vegetable.svg"
+                alt="Vegetable"
+                width={24}
+                height={24}
+              />
+              <span className="text-2xl font-bold text-violet-600 leading-none">
+                {dataLoading ? "—" : (landingStats?.vegetableListings ?? 0)}
+              </span>
+              <span className="text-xs text-muted-foreground leading-tight">Vegetable Listings</span>
+            </motion.div>
+
           </div>
         </div>
       </section>

@@ -28,7 +28,7 @@ export function getSupabase(): SupabaseClient {
   return _client;
 }
 
-// ── Auth types ─────────────────────────────────────────────────────────────
+// ── Auth types ──────────────────────────────────────────────────────────────
 
 export type UserRole = "buyer" | "farmer" | "agent" | "admin";
 
@@ -109,12 +109,141 @@ export async function signUp(data: SignUpData): Promise<{ error: string | null }
     return { error: `Account created but profile save failed: ${profileError.message}` };
   }
 
+  // If role is farmer AND there's an active session (email confirmation disabled),
+  // create the farmers row immediately. If no session (confirmation pending),
+  // the dashboard will create it on first login.
+  if (data.role === "farmer" && authData.session) {
+    const { error: farmerError } = await sb.from("farmers").insert({
+      user_id: authData.user.id,
+      name: data.fullName.trim(),
+      phone: data.phone.trim(),
+      village: data.village?.trim() || null,
+      assisted_mode: false,
+      verified: false,
+    });
+    if (farmerError) {
+      // Non-fatal: dashboard will create the farmers row on first login
+      console.warn("Farmer row creation at signup failed:", farmerError.message);
+    }
+  }
+
   return { error: null };
 }
 
 export async function signOut(): Promise<void> {
   if (!isSupabaseConfigured()) return;
   await getSupabase().auth.signOut();
+}
+
+// ── Farmer helpers ──────────────────────────────────────────────────────────
+
+/** Returns the farmers row linked to the currently authenticated user, or null. */
+export async function getFarmerByCurrentUser(): Promise<SupabaseFarmer | null> {
+  if (!isSupabaseConfigured()) return null;
+  const { data: { user } } = await getSupabase().auth.getUser();
+  if (!user) return null;
+
+  const { data, error } = await getSupabase()
+    .from("farmers")
+    .select("*")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (error) {
+    console.warn("getFarmerByCurrentUser error:", error.message);
+    return null;
+  }
+  return data as SupabaseFarmer | null;
+}
+
+/**
+ * Returns the farmers row for the current user, creating one from user_profiles
+ * if it doesn't exist yet. Returns null if creation fails or user not authenticated.
+ */
+export async function getOrCreateFarmerForCurrentUser(
+  profile: UserProfile
+): Promise<SupabaseFarmer | null> {
+  if (!isSupabaseConfigured()) return null;
+  const { data: { user } } = await getSupabase().auth.getUser();
+  if (!user) return null;
+
+  // Try to get existing row first
+  const existing = await getFarmerByCurrentUser();
+  if (existing) return existing;
+
+  // Create a new farmers row from user_profiles data
+  const { data, error } = await getSupabase()
+    .from("farmers")
+    .insert({
+      user_id: user.id,
+      name: profile.full_name ?? "Farmer",
+      phone: profile.phone ?? null,
+      village: profile.village ?? null,
+      district: profile.district ?? null,
+      assisted_mode: false,
+      verified: false,
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.warn("getOrCreateFarmerForCurrentUser — create failed:", error.message);
+    return null;
+  }
+  return data as SupabaseFarmer;
+}
+
+/** Fetches all produce_listings for a given farmer_id (any status). */
+export async function getFarmerListings(farmerId: string): Promise<SupabaseListing[]> {
+  if (!isSupabaseConfigured()) return [];
+  const { data, error } = await getSupabase()
+    .from("produce_listings")
+    .select("*, farmers(id, name, village, district, rating, phone)")
+    .eq("farmer_id", farmerId)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.warn("getFarmerListings error:", error.message);
+    return [];
+  }
+  return (data ?? []) as SupabaseListing[];
+}
+
+/** Inserts a new produce_listing for the given farmer_id. Returns the new row id. */
+export async function createFarmerListing(
+  farmerId: string,
+  listing: Omit<ListingInsert, "farmer_id">
+): Promise<string | null> {
+  if (!isSupabaseConfigured()) return null;
+  const { data, error } = await getSupabase()
+    .from("produce_listings")
+    .insert({ ...listing, farmer_id: farmerId })
+    .select("id")
+    .single();
+
+  if (error) {
+    console.warn("createFarmerListing error:", error.message);
+    return null;
+  }
+  return (data as { id: string }).id;
+}
+
+/** Updates the status of a produce_listing. Farmer RLS ensures only own listings. */
+export async function updateListingStatus(
+  listingId: string,
+  status: "active" | "sold" | "out_of_stock" | "reserved"
+): Promise<boolean> {
+  if (!isSupabaseConfigured()) return false;
+  const { error } = await getSupabase()
+    .from("produce_listings")
+    .update({ status })
+    .eq("id", listingId);
+
+  if (error) {
+    console.warn("updateListingStatus error:", error.message);
+    return false;
+  }
+  return true;
 }
 
 // ── Table types ─────────────────────────────────────────────────────────────
@@ -175,6 +304,8 @@ export type SupabaseFarmer = {
   rating: number | null;
   phone: string | null;
   verified: boolean;
+  assisted_mode: boolean;
+  user_id: string | null;
 };
 
 export type AgentCallRequestStatus = "pending" | "called" | "resolved";

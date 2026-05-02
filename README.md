@@ -209,29 +209,58 @@ Or run SQL:
 UPDATE user_profiles SET role = 'admin' WHERE id = '<user-uuid>';
 ```
 
-### Auth SQL patch
+### Farmer auth linking
 
-The `supabase/patch-auth.sql` file creates the `user_profiles` table and all required RLS policies. Run it with:
+When a user signs up or logs in with `role = farmer`, they get a linked row in the `farmers` table:
+
+**How it works:**
+
+1. On signup (if email confirmation is disabled): a `farmers` row is created immediately from the user's `user_profiles` data
+2. On first Farmer Dashboard load (after login): `getOrCreateFarmerForCurrentUser()` checks for an existing `farmers` row linked via `user_id = auth.uid()`. If none exists, it creates one from the `user_profiles` data
+3. The `farmers.user_id` column links `auth.users.id` to the farmer row via a UNIQUE constraint
+4. All produce_listings inserted from the Farmer Dashboard use `farmer_id = <linked farmers row id>` — never the hardcoded demo UUID
+5. The Farmer Dashboard loads only that farmer's own listings (any status) via `getFarmerListings(farmerId)`
+6. Status updates (Sold / Out of Stock) hit Supabase and only succeed if the farmer's row owns the listing (enforced by RLS)
+
+**Seed farmers** (from `seed.sql`) have `user_id = NULL`. They remain visible on Browse Produce because `public_read_active_listings` (status = 'active') is unaffected.
+
+**What happens if the farmers row cannot be created:**
+- The dashboard shows a warning banner
+- Listings are not saved to the database
+- This can happen if the user signed up with email confirmation pending and has never logged in since — refreshing after confirming email resolves it
+
+**helpers added in `supabase.ts`:**
+- `getFarmerByCurrentUser()` — fetches the farmers row linked to `auth.uid()`
+- `getOrCreateFarmerForCurrentUser(profile)` — get or create, non-fatal on failure
+- `getFarmerListings(farmerId)` — all listings for a farmer (any status)
+- `createFarmerListing(farmerId, data)` — inserts listing with correct farmer_id
+- `updateListingStatus(listingId, status)` — updates status, RLS ensures only own listings
+
+### SQL patches
+
+Apply in order if setting up from scratch:
+
 ```
-pnpm --filter @workspace/scripts run db:patch-auth
+pnpm --filter @workspace/scripts run db:patch-auth          # user_profiles + RLS
+pnpm --filter @workspace/scripts run db:patch-farmer-link   # farmers.user_id + produce_listings RLS
 ```
 
-Or paste its contents into Supabase → SQL Editor.
+Or paste each file's contents into Supabase → SQL Editor.
 
 ### Current MVP limitations
 
 - **Email confirmation** is required by default in Supabase — disable it in Supabase settings for faster testing
-- **Farmer Dashboard listings**: when a farmer logs in, the dashboard profile card shows their name and village from their profile, but the Supabase listing queries still use the demo farmer UUID (`11111111-0001-0001-0001-000000000001`). Real per-user listing management requires linking `auth.uid()` to the `farmers` table — documented as a future improvement
-- **Admin profile reads**: the admin can only read their own profile via RLS. Reading all user profiles requires either a Supabase Edge Function with service_role or app_metadata-based JWT checks — documented as pending
-- **Anon RLS still present**: the existing anon policies (added in previous iterations) remain alongside the new authenticated policies. Remove the anon policies and GRANTs before production
+- **Buyer Reservations on Farmer Dashboard**: the reservations section still uses mock data. Linking real Supabase reservations to the farmer's listings is the next step
+- **Admin profile reads**: the admin can only read their own profile via RLS. Reading all user profiles requires either a Supabase Edge Function with service_role or app_metadata-based JWT checks
+- **Anon RLS still present**: the existing anon policies (from schema.sql) remain alongside the authenticated ones. Remove anon INSERT grants before production
 
 ### Production hardening checklist
 
-- [ ] Disable public anon INSERT/UPDATE on `agent_call_requests`, `produce_listings`, `reservations`, `waitlist_leads`
-- [ ] Restrict `GRANT UPDATE` on `agent_call_requests` to authenticated only
+- [ ] Disable public anon INSERT on `produce_listings` (now handled by farmer-scoped authenticated INSERT)
+- [ ] Disable public anon INSERT/UPDATE on `agent_call_requests`
 - [ ] Add admin RLS using `auth.jwt() ->> 'app_metadata'` for reading all `user_profiles`
-- [ ] Enable email confirmation in Supabase Auth settings
-- [ ] Link `farmers.id` to `auth.uid()` so farmer listings are per-user
+- [ ] Enable email confirmation in Supabase Auth settings for production
+- [ ] Link Supabase `reservations` to the farmer's listings so they appear on Farmer Dashboard
 - [ ] Move service-role operations to a Supabase Edge Function
 
 ---

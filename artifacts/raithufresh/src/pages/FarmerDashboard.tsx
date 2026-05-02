@@ -206,6 +206,7 @@ export default function FarmerDashboard() {
     localStorage.setItem("raithu_farmer_last_visit_ts", new Date().toISOString());
 
     setFarmerLoading(true);
+    setReservationsLoading(true);
     try {
       const farmer = await getOrCreateFarmerForCurrentUser(profile);
       setFarmerRow(farmer);
@@ -236,6 +237,7 @@ export default function FarmerDashboard() {
       setReservations([]);
     } finally {
       setFarmerLoading(false);
+      setReservationsLoading(false);
       setListingsLoaded(true);
     }
   }, [user, profile]);
@@ -730,7 +732,7 @@ export default function FarmerDashboard() {
                   animate={{ opacity: 1, x: 0 }}
                   className="bg-card border border-border rounded-2xl p-4 shadow-sm"
                 >
-                  <div className="flex flex-col sm:flex-row items-start sm:items-start gap-4">
+                  <div className="flex flex-col sm:flex-row items-start gap-4">
                     {/* Info */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1 flex-wrap">

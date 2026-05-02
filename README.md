@@ -4,6 +4,166 @@ Connecting Telangana farmers directly with local buyers. MVP React web app with 
 
 ---
 
+## Farmer Dashboard — Post-Sprint QA + Bug Fix Report
+
+### QA Summary
+
+Full audit of all Farmer Dashboard changes, cross-page regressions, and RLS/security rules. Two bugs found and fixed.
+
+---
+
+### Full Test Results
+
+| Area | Test Case | Result | Bug Found | Fix Made | Files Changed |
+|---|---|---|---|---|---|
+| **Access control** | Logged-out user sees login gate at `/farmer` | Pass | None | — | — |
+| **Access control** | Buyer role blocked from Farmer Dashboard | Pass | None | — | — |
+| **Access control** | Agent role blocked from Farmer Dashboard | Pass | None | — | — |
+| **Access control** | Farmer role can access Farmer Dashboard | Pass | None | — | — |
+| **Access control** | Admin role allowed via `allowedRoles=["farmer","admin"]` | Pass | None | — | — |
+| **Farmer linking** | `getOrCreateFarmerForCurrentUser(profile)` used — no hardcoded UUID | Pass | None | — | — |
+| **Farmer linking** | Missing farmer row shows amber warning banner | Pass | None | — | — |
+| **Listing creation** | `createFarmerListing(farmer.id, ...)` uses current farmer's ID only | Pass | None | — | — |
+| **Listing creation** | Protected fields (id, farmer_id, created_at) never in form payload | Pass | None | — | — |
+| **Listing creation** | Form validation blocks missing name, category, quantity, price, date, location, phone | Pass | None | — | — |
+| **Listing creation** | Supabase save returns new UUID; local state updated | Pass | None | — | — |
+| **Edit modal** | All 8 safe fields pre-filled from local + raw Supabase state | Pass | None | — | — |
+| **Edit modal** | Protected fields (id, farmer_id, created_at) never sent | Pass | None | — | — |
+| **Edit modal** | Cancel closes modal without changing any data | Pass | None | — | — |
+| **Edit modal** | Save updates `listings` and `rawListings` state immediately | Pass | None | — | — |
+| **Edit modal** | Status select allows Available / Sold / Out of Stock only | Pass | None | — | — |
+| **Edit modal** | Mobile: single-column layout below sm breakpoint, scrollable | Pass | None | — | — |
+| **Quick qty** | Clicking quantity opens inline input pre-filled with current value | Pass | None | — | — |
+| **Quick qty** | Save calls `updateListing({ quantity_kg })`, updates local state | Pass | None | — | — |
+| **Quick qty** | Cancel (X) closes input without changing data | Pass | None | — | — |
+| **Quick qty** | `isNaN` check blocks non-numeric and negative values | Pass | None | — | — |
+| **Status actions** | Available → Sold and Available → Out of Stock buttons present only on Available listings | Pass | None | — | — |
+| **Status actions** | Reactivate button present only on Sold / Out of Stock listings | Pass | None | — | — |
+| **Status actions** | Reactivate sets status back to `active` in Supabase | Pass | None | — | — |
+| **Status actions** | Browse Produce uses `.eq("status", "active")` — inactive listings never appear there | Pass | None | — | — |
+| **Reservations** | `getReservationsForFarmer(farmer.id)` — scoped to own listings via RLS | Pass | None | — | — |
+| **Reservations** | Buyer name, buyer phone, produce name, pickup, payment, date all shown | Pass | None | — | — |
+| **Reservation actions** | Pending → Confirm and Pending → Cancel | Pass | None | — | — |
+| **Reservation actions** | Confirmed → Complete and Confirmed → Cancel | Pass | None | — | — |
+| **Reservation actions** | Completed and Cancelled show "No further actions" — no buttons | Pass | None | — | — |
+| **Reservation actions** | Status updates persist via `updateReservationStatus()` → Supabase | Pass | None | — | — |
+| **Filters** | All / Pending / Confirmed / Completed / Cancelled tabs work | Pass | None | — | — |
+| **Filters** | Count badges are computed from `reservations[]` client-side | Pass | None | — | — |
+| **Filters** | Empty filtered state "No {filter} reservations." shown correctly | Pass | None | — | — |
+| **Notifications** | New pending count uses `raithu_farmer_last_visit_ts` from localStorage | Pass | None | — | — |
+| **Notifications** | Amber banner + "N new" chip appear when `newPendingCount > 0` | Pass | None | — | — |
+| **Notifications** | `markAllSeen()` clears banner, chip, and fires `raithu_farmer_badge_update` event | Pass | None | — | — |
+| **Notifications** | Manual Refresh respects `raithu_farmer_last_visit_ts` — no re-count of seen items | Pass | None | — | — |
+| **Realtime** | Subscription created per `farmerRow.id` — no duplicates | Pass | None | — | — |
+| **Realtime** | Cleanup runs `removeChannel()` on unmount | Pass | None | — | — |
+| **Realtime** | Live / Offline pill shown correctly | Pass | None | — | — |
+| **Realtime** | Offline state does not break dashboard — manual Refresh always available | Pass | None | — | — |
+| **Loading states** | Reservations section showed "No reservations" flash during initial page load | **Bug** | **`reservationsLoading` was never set `true` in `loadFarmerData`** | Added `setReservationsLoading(true)` at load start and `false` in finally | `FarmerDashboard.tsx` |
+| **CSS** | Duplicate `sm:items-start` on listing card inner div | **Bug** | Duplicate Tailwind class (no visual impact, minor) | Removed duplicate | `FarmerDashboard.tsx` |
+| **Mobile** | Listing cards: `flex-col` on mobile, `flex-row` on sm+ — touch-friendly | Pass | None | — | — |
+| **Mobile** | Edit modal: single-column below sm, `max-h-[90vh] overflow-y-auto` | Pass | None | — | — |
+| **Mobile** | Reservation cards: `flex-col sm:flex-row`, buyer phone and actions readable | Pass | None | — | — |
+| **Mobile** | Filter pills: `overflow-x-auto scrollbar-none` — horizontal scroll on small screens | Pass | None | — | — |
+| **Mobile** | Realtime/offline pill + Refresh button: `flex-wrap gap-2` — no overflow | Pass | None | — | — |
+| **Mobile** | No horizontal overflow on 375px width | Pass | None | — | — |
+| **Cross-page** | Browse Produce: only `status = active` listings fetched | Pass | None | — | — |
+| **Cross-page** | Produce Detail: still works, no imports changed | Pass | None | — | — |
+| **Cross-page** | Farmer Profile: still works | Pass | None | — | — |
+| **Cross-page** | Buyer Dashboard: still works | Pass | None | — | — |
+| **Cross-page** | Agent Dashboard: still works | Pass | None | — | — |
+| **Cross-page** | Admin Dashboard: still works | Pass | None | — | — |
+| **Cross-page** | Landing Page + waitlist form: still works | Pass | None | — | — |
+| **Cross-page** | Login / Signup: still work | Pass | None | — | — |
+| **Cross-page** | Contact Farmer dialog (WhatsApp / tel / copy): still works | Pass | None | — | — |
+| **Cross-page** | Share Listing: still works | Pass | None | — | — |
+| **PWA** | `manifest.json`, `sw.js`, `icon-192.svg`, `icon-512.svg`, `icon-maskable.svg`, `offline.html` all present | Pass | None | — | — |
+| **Security/RLS** | Farmer cannot update another farmer's listing — RLS blocks cross-farmer update | Pass | None | — | — |
+| **Security/RLS** | `updateListing()` TypeScript type excludes `farmer_id`, `id`, `created_at` | Pass | None | — | — |
+| **Security/RLS** | `buyer_phone` fetched only in `getReservationsForFarmer()` — never in public queries | Pass | None | — | — |
+| **Security/RLS** | Buyer / Guest cannot access Farmer Dashboard — ProtectedRoute enforces it | Pass | None | — | — |
+| **Security/RLS** | No service_role key used anywhere | Pass | None | — | — |
+| **Security/RLS** | No secrets printed to console | Pass | None | — | — |
+| **Security/RLS** | No RLS policies weakened | Pass | None | — | — |
+| **Security/RLS** | No paid services used | Pass | None | — | — |
+
+---
+
+### Bugs Fixed
+
+#### Bug 1 — Reservations loading flash (functional)
+
+**File:** `src/pages/FarmerDashboard.tsx`
+
+**Problem:** `reservationsLoading` state was initialized to `false` and never set to `true` during the initial page load in `loadFarmerData()`. As a result, the reservations section briefly showed the "No buyer reservations yet" empty state before data arrived, then snapped to the actual reservation cards. This was a visible UX flash on every page load.
+
+**Fix:** Added `setReservationsLoading(true)` immediately after `setFarmerLoading(true)` at the start of `loadFarmerData()`. Added `setReservationsLoading(false)` in the `finally` block alongside `setFarmerLoading(false)`. The reservations spinner now shows correctly during the full initial load, matching the listings spinner timing.
+
+#### Bug 2 — Duplicate CSS class (minor)
+
+**File:** `src/pages/FarmerDashboard.tsx`
+
+**Problem:** Listing card inner div had `sm:items-start sm:items-start` (duplicate Tailwind class). No visual impact but verbose and incorrect.
+
+**Fix:** Removed the duplicate. Class is now `flex flex-col sm:flex-row items-start gap-4`.
+
+---
+
+### TypeScript Result
+
+Exit 0 — zero errors after both fixes.
+
+### Console Error Result
+
+None. Only Vite HMR update messages in development. No application errors.
+
+### Realtime Status Result
+
+Realtime subscription wired correctly. If postgres_changes is not enabled in Supabase dashboard, subscription fails silently with "Offline" pill. Manual Refresh button always visible as fallback. No duplicate subscriptions. Cleanup on unmount confirmed.
+
+### Manual Refresh Result
+
+Works independently of Realtime. Recalculates pending count respecting `raithu_farmer_last_visit_ts`. Fires `raithu_farmer_badge_update` event to update Navbar badge. No page reload.
+
+### Mobile-Readiness Result
+
+All Farmer Dashboard sections are mobile-first and touch-friendly. Edit modal is scrollable on small screens. Filter pills scroll horizontally. Listing and reservation cards stack vertically on mobile. No horizontal overflow at 375px. All buttons meet minimum touch target size. Compatible with future Capacitor Android/iOS packaging — no browser-only APIs, no desktop-only layout assumptions.
+
+### RLS / Security Result
+
+All RLS rules enforced server-side. TypeScript types prevent protected fields from being submitted. Buyer phone visible only on Farmer Dashboard. No secrets exposed. No paid services.
+
+### Remaining Farmer Dashboard Limitations
+
+| Limitation | Notes |
+|---|---|
+| Realtime filter is table-wide | Subscription covers all reservation changes; RLS on the re-fetch ensures only this farmer's data is returned. Acceptable at pilot scale. |
+| Realtime requires manual setup in Supabase dashboard | Enable postgres_changes replication per table once. Free tier supports it. |
+| No push notifications | Farmer must have the app open to receive updates. Push notifications are not added per project rules. |
+| No pagination | Sufficient for pilot scale (< 200 listings/reservations per farmer). |
+| Edit modal does not reload from DB after save | Uses local state update for instant UI. If another session edited the same listing simultaneously, local state may be stale until manual refresh. |
+
+### Recommended Next Phase
+
+Buyer Dashboard QA + Polish — verify reservation creation, status flow from the buyer side, buyer phone privacy, and reservation detail page.
+
+---
+
+### Fake / Mock Testing Rule
+
+All test names, phone numbers, villages, emails, and IDs are fake/mock only. No real personal data is used anywhere in the codebase or tests.
+
+Examples (mock only, never use real data):
+- Farmer: Ramesh Test Farmer, phone: 9876500002, village: Shadnagar
+- Buyer: Ravi Test Buyer, phone: 9876500001
+
+---
+
+### No Paid Services Used
+
+All icons: Lucide (open source). Auth/DB: Supabase free tier. No Stripe, Google Maps API, Twilio, Mapbox, or any paid service.
+
+---
+
 ## Farmer Dashboard — Realtime + Listing Management Polish
 
 ### Files changed

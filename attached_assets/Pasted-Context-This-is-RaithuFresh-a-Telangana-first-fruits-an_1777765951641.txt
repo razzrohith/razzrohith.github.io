@@ -1,0 +1,253 @@
+Context:
+This is RaithuFresh, a Telangana-first fruits and vegetables marketplace for farmers, buyers, agents, and admins.
+
+Final product goal:
+The final goal is to publish RaithuFresh as a real Android app on Google Play Store and a real iOS app on Apple App Store.
+
+Current build direction:
+For now, continue building the web/PWA MVP, but keep the code mobile-app-ready.
+Avoid choices that make future Android/iOS packaging difficult.
+Use a path that can later work with Capacitor or another free/open-source mobile wrapper if needed.
+
+Important mobile-readiness rules:
+- Keep UI mobile-first and touch-friendly.
+- Avoid browser-only features without fallback.
+- Do not rely on paid mobile services.
+- Do not use paid APIs.
+- Do not use code that only works on desktop.
+- Keep routes, auth, forms, and dashboards clean for future Android/iOS app shell.
+- Do not add native Android/iOS code yet unless explicitly asked.
+- Do not start Play Store/App Store setup yet.
+- Just keep the current web app ready for that future goal.
+
+Rules:
+- Focus only on fruits and vegetables.
+- Use only free tools, free tiers, open-source libraries, and mock/local alternatives.
+- Do not use paid services or paid APIs.
+- Do not add background push notifications yet.
+- Do not add Web Push, VAPID keys, Push API subscription storage, or notification servers.
+- Do not use paid stock images.
+- Do not use copyrighted brand images.
+- Do not hotlink images from random websites.
+- Do not touch DealNest/deals/coupons/stores/threads code or data.
+- Do not add delivery, online payments, admin promotion tools, Edge Functions, or paid services.
+- Do not use service_role key.
+- Do not expose secrets.
+- Do not weaken RLS.
+- Use only fake/mock names, phone numbers, emails, villages, and test details during testing.
+- Do not use real personal data.
+
+Task:
+Run a Farmer Dashboard Post-Sprint QA + Bug Fix phase.
+
+Current state:
+Farmer Dashboard was heavily upgraded with:
+- Supabase realtime reservation subscription
+- Manual refresh fallback
+- Listing edit modal
+- Quick quantity update
+- Status actions including Reactivate
+- Reservation filters
+- Better reservation cards
+- Mark all as seen
+- Navbar badge updates
+- updateListing() helper
+
+Goal:
+Verify all Farmer Dashboard changes deeply, fix any bugs found, and ensure no regressions across the app.
+
+Important:
+Do not add new features unless needed to fix a bug.
+If a bug is found, apply the smallest safe fix.
+
+Part 1 — Farmer Dashboard QA
+
+Test as fake/mock farmer only.
+
+Use fake test data:
+- Farmer name: Ramesh Test Farmer
+- Phone: 9876500002
+- Village: Shadnagar
+- Produce: Tomato, Mango, Brinjal, Okra
+- Buyer names: Ravi Test Buyer, Suresh Test Buyer
+- Buyer phones: 9876500001, 9876500005
+
+Verify:
+
+1. Farmer Dashboard access
+- Logged-out user sees login gate.
+- Buyer role cannot access Farmer Dashboard.
+- Agent role cannot access Farmer Dashboard.
+- Farmer role can access Farmer Dashboard.
+- Admin override can access if intentionally supported.
+
+2. Farmer linked row
+- Dashboard loads the logged-in farmer row.
+- If farmer row is missing, it creates one safely from user profile.
+- It does not use old demo farmer UUID.
+
+3. Listing creation
+- Add a fake fruit listing.
+- Add a fake vegetable listing.
+- Listing saves with current farmer_id.
+- Listing does not save with another farmer_id.
+- Form validation works.
+- No protected fields are submitted.
+
+4. Listing edit modal
+- Edit produce name.
+- Edit category.
+- Edit quantity.
+- Edit price.
+- Edit harvest date/time.
+- Edit pickup location.
+- Edit district.
+- Edit quality notes.
+- Edit status.
+- Save works.
+- Cancel closes without changing data.
+- Protected fields id, farmer_id, created_at are never edited.
+
+5. Quick quantity update
+- Quantity inline edit opens.
+- Save updates quantity.
+- Cancel keeps old quantity.
+- Invalid quantity is blocked or handled.
+- UI updates without page reload.
+
+6. Status actions
+- Active listing can be marked Sold.
+- Active listing can be marked Out of Stock.
+- Sold listing can be reactivated only to active.
+- Out of Stock listing can be reactivated only to active.
+- Invalid statuses are never created.
+- Browse Produce only shows active listings.
+- Farmer Dashboard still shows own inactive listings.
+
+7. Reservation list
+- Farmer sees only reservations for own listings.
+- Farmer cannot see another farmer’s reservations.
+- Buyer name and buyer phone appear only in Farmer Dashboard reservation cards.
+- Payment method shows Cash or UPI directly to farmer.
+- Pickup location appears.
+
+8. Reservation actions
+- Pending reservation can be Confirmed.
+- Pending reservation can be Cancelled.
+- Confirmed reservation can be Completed.
+- Confirmed reservation can be Cancelled.
+- Completed and Cancelled reservations show no action buttons.
+- Status updates persist in Supabase.
+
+9. Reservation filters
+- All tab works.
+- Pending tab works.
+- Confirmed tab works.
+- Completed tab works.
+- Cancelled tab works.
+- Count badges are correct.
+- Empty filtered state is clear.
+
+10. New pending notification
+- New pending count is calculated correctly.
+- Amber banner appears when applicable.
+- “N new” chip appears when applicable.
+- Navbar Farmer Dashboard badge appears when applicable.
+- Mark all as seen clears banner/chip/navbar badge without reload.
+- Manual refresh does not re-count already seen reservations.
+
+11. Realtime behavior
+- Realtime subscription shows Live if connected.
+- If realtime is unavailable, Offline pill appears.
+- Offline state does not break dashboard.
+- Manual Refresh works as fallback.
+- No duplicate subscriptions are created.
+- Subscription cleanup happens when leaving page.
+
+12. Mobile-readiness check for Farmer Dashboard
+Verify:
+- Farmer Dashboard works well on mobile width.
+- Listing cards are touch-friendly.
+- Edit modal works on mobile width.
+- Reservation cards are readable on mobile.
+- Buttons are large enough for touch use.
+- No horizontal overflow.
+- Forms are usable on mobile.
+- Realtime/offline badge does not break mobile layout.
+
+Part 2 — Cross-page regression
+
+Verify:
+- Browse Produce still works.
+- Browse only shows active listings.
+- Produce Detail still works.
+- More from this farmer still works.
+- Farmer Profile still works.
+- Buyer Dashboard still works.
+- Buyer Reservation Detail still works.
+- Agent Dashboard still works.
+- Admin Dashboard still works.
+- Landing Page still works.
+- Waitlist form still works.
+- Login/Signup still work.
+- Contact Farmer dialog still works.
+- WhatsApp/tel/copy still work.
+- Share Listing still works.
+- PWA files still exist.
+- Mobile layout still works on core pages.
+
+Part 3 — Security/RLS verification
+
+Verify:
+- Farmer cannot update another farmer’s listing.
+- Farmer cannot change farmer_id.
+- Farmer cannot update id or created_at.
+- Farmer cannot see another farmer’s buyer phone.
+- Farmer cannot update another farmer’s reservation.
+- Buyer cannot access Farmer Dashboard.
+- Guest cannot access Farmer Dashboard.
+- No secrets printed.
+- No service_role key used.
+- No RLS weakening.
+- No paid services used.
+
+Part 4 — Fix bugs only if found
+
+If bugs are found:
+- Fix only the smallest safe issue.
+- Do not redesign the dashboard.
+- Do not add unrelated features.
+- Do not change database/RLS unless the bug requires it.
+- If database/RLS change is required, explain before applying.
+
+Part 5 — Documentation
+
+Update README with:
+- Farmer Dashboard QA summary
+- Any bugs fixed
+- Realtime fallback behavior
+- Manual refresh behavior
+- Listing edit/quantity/status behavior
+- Reservation filter/action behavior
+- Mobile-readiness note for future Android/iOS app packaging
+- Fake/mock testing rule
+- No paid services used
+
+Final report format:
+Return a table with:
+- Area checked
+- Test case
+- Result
+- Bug found
+- Fix made
+- Files changed
+
+Also include:
+- TypeScript result
+- Console error result
+- Realtime status result
+- Manual refresh result
+- Mobile-readiness result
+- RLS/security result
+- Remaining Farmer Dashboard limitations
+- Recommended next phase

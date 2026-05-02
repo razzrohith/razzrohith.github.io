@@ -42,6 +42,66 @@ This inserts:
 
 ---
 
+## Security — Produce Listing Update Hardening (patch-produce-listing-update-security.sql)
+
+### Changes applied
+
+SQL patch: `supabase/patch-produce-listing-update-security.sql`
+
+#### Anon write access removed from produce_listings
+
+| Operation | Before | After |
+|---|---|---|
+| anon SELECT active listings | Allowed | Allowed (unchanged) |
+| anon INSERT | Blocked (previous patch) | Blocked (unchanged) |
+| anon UPDATE | Allowed (table grant — no RLS policy, so blocked in practice) | **Revoked at grant level** |
+| anon DELETE | Allowed (table grant — no RLS policy, so blocked in practice) | **Revoked at grant level** |
+
+Grants revoked: `REVOKE UPDATE ON produce_listings FROM anon` and `REVOKE DELETE ON produce_listings FROM anon`.
+
+#### Farmer UPDATE restricted to safe columns only
+
+| Column | Farmer can UPDATE | Notes |
+|---|---|---|
+| produce_name | Yes | Safe editable field |
+| category | Yes | Safe editable field |
+| quantity_kg | Yes | Safe editable field |
+| price_per_kg | Yes | Safe editable field |
+| harvest_datetime | Yes | Safe editable field |
+| pickup_location | Yes | Safe editable field |
+| district | Yes | Safe editable field |
+| distance_km | Yes | Safe editable field |
+| quality_notes | Yes | Safe editable field |
+| status | Yes | Core farmer workflow (Sold / Out of Stock) |
+| updated_at | Yes | Audit timestamp — farmer-writable |
+| **id** | **No** | Protected — primary key |
+| **farmer_id** | **No** | Protected — ownership anchor. Farmer cannot re-assign listing to another farmer |
+| **created_at** | **No** | Protected — immutable audit timestamp |
+
+Grant applied: `GRANT UPDATE(produce_name, category, ..., status, updated_at) ON produce_listings TO authenticated`.
+
+The broad table-level `GRANT UPDATE ON produce_listings TO authenticated` was revoked first. The column-level grant now acts as a second, independent enforcement layer alongside the RLS `farmer_update_own_listing` row ownership policy.
+
+#### RLS policies unchanged
+
+All existing policies are retained:
+- `public_read_active_listings` — anon SELECT WHERE status='active'
+- `auth_read_listings` — authenticated SELECT all
+- `farmer_insert_own_listing` — authenticated INSERT, farmer_id ownership required
+- `farmer_update_own_listing` — authenticated UPDATE, row ownership enforced via farmer_id → farmers.user_id = auth.uid()
+
+#### Testing guidelines
+
+- Use only fake/mock data during all tests (fake names, fake phones, fake villages)
+- No real personal data
+- No paid services, paid APIs, paid Supabase add-ons, or paid Replit features are used
+
+### Apply the patch
+
+Paste `supabase/patch-produce-listing-update-security.sql` into Supabase SQL Editor → Run.
+
+---
+
 ## Security — Post-QA Hardening (patch-post-qa-security-hardening.sql)
 
 ### Summary of changes

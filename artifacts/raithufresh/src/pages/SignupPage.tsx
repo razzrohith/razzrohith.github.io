@@ -278,8 +278,7 @@ export default function SignupPage() {
                   Phone <span className="text-destructive">*</span>
                 </Label>
                 <Input
-                  placeholder="10-digit mobile number"
-                  maxLength={10}
+                  placeholder="e.g. +91 98765 43210"
                   inputMode="numeric"
                   {...register("phone")}
                 />
@@ -330,7 +329,7 @@ export default function SignupPage() {
                   <p className="text-destructive text-xs mt-1">{errors.password.message}</p>
                 )}
 
-                {passwordFocused && (
+                {(passwordFocused || (errors.password && passwordValue.length > 0)) && (
                   <div className="mt-3 p-3 bg-muted/50 rounded-xl border border-border space-y-2">
                     <p className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground mb-1 flex items-center gap-1.5">
                       <ShieldCheck className="w-3 h-3" /> Password Requirements
@@ -383,7 +382,11 @@ export default function SignupPage() {
                 <Input placeholder="e.g. Shadnagar" {...register("village")} />
               </div>
 
-              <Button type="submit" className="w-full" disabled={submitting || justSignedUp}>
+              <Button 
+                type="submit" 
+                className={`w-full transition-all duration-200 ${submitting || justSignedUp ? "opacity-70 cursor-not-allowed" : ""}`}
+                disabled={submitting || justSignedUp}
+              >
                 {submitting || justSignedUp ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />

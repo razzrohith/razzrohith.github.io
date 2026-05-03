@@ -1,0 +1,221 @@
+Context:
+This is RaithuFresh, a Telangana-first fruits and vegetables marketplace for farmers, buyers, agents, and admins.
+
+Current status:
+The web/PWA MVP is Release Candidate READY.
+Phase 14 + Phase 15 passed.
+RLS patch is verified.
+PWA PNG icons are ready.
+No paid services are used.
+Final goal is to publish RaithuFresh as:
+- Android app on Google Play Store
+- iOS app on Apple App Store
+
+Current task:
+Start Phase 16 — Mobile App Planning + Capacitor Android Scaffold.
+
+Rules:
+- Use only free/open-source tools.
+- Do not use paid services or paid APIs.
+- Do not add push notifications yet.
+- Do not add delivery.
+- Do not add online payments.
+- Do not use service_role key.
+- Do not expose secrets.
+- Do not weaken RLS.
+- Do not break the existing web/PWA app.
+- Do not remove existing PWA support.
+- Do not touch DealNest/deals/coupons/stores/threads code or data.
+- Keep fake/mock data only for testing.
+- Do not use real personal data.
+
+Important:
+Before making changes, inspect the current project structure and package setup.
+
+If Capacitor setup is too large for one run, stop and report:
+1. What can be safely done now
+2. What should be done manually
+3. What requires Android Studio locally
+4. What requires macOS/Xcode later for iOS
+
+Goal:
+Prepare RaithuFresh for real Android/iOS app packaging while preserving the web app.
+
+Part 1 — Inspect project
+
+Check:
+- package.json
+- Vite config
+- build command
+- output directory
+- public icons
+- PWA files
+- current routes
+- environment variable usage
+- Supabase frontend variables
+
+Confirm:
+- VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY are frontend-safe.
+- SUPABASE_DB_URL is never used in frontend/mobile code.
+- service_role key is not present.
+- Web app still builds.
+
+Part 2 — Add Capacitor dependencies
+
+Install only free/open-source Capacitor packages if missing:
+
+- @capacitor/core
+- @capacitor/cli
+- @capacitor/android
+
+Do not add paid plugins.
+
+Part 3 — Add Capacitor config
+
+Create or update:
+
+capacitor.config.ts
+
+Use safe defaults:
+
+- appId: com.raithufresh.app
+- appName: RaithuFresh
+- webDir: dist
+- bundledWebRuntime: false if applicable
+
+Important:
+If appId should be changed before Play Store publishing, document it clearly.
+Do not hardcode secrets.
+
+Part 4 — Verify web build output
+
+Run the existing web build command.
+
+Confirm:
+- dist/ is created
+- app routes work with Capacitor-friendly routing
+- assets load correctly
+- PWA files/icons remain present
+
+If React Router routing needs special handling for mobile wrapper, report it clearly before changing it.
+
+Part 5 — Add Android platform
+
+Run Capacitor Android setup if safe:
+
+- npx cap add android
+
+Then run:
+
+- npx cap sync android
+
+Do not require Android Studio inside Replit if unavailable.
+Do not try to sign release APK yet.
+Do not create paid Play Store setup.
+
+Part 6 — Android readiness checks
+
+Verify:
+- android/ directory exists
+- Capacitor config points to correct webDir
+- Android project references RaithuFresh app name
+- App icons/splash assets are acceptable for testing
+- No secrets copied into Android files
+- Build artifacts are ignored if needed
+- Existing web app still runs
+
+If possible, run:
+
+- npx cap doctor
+- npx cap sync android
+
+If Gradle build cannot run in Replit, report that it must be done locally in Android Studio.
+
+Part 7 — iOS planning only
+
+Do not add iOS unless it is safe and does not require macOS.
+
+Document:
+- iOS requires macOS + Xcode
+- Later command: npx cap add ios
+- Later command: npx cap sync ios
+- App Store publishing requires Apple Developer account
+- iOS signing must be done on Mac
+
+Do not fake iOS build success.
+
+Part 8 — Create mobile setup documentation
+
+Create or update:
+
+docs/mobile-setup.md
+
+Include:
+
+1. Current web/PWA status
+2. Capacitor setup summary
+3. Android local setup steps
+4. Required tools:
+   - Node/pnpm
+   - Android Studio
+   - JDK
+   - Android SDK
+5. Commands:
+   - pnpm install
+   - pnpm build
+   - npx cap sync android
+   - npx cap open android
+6. How to test on Android emulator/device
+7. How to build debug APK
+8. What not to commit:
+   - secrets
+   - .env
+   - service_role keys
+   - local signing keys
+9. iOS later plan
+10. Known limitations
+
+Part 9 — Update README
+
+Update README with:
+- Phase 16 started
+- Capacitor Android scaffold status
+- Web/PWA still remains source of truth
+- Android Studio local steps
+- iOS requires Mac/Xcode later
+- No paid services used
+- No secrets used
+- Current app is mobile-wrapper-ready
+
+Part 10 — Testing
+
+Run:
+- TypeScript check
+- web build
+- Capacitor sync if available
+- browser smoke test if possible
+
+Verify:
+- Landing page still works
+- Browse Produce still works
+- Login/Signup still works
+- PWA files still exist
+- No console errors
+- No secrets printed
+- No paid services used
+
+Final report:
+Return:
+
+- Files changed
+- Packages added
+- Capacitor config values
+- Android platform status
+- Whether web build passed
+- Whether cap sync passed
+- Whether Android Studio local step is required
+- iOS status/planning note
+- TypeScript result
+- Console result
+- Any blockers
+- Next manual steps

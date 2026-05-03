@@ -4,7 +4,124 @@ Connecting Telangana farmers directly with local buyers. MVP React web app with 
 
 ---
 
-## Phase 15: Web Release Candidate QA (Latest)
+## Phase 16: Capacitor Android Scaffold (Latest)
+
+### Status: Scaffold Complete — Android Studio Required Locally
+
+The Capacitor scaffold is installed and configured. The web build passes with
+Capacitor-compatible settings. The Android platform must be added and synced
+locally using Android Studio (JDK/SDK not available in Replit).
+
+### What Was Done
+
+| Task | Status | Notes |
+|---|---|---|
+| Inspect package.json / vite config / routing | Done | `wouter` router, `dist/public` output, `BASE_PATH` required |
+| Install `@capacitor/core` | Done | v8.3.1, added to `dependencies` |
+| Install `@capacitor/cli` + `@capacitor/android` | Done | v8.3.1, added to `devDependencies` |
+| Create `capacitor.config.ts` | Done | `appId: com.raithufresh.app`, `webDir: dist/public` |
+| Add `build:cap` script | Done | `PORT=3000 BASE_PATH=/ vite build` |
+| Add `cap:sync`, `cap:open`, `cap:doctor` scripts | Done | In `package.json` |
+| Create `.gitignore` | Done | Excludes android/, ios/, dist/, .env, keystores |
+| Web build test (`pnpm run build:cap`) | Done | Exit 0, `dist/public/` created, all PWA files present |
+| `npx cap doctor` | Done | cli, core, android all 8.3.1 — iOS not installed (correct) |
+| Create `docs/mobile-setup.md` | Done | 286-line full guide |
+| TypeScript check | Done | Exit 0 |
+| Smoke test (Landing, Browse, Login) | Done | All pass, zero console errors |
+| Web app still running | Done | Unaffected |
+
+### Capacitor Config
+
+```ts
+appId:   "com.raithufresh.app"
+appName: "RaithuFresh"
+webDir:  "dist/public"
+server.androidScheme: "https"
+```
+
+> `webDir` is `dist/public`, not `dist` — this is critical. The Vite config
+> writes to `dist/public/` (not `dist/`) and Capacitor must point to the
+> actual output directory.
+
+> `appId` must be confirmed before publishing to Google Play Store. Once
+> published, the appId cannot be changed.
+
+### Build Commands
+
+```bash
+cd artifacts/raithufresh
+
+pnpm install                # Install all dependencies
+pnpm run build:cap          # Build web for Capacitor (BASE_PATH=/, PORT=3000 dummy)
+npx cap add android         # First time only — creates android/ project
+pnpm run cap:sync           # After every build — copies dist/public/ into android/
+pnpm run cap:open           # Opens Android Studio
+pnpm run cap:doctor         # Verify local toolchain
+```
+
+### Android Studio Local Steps (Required on Your Machine)
+
+1. Install Android Studio and JDK 17+ from https://developer.android.com/studio
+2. Clone the repo / pull the latest code
+3. Run: `cd artifacts/raithufresh && pnpm install && pnpm run build:cap`
+4. Run: `npx cap add android` (first time only)
+5. Run: `pnpm run cap:sync`
+6. Run: `pnpm run cap:open` → Android Studio opens
+7. Let Gradle sync finish, then Run on emulator or device
+
+### iOS — Planned for Later (macOS + Xcode Required)
+
+```bash
+# On a Mac only:
+pnpm run build:cap
+npx cap add ios
+npx cap sync ios
+npx cap open ios    # Opens Xcode
+```
+
+Apple Developer account required for App Store: $99/year.
+
+### No Paid Services
+
+| Check | Status |
+|---|---|
+| Capacitor license | Free / MIT |
+| Android Studio | Free |
+| Google Play one-time fee | $25 (not yet paid — publish step) |
+| No paid plugins added | PASS |
+| No secrets in capacitor.config.ts | PASS |
+| No service_role key anywhere | PASS |
+
+### Files Changed / Created (Phase 16)
+
+| File | Action |
+|---|---|
+| `artifacts/raithufresh/capacitor.config.ts` | Created |
+| `artifacts/raithufresh/package.json` | Updated — 4 new scripts |
+| `artifacts/raithufresh/.gitignore` | Created — excludes android/, ios/, dist/, keys |
+| `artifacts/raithufresh/docs/mobile-setup.md` | Created — 286 lines |
+
+### What Requires Android Studio Locally
+
+| Task | Where | Notes |
+|---|---|---|
+| `npx cap add android` | Local machine | Needs JDK — not available in Replit |
+| `npx cap sync android` | Local machine | Needs Android SDK |
+| Run on emulator | Local machine | Android Studio emulator |
+| Build debug APK | Local machine | `./gradlew assembleDebug` |
+| Sign release APK | Local machine | Signing keystore — never commit |
+
+### What Requires macOS Later
+
+| Task | Notes |
+|---|---|
+| `npx cap add ios` | macOS + Xcode only |
+| App Store build | Xcode archive — macOS only |
+| iOS signing | Apple Developer account + provisioning profile |
+
+---
+
+## Phase 15: Web Release Candidate QA
 
 ### Release Candidate Status: READY
 

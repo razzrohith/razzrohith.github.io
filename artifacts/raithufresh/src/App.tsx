@@ -16,6 +16,9 @@ import BuyerDashboard from "@/pages/BuyerDashboard";
 import BuyerReservationDetail from "@/pages/BuyerReservationDetail";
 import LoginPage from "@/pages/LoginPage";
 import SignupPage from "@/pages/SignupPage";
+import ForgotPasswordPage from "@/pages/ForgotPasswordPage";
+import ResetPasswordPage from "@/pages/ResetPasswordPage";
+import AuthCallbackPage from "@/pages/AuthCallbackPage";
 import ProfilePage from "@/pages/ProfilePage";
 import InstallBanner from "@/components/InstallBanner";
 
@@ -31,6 +34,9 @@ function Router() {
       <Route path="/farmers/:id" component={FarmerProfilePage} />
       <Route path="/login" component={LoginPage} />
       <Route path="/signup" component={SignupPage} />
+      <Route path="/forgot-password" component={ForgotPasswordPage} />
+      <Route path="/reset-password" component={ResetPasswordPage} />
+      <Route path="/auth/callback" component={AuthCallbackPage} />
 
       {/* Protected routes */}
       <Route path="/farmer">

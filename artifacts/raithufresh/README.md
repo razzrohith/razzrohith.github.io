@@ -60,12 +60,32 @@ Production builds require `PORT`, `BASE_PATH`, and Supabase frontend variables t
 PORT=3000 BASE_PATH=/ pnpm run build
 ```
 
-## Security notes
-
 - No service_role key in frontend
 - RLS verified
 - Buyer phone privacy preserved
 - No paid services
+
+## Supabase Auth Configuration
+
+To support email verification and password reset, configure your Supabase project as follows:
+
+### URL Configuration
+- **Site URL**: `https://razzrohith.com`
+- **Additional Redirect URLs**:
+  - `https://razzrohith.com/auth/callback`
+  - `https://razzrohith.com/reset-password`
+  - `http://localhost:3000/auth/callback`
+  - `http://localhost:3000/reset-password`
+
+### Email Templates
+- Ensure the **Confirm signup** template points to `{{ .SiteURL }}/auth/callback` or uses the default redirect logic.
+- Ensure the **Reset password** template points to `{{ .ConfirmationURL }}`.
+
+### Rate Limits
+Supabase's free tier has strict email rate limits (usually 3 emails per hour per address). For extensive testing:
+1. Use unique fake emails.
+2. Disable "Confirm email" in Auth Settings temporarily if needed.
+3. Use a custom SMTP provider for production.
 
 ## Deployment plan
 

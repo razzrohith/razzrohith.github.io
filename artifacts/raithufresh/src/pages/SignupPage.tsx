@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
-import { Leaf, Loader2, Eye, EyeOff } from "lucide-react";
+import { Leaf, Loader2, Eye, EyeOff, Mail, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -42,6 +42,10 @@ export default function SignupPage() {
   const [submitting, setSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [justSignedUp, setJustSignedUp] = useState(false);
+  const [verificationNeeded, setVerificationNeeded] = useState(false);
+  const [signedUpEmail, setSignedUpEmail] = useState("");
+  const [resending, setResending] = useState(false);
+  const { resendVerification } = useAuth();
 
   // Read ?role= from URL (e.g. /signup?role=buyer)
   const params = new URLSearchParams(search);
@@ -117,11 +121,12 @@ export default function SignupPage() {
       }
 
       if (needsEmailConfirmation) {
+        setSignedUpEmail(data.email);
+        setVerificationNeeded(true);
         toast.success(
-          "Account created! Check your email and click the confirmation link, then log in.",
+          "Account created! Please check your email for a verification link.",
           { duration: 8000 }
         );
-        navigate("/login");
       } else {
         toast.success("Account created! Welcome to RaithuFresh.");
         setJustSignedUp(true);
@@ -131,6 +136,22 @@ export default function SignupPage() {
       toast.error(err.message || "An unexpected error occurred during signup.");
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleResend = async () => {
+    if (!signedUpEmail) return;
+    setResending(true);
+    const { error } = await resendVerification(signedUpEmail);
+    setResending(false);
+    if (error) {
+      if (error.toLowerCase().includes("rate limit")) {
+        toast.error("Resend limit reached. Please wait a few minutes.");
+      } else {
+        toast.error(error);
+      }
+    } else {
+      toast.success("Verification email resent!");
     }
   };
 
@@ -147,7 +168,49 @@ export default function SignupPage() {
           Join RaithuFresh as a buyer, farmer, or agent.
         </p>
 
-        {user && !submitting ? (
+        {verificationNeeded ? (
+          <div className="text-center space-y-6 py-2">
+            <div className="flex justify-center">
+              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+                <Mail className="w-8 h-8 text-primary" />
+              </div>
+            </div>
+            <div>
+              <h1 className="text-xl font-bold text-foreground">Verify Your Email</h1>
+              <p className="text-sm text-muted-foreground mt-2">
+                We've sent a verification link to<br />
+                <span className="font-medium text-foreground">{signedUpEmail}</span>
+              </p>
+            </div>
+            
+            <div className="bg-muted/50 rounded-xl p-4 text-xs text-muted-foreground text-left space-y-2 border border-border">
+              <p>• Check your spam folder if you don't see it.</p>
+              <p>• The link will expire in 24 hours.</p>
+              <p>• You must verify before you can log in.</p>
+            </div>
+
+            <div className="space-y-3">
+              <Link href="/login">
+                <Button className="w-full">Proceed to Login</Button>
+              </Link>
+              
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="w-full text-xs gap-2"
+                onClick={handleResend}
+                disabled={resending}
+              >
+                {resending ? (
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                ) : (
+                  <RefreshCw className="w-3 h-3" />
+                )}
+                Didn't get the email? Resend
+              </Button>
+            </div>
+          </div>
+        ) : user && !submitting ? (
           <div className="space-y-4">
             <div className="bg-primary/10 border border-primary/20 text-primary rounded-xl p-4 text-sm text-center">
               You are already signed in as <strong>{user.email}</strong>.

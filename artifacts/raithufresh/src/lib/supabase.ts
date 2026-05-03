@@ -206,6 +206,41 @@ export async function signOut(): Promise<void> {
   await getSupabase().auth.signOut();
 }
 
+/** Sends a password reset email to the given address. */
+export async function resetPasswordForEmail(
+  email: string,
+  redirectTo?: string
+): Promise<{ error: string | null }> {
+  if (!isSupabaseConfigured()) return { error: "Supabase is not configured." };
+  const { error } = await getSupabase().auth.resetPasswordForEmail(email, {
+    redirectTo: redirectTo || `${window.location.origin}/reset-password`,
+  });
+  if (error) return { error: error.message };
+  return { error: null };
+}
+
+/** Updates the current user's password. Requires an active session. */
+export async function updatePassword(password: string): Promise<{ error: string | null }> {
+  if (!isSupabaseConfigured()) return { error: "Supabase is not configured." };
+  const { error } = await getSupabase().auth.updateUser({ password });
+  if (error) return { error: error.message };
+  return { error: null };
+}
+
+/** Resends the signup confirmation email. */
+export async function resendVerificationEmail(email: string): Promise<{ error: string | null }> {
+  if (!isSupabaseConfigured()) return { error: "Supabase is not configured." };
+  const { error } = await getSupabase().auth.resend({
+    type: "signup",
+    email,
+    options: {
+      emailRedirectTo: `${window.location.origin}/auth/callback`,
+    },
+  });
+  if (error) return { error: error.message };
+  return { error: null };
+}
+
 // ── Farmer helpers ──────────────────────────────────────────────────────────
 
 /** Returns the farmers row linked to the currently authenticated user, or null. */

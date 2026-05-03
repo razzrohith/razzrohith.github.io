@@ -6,6 +6,9 @@ import {
   getSupabase, isSupabaseConfigured,
   UserProfile, UserRole, SignUpData,
   signIn as sbSignIn, signUp as sbSignUp, signOut as sbSignOut,
+  resetPasswordForEmail as sbResetPasswordForEmail,
+  updatePassword as sbUpdatePassword,
+  resendVerificationEmail as sbResendVerificationEmail,
   getCurrentUserProfile,
 } from "@/lib/supabase";
 
@@ -16,10 +19,14 @@ type AuthContextValue = {
   profile: UserProfile | null;
   role: UserRole | null;
   loading: boolean;
+  recovering: boolean; // True during password recovery flow
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
   signUp: (data: SignUpData) => Promise<{ error: string | null; needsEmailConfirmation: boolean }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
+  resetPassword: (email: string) => Promise<{ error: string | null }>;
+  updatePassword: (password: string) => Promise<{ error: string | null }>;
+  resendVerification: (email: string) => Promise<{ error: string | null }>;
 };
 
 const AuthContext = createContext<AuthContextValue>({
@@ -27,10 +34,14 @@ const AuthContext = createContext<AuthContextValue>({
   profile: null,
   role: null,
   loading: true,
+  recovering: false,
   signIn: async () => ({ error: "Auth not ready" }),
   signUp: async () => ({ error: "Auth not ready", needsEmailConfirmation: false }),
   signOut: async () => {},
   refreshProfile: async () => {},
+  resetPassword: async () => ({ error: "Auth not ready" }),
+  updatePassword: async () => ({ error: "Auth not ready" }),
+  resendVerification: async () => ({ error: "Auth not ready" }),
 });
 
 // ── Provider ───────────────────────────────────────────────────────────────
@@ -39,6 +50,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [recovering, setRecovering] = useState(false);
 
   const loadProfile = useCallback(async (u: User) => {
     let p = await getCurrentUserProfile(u.id);
@@ -134,10 +146,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     const { data: { subscription } } = sb.auth.onAuthStateChange(
-      async (_event, session) => {
+      async (event, session) => {
         try {
           const u = session?.user ?? null;
           setUser(u);
+
+          if (event === "PASSWORD_RECOVERY") {
+            setRecovering(true);
+          } else if (event === "SIGNED_IN") {
+            // If we were recovering, keep the flag until explicit logout or reset
+            // but we usually want to know they are "in" now.
+          } else if (event === "SIGNED_OUT") {
+            setRecovering(false);
+          }
+
           if (u) {
             await loadProfile(u);
           } else {
@@ -175,12 +197,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Always clear local state even if Supabase call fails
       setUser(null);
       setProfile(null);
+      setRecovering(false);
       // Clear app-specific local storage keys to ensure fresh state on next login
       try {
         localStorage.removeItem("raithu_farmer_new_pending");
         localStorage.removeItem("raithu_farmer_last_visit_ts");
       } catch { /* ignore storage errors */ }
     }
+  };
+
+  const handleResetPassword = async (email: string) => {
+    return sbResetPasswordForEmail(email);
+  };
+
+  const handleUpdatePassword = async (password: string) => {
+    return sbUpdatePassword(password);
+  };
+
+  const handleResendVerification = async (email: string) => {
+    return sbResendVerificationEmail(email);
   };
 
   return (
@@ -190,10 +225,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         profile,
         role: profile?.role ?? null,
         loading,
+        recovering,
         signIn: handleSignIn,
         signUp: handleSignUp,
         signOut: handleSignOut,
         refreshProfile,
+        resetPassword: handleResetPassword,
+        updatePassword: handleUpdatePassword,
+        resendVerification: handleResendVerification,
       }}
     >
       {children}

@@ -9,6 +9,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Navbar from "@/components/Navbar";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   isSupabaseConfigured,
   getLandingFarmers,
@@ -96,9 +97,17 @@ function CategoryIcon({ category, size = 20 }: { category: string; size?: number
   );
 }
 
+function getRoleDashboard(role: string | null): { href: string; label: string } {
+  if (role === "farmer") return { href: "/farmer", label: "Farmer Dashboard" };
+  if (role === "agent") return { href: "/agent", label: "Agent Dashboard" };
+  if (role === "admin") return { href: "/admin", label: "Admin Dashboard" };
+  return { href: "/buyer", label: "Buyer Dashboard" };
+}
+
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function LandingPage() {
+  const { user, role } = useAuth();
   // ── Landing data ─────────────────────────────────────────────────────────
   const [landingFarmers, setLandingFarmers] = useState<LandingFarmer[]>([]);
   const [landingListings, setLandingListings] = useState<SupabaseListing[]>([]);
@@ -171,21 +180,43 @@ export default function LandingPage() {
                 Connecting Telangana farmers with local buyers. No middlemen. Fair prices. Fresh produce.
               </p>
               <div className="flex flex-col sm:flex-row gap-3">
-                <Link href="/signup?role=buyer">
-                  <Button size="lg" className="text-base px-7 w-full sm:w-auto">
-                    Join as Buyer
-                  </Button>
-                </Link>
-                <Link href="/signup?role=farmer">
-                  <Button size="lg" variant="secondary" className="text-base px-7 w-full sm:w-auto">
-                    Join as Farmer
-                  </Button>
-                </Link>
-                <Link href="/browse">
-                  <Button size="lg" variant="outline" className="text-base px-7 w-full sm:w-auto">
-                    Browse Produce <ArrowRight className="w-4 h-4 ml-1" />
-                  </Button>
-                </Link>
+                {user ? (
+                  <>
+                    <Link href={getRoleDashboard(role).href}>
+                      <Button size="lg" className="text-base px-7 w-full sm:w-auto">
+                        Go to {getRoleDashboard(role).label.replace(" Dashboard", "")} Dashboard
+                      </Button>
+                    </Link>
+                    <Link href="/browse">
+                      <Button size="lg" variant="secondary" className="text-base px-7 w-full sm:w-auto">
+                        Browse Produce
+                      </Button>
+                    </Link>
+                    <Link href="/profile">
+                      <Button size="lg" variant="outline" className="text-base px-7 w-full sm:w-auto">
+                        My Profile <ArrowRight className="w-4 h-4 ml-1" />
+                      </Button>
+                    </Link>
+                  </>
+                ) : (
+                  <>
+                    <Link href="/signup?role=buyer">
+                      <Button size="lg" className="text-base px-7 w-full sm:w-auto">
+                        Join as Buyer
+                      </Button>
+                    </Link>
+                    <Link href="/signup?role=farmer">
+                      <Button size="lg" variant="secondary" className="text-base px-7 w-full sm:w-auto">
+                        Join as Farmer
+                      </Button>
+                    </Link>
+                    <Link href="/browse">
+                      <Button size="lg" variant="outline" className="text-base px-7 w-full sm:w-auto">
+                        Browse Produce <ArrowRight className="w-4 h-4 ml-1" />
+                      </Button>
+                    </Link>
+                  </>
+                )}
               </div>
             </motion.div>
 
@@ -700,11 +731,13 @@ export default function LandingPage() {
                     </li>
                   ))}
                 </ul>
-                <Link href="/signup?role=farmer" className="mt-5 block">
-                  <Button className="w-full" variant="outline">
-                    Join as Farmer
-                  </Button>
-                </Link>
+                {!user && (
+                  <Link href="/signup?role=farmer" className="mt-5 block">
+                    <Button className="w-full" variant="outline">
+                      Join as Farmer
+                    </Button>
+                  </Link>
+                )}
               </div>
               <div className="bg-white rounded-xl p-6 border border-border shadow-sm">
                 <div className="flex items-center gap-2 mb-4">
@@ -719,11 +752,13 @@ export default function LandingPage() {
                     </li>
                   ))}
                 </ul>
-                <Link href="/signup?role=buyer" className="mt-5 block">
-                  <Button className="w-full">
-                    Join as Buyer
-                  </Button>
-                </Link>
+                {!user && (
+                  <Link href="/signup?role=buyer" className="mt-5 block">
+                    <Button className="w-full">
+                      Join as Buyer
+                    </Button>
+                  </Link>
+                )}
               </div>
             </div>
           </motion.div>
@@ -746,21 +781,38 @@ export default function LandingPage() {
               Sign up in under a minute. Browse active listings or list your produce today.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-              <Link href="/signup?role=buyer">
-                <Button size="lg" className="text-base px-8 w-full sm:w-auto">
-                  Sign Up as Buyer
-                </Button>
-              </Link>
-              <Link href="/signup?role=farmer">
-                <Button size="lg" variant="secondary" className="text-base px-8 w-full sm:w-auto">
-                  Sign Up as Farmer
-                </Button>
-              </Link>
-              <Link href="/browse">
-                <Button size="lg" variant="outline" className="text-base px-8 w-full sm:w-auto">
-                  Browse First <ArrowRight className="w-4 h-4 ml-1" />
-                </Button>
-              </Link>
+              {user ? (
+                <>
+                  <Link href={getRoleDashboard(role).href}>
+                    <Button size="lg" className="text-base px-8 w-full sm:w-auto">
+                      Go to Dashboard
+                    </Button>
+                  </Link>
+                  <Link href="/browse">
+                    <Button size="lg" variant="outline" className="text-base px-8 w-full sm:w-auto">
+                      Browse Produce <ArrowRight className="w-4 h-4 ml-1" />
+                    </Button>
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <Link href="/signup?role=buyer">
+                    <Button size="lg" className="text-base px-8 w-full sm:w-auto">
+                      Sign Up as Buyer
+                    </Button>
+                  </Link>
+                  <Link href="/signup?role=farmer">
+                    <Button size="lg" variant="secondary" className="text-base px-8 w-full sm:w-auto">
+                      Sign Up as Farmer
+                    </Button>
+                  </Link>
+                  <Link href="/browse">
+                    <Button size="lg" variant="outline" className="text-base px-8 w-full sm:w-auto">
+                      Browse First <ArrowRight className="w-4 h-4 ml-1" />
+                    </Button>
+                  </Link>
+                </>
+              )}
             </div>
           </motion.div>
         </div>
@@ -781,17 +833,31 @@ export default function LandingPage() {
             Browse Produce
           </Link>
           <span>·</span>
-          <Link href="/signup?role=farmer" className="hover:text-foreground underline underline-offset-2">
-            Join as Farmer
-          </Link>
-          <span>·</span>
-          <Link href="/signup?role=buyer" className="hover:text-foreground underline underline-offset-2">
-            Join as Buyer
-          </Link>
-          <span>·</span>
-          <Link href="/login" className="hover:text-foreground underline underline-offset-2">
-            Log In
-          </Link>
+          {user ? (
+            <>
+              <Link href={getRoleDashboard(role).href} className="hover:text-foreground underline underline-offset-2">
+                Dashboard
+              </Link>
+              <span>·</span>
+              <Link href="/profile" className="hover:text-foreground underline underline-offset-2">
+                My Profile
+              </Link>
+            </>
+          ) : (
+            <>
+              <Link href="/signup?role=farmer" className="hover:text-foreground underline underline-offset-2">
+                Join as Farmer
+              </Link>
+              <span>·</span>
+              <Link href="/signup?role=buyer" className="hover:text-foreground underline underline-offset-2">
+                Join as Buyer
+              </Link>
+              <span>·</span>
+              <Link href="/login" className="hover:text-foreground underline underline-offset-2">
+                Log In
+              </Link>
+            </>
+          )}
         </div>
         <p className="mt-3 text-xs">
           Payment is Cash or UPI directly to the farmer at pickup.

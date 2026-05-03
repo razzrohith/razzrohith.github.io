@@ -38,7 +38,7 @@ function roleDashboard(role: string | null): string {
 export default function SignupPage() {
   const [, navigate] = useLocation();
   const search = useSearch();
-  const { signUp, role } = useAuth();
+  const { signUp, role, user, signOut } = useAuth();
   const [submitting, setSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [justSignedUp, setJustSignedUp] = useState(false);
@@ -140,132 +140,151 @@ export default function SignupPage() {
           Join RaithuFresh as a buyer, farmer, or agent.
         </p>
 
-        {!isSupabaseConfigured() && (
-          <div className="bg-amber-50 border border-amber-200 text-amber-800 text-xs rounded-lg px-3 py-2 mb-4">
-            Supabase is not configured. Signup is unavailable in demo mode.
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div>
-            <Label>
-              Full Name <span className="text-destructive">*</span>
-            </Label>
-            <Input placeholder="e.g. Ramaiah Reddy" {...register("fullName")} />
-            {errors.fullName && (
-              <p className="text-destructive text-xs mt-1">{errors.fullName.message}</p>
-            )}
-          </div>
-
-          <div>
-            <Label>
-              Phone <span className="text-destructive">*</span>
-            </Label>
-            <Input
-              placeholder="10-digit mobile number"
-              maxLength={10}
-              inputMode="numeric"
-              {...register("phone")}
-            />
-            {errors.phone && (
-              <p className="text-destructive text-xs mt-1">{errors.phone.message}</p>
-            )}
-          </div>
-
-          <div>
-            <Label>
-              Email <span className="text-destructive">*</span>
-            </Label>
-            <Input
-              type="email"
-              placeholder="you@example.com"
-              {...register("email")}
-              autoComplete="email"
-            />
-            {errors.email && (
-              <p className="text-destructive text-xs mt-1">{errors.email.message}</p>
-            )}
-          </div>
-
-          <div>
-            <Label>
-              Password <span className="text-destructive">*</span>
-            </Label>
-            <div className="relative">
-              <Input
-                type={showPassword ? "text" : "password"}
-                placeholder="At least 6 characters"
-                {...register("password")}
-                autoComplete="new-password"
-                className="pr-10"
-              />
-              <button
-                type="button"
-                aria-label={showPassword ? "Hide password" : "Show password"}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                onClick={() => setShowPassword(!showPassword)}
-                tabIndex={-1}
-              >
-                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-              </button>
+        {user ? (
+          <div className="space-y-4">
+            <div className="bg-primary/10 border border-primary/20 text-primary rounded-xl p-4 text-sm text-center">
+              You are already signed in as <strong>{user.email}</strong>.
             </div>
-            {errors.password && (
-              <p className="text-destructive text-xs mt-1">{errors.password.message}</p>
-            )}
+            <Link href={roleDashboard(role)}>
+              <Button className="w-full">Go to Dashboard</Button>
+            </Link>
+            <Link href="/profile">
+              <Button variant="outline" className="w-full">My Profile</Button>
+            </Link>
+            <Button variant="ghost" className="w-full text-destructive" onClick={() => signOut()}>
+              Log Out
+            </Button>
           </div>
-
-          <div>
-            <Label>
-              I am a <span className="text-destructive">*</span>
-            </Label>
-            <Select
-              value={roleValue}
-              onValueChange={(v) => {
-                setRoleValue(v);
-                setValue("role", v as "buyer" | "farmer" | "agent", { shouldValidate: true });
-              }}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select your role" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="buyer">Buyer — I want to buy produce</SelectItem>
-                <SelectItem value="farmer">Farmer — I sell my produce</SelectItem>
-                <SelectItem value="agent">Agent — I assist farmers</SelectItem>
-              </SelectContent>
-            </Select>
-            {errors.role && (
-              <p className="text-destructive text-xs mt-1">{errors.role.message}</p>
+        ) : (
+          <>
+            {!isSupabaseConfigured() && (
+              <div className="bg-amber-50 border border-amber-200 text-amber-800 text-xs rounded-lg px-3 py-2 mb-4">
+                Supabase is not configured. Signup is unavailable in demo mode.
+              </div>
             )}
-          </div>
 
-          <div>
-            <Label>Village / Town (optional)</Label>
-            <Input placeholder="e.g. Shadnagar" {...register("village")} />
-          </div>
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+              <div>
+                <Label>
+                  Full Name <span className="text-destructive">*</span>
+                </Label>
+                <Input placeholder="e.g. Ramaiah Reddy" {...register("fullName")} />
+                {errors.fullName && (
+                  <p className="text-destructive text-xs mt-1">{errors.fullName.message}</p>
+                )}
+              </div>
 
-          <Button type="submit" className="w-full" disabled={submitting || justSignedUp}>
-            {submitting || justSignedUp ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                {justSignedUp ? "Redirecting..." : "Creating account..."}
-              </>
-            ) : (
-              "Create Account"
-            )}
-          </Button>
-        </form>
+              <div>
+                <Label>
+                  Phone <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  placeholder="10-digit mobile number"
+                  maxLength={10}
+                  inputMode="numeric"
+                  {...register("phone")}
+                />
+                {errors.phone && (
+                  <p className="text-destructive text-xs mt-1">{errors.phone.message}</p>
+                )}
+              </div>
 
-        <p className="text-xs text-muted-foreground text-center mt-4">
-          Admin accounts are assigned manually by the platform admin.
-        </p>
+              <div>
+                <Label>
+                  Email <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  type="email"
+                  placeholder="you@example.com"
+                  {...register("email")}
+                  autoComplete="email"
+                />
+                {errors.email && (
+                  <p className="text-destructive text-xs mt-1">{errors.email.message}</p>
+                )}
+              </div>
 
-        <p className="text-sm text-muted-foreground text-center mt-3">
-          Already have an account?{" "}
-          <Link href="/login" className="text-primary font-medium hover:underline">
-            Log in
-          </Link>
-        </p>
+              <div>
+                <Label>
+                  Password <span className="text-destructive">*</span>
+                </Label>
+                <div className="relative">
+                  <Input
+                    type={showPassword ? "text" : "password"}
+                    placeholder="At least 6 characters"
+                    {...register("password")}
+                    autoComplete="new-password"
+                    className="pr-10"
+                  />
+                  <button
+                    type="button"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    onClick={() => setShowPassword(!showPassword)}
+                    tabIndex={-1}
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+                {errors.password && (
+                  <p className="text-destructive text-xs mt-1">{errors.password.message}</p>
+                )}
+              </div>
+
+              <div>
+                <Label>
+                  I am a <span className="text-destructive">*</span>
+                </Label>
+                <Select
+                  value={roleValue}
+                  onValueChange={(v) => {
+                    setRoleValue(v);
+                    setValue("role", v as "buyer" | "farmer" | "agent", { shouldValidate: true });
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select your role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="buyer">Buyer — I want to buy produce</SelectItem>
+                    <SelectItem value="farmer">Farmer — I sell my produce</SelectItem>
+                    <SelectItem value="agent">Agent — I assist farmers</SelectItem>
+                  </SelectContent>
+                </Select>
+                {errors.role && (
+                  <p className="text-destructive text-xs mt-1">{errors.role.message}</p>
+                )}
+              </div>
+
+              <div>
+                <Label>Village / Town (optional)</Label>
+                <Input placeholder="e.g. Shadnagar" {...register("village")} />
+              </div>
+
+              <Button type="submit" className="w-full" disabled={submitting || justSignedUp}>
+                {submitting || justSignedUp ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    {justSignedUp ? "Redirecting..." : "Creating account..."}
+                  </>
+                ) : (
+                  "Create Account"
+                )}
+              </Button>
+            </form>
+
+            <p className="text-xs text-muted-foreground text-center mt-4">
+              Admin accounts are assigned manually by the platform admin.
+            </p>
+
+            <p className="text-sm text-muted-foreground text-center mt-3">
+              Already have an account?{" "}
+              <Link href="/login" className="text-primary font-medium hover:underline">
+                Log in
+              </Link>
+            </p>
+          </>
+        )}
       </div>
     </div>
   );

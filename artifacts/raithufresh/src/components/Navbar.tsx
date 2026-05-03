@@ -23,6 +23,14 @@ const links: NavLink[] = [
   { href: "/admin", label: "Admin", roles: ["admin"] },
 ];
 
+function getRoleDashboard(role: string | null): { href: string; label: string } {
+  if (role === "farmer") return { href: "/farmer", label: "Farmer Dashboard" };
+  if (role === "agent") return { href: "/agent", label: "Agent Dashboard" };
+  if (role === "admin") return { href: "/admin", label: "Admin Dashboard" };
+  return { href: "/buyer", label: "Buyer Dashboard" };
+}
+
+
 export default function Navbar() {
   const [location] = useLocation();
   const [open, setOpen] = useState(false);
@@ -113,16 +121,14 @@ export default function Navbar() {
                     <UserCircle className="w-4 h-4 text-primary" />
                     My Profile
                   </Link>
-                  {(role === "buyer" || role === "admin") && (
-                    <Link
-                      href="/buyer"
-                      onClick={() => setUserMenuOpen(false)}
-                      className="w-full text-left px-3 py-2 text-sm text-foreground hover:bg-muted flex items-center gap-2"
-                    >
-                      <ClipboardList className="w-4 h-4 text-primary" />
-                      Buyer Dashboard
-                    </Link>
-                  )}
+                  <Link
+                    href={getRoleDashboard(role).href}
+                    onClick={() => setUserMenuOpen(false)}
+                    className="w-full text-left px-3 py-2 text-sm text-foreground hover:bg-muted flex items-center gap-2"
+                  >
+                    <ClipboardList className="w-4 h-4 text-primary" />
+                    {getRoleDashboard(role).label}
+                  </Link>
                   <button
                     onClick={handleSignOut}
                     className="w-full text-left px-3 py-2 text-sm text-destructive hover:bg-muted flex items-center gap-2"
@@ -202,20 +208,18 @@ export default function Navbar() {
                 <UserCircle className="w-4 h-4" />
                 My Profile
               </Link>
-              {(role === "buyer" || role === "admin") && (
-                <Link
-                  href="/buyer"
-                  onClick={() => setOpen(false)}
-                  className={`px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-2 ${
-                    location === "/buyer"
-                      ? "bg-primary text-primary-foreground"
-                      : "text-foreground hover:bg-muted"
-                  }`}
-                >
-                  <ClipboardList className="w-4 h-4" />
-                  Buyer Dashboard
-                </Link>
-              )}
+              <Link
+                href={getRoleDashboard(role).href}
+                onClick={() => setOpen(false)}
+                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-2 ${
+                  location === getRoleDashboard(role).href
+                    ? "bg-primary text-primary-foreground"
+                    : "text-foreground hover:bg-muted"
+                }`}
+              >
+                <ClipboardList className="w-4 h-4" />
+                {getRoleDashboard(role).label}
+              </Link>
               <button
                 onClick={handleSignOut}
                 className="flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-destructive hover:bg-muted text-left"

@@ -26,7 +26,7 @@ function roleDashboard(role: string | null): string {
 
 export default function LoginPage() {
   const [, navigate] = useLocation();
-  const { signIn, role } = useAuth();
+  const { user, signIn, signOut, role } = useAuth();
   const [submitting, setSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [justLoggedIn, setJustLoggedIn] = useState(false);
@@ -72,71 +72,90 @@ export default function LoginPage() {
           Welcome back. Enter your credentials to continue.
         </p>
 
-        {!isSupabaseConfigured() && (
-          <div className="bg-amber-50 border border-amber-200 text-amber-800 text-xs rounded-lg px-3 py-2 mb-4">
-            Supabase is not configured. Authentication is unavailable in demo mode.
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div>
-            <Label htmlFor="login-email">Email</Label>
-            <Input
-              id="login-email"
-              type="email"
-              placeholder="you@example.com"
-              {...register("email")}
-              autoComplete="email"
-            />
-            {errors.email && (
-              <p className="text-destructive text-xs mt-1">{errors.email.message}</p>
-            )}
-          </div>
-
-          <div>
-            <Label htmlFor="login-password">Password</Label>
-            <div className="relative">
-              <Input
-                id="login-password"
-                type={showPassword ? "text" : "password"}
-                placeholder="Your password"
-                {...register("password")}
-                autoComplete="current-password"
-                className="pr-10"
-              />
-              <button
-                type="button"
-                aria-label={showPassword ? "Hide password" : "Show password"}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                onClick={() => setShowPassword(!showPassword)}
-                tabIndex={-1}
-              >
-                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-              </button>
+        {user ? (
+          <div className="space-y-4">
+            <div className="bg-primary/10 border border-primary/20 text-primary rounded-xl p-4 text-sm text-center">
+              You are already logged in as <strong>{user.email}</strong>.
             </div>
-            {errors.password && (
-              <p className="text-destructive text-xs mt-1">{errors.password.message}</p>
-            )}
+            <Link href={roleDashboard(role)}>
+              <Button className="w-full">Go to Dashboard</Button>
+            </Link>
+            <Link href="/profile">
+              <Button variant="outline" className="w-full">My Profile</Button>
+            </Link>
+            <Button variant="ghost" className="w-full text-destructive" onClick={() => signOut()}>
+              Log Out
+            </Button>
           </div>
-
-          <Button type="submit" className="w-full" disabled={submitting || justLoggedIn}>
-            {submitting || justLoggedIn ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                {justLoggedIn ? "Redirecting..." : "Logging in..."}
-              </>
-            ) : (
-              "Log In"
+        ) : (
+          <>
+            {!isSupabaseConfigured() && (
+              <div className="bg-amber-50 border border-amber-200 text-amber-800 text-xs rounded-lg px-3 py-2 mb-4">
+                Supabase is not configured. Authentication is unavailable in demo mode.
+              </div>
             )}
-          </Button>
-        </form>
 
-        <p className="text-sm text-muted-foreground text-center mt-5">
-          No account?{" "}
-          <Link href="/signup" className="text-primary font-medium hover:underline">
-            Sign up
-          </Link>
-        </p>
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+              <div>
+                <Label htmlFor="login-email">Email</Label>
+                <Input
+                  id="login-email"
+                  type="email"
+                  placeholder="you@example.com"
+                  {...register("email")}
+                  autoComplete="email"
+                />
+                {errors.email && (
+                  <p className="text-destructive text-xs mt-1">{errors.email.message}</p>
+                )}
+              </div>
+
+              <div>
+                <Label htmlFor="login-password">Password</Label>
+                <div className="relative">
+                  <Input
+                    id="login-password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Your password"
+                    {...register("password")}
+                    autoComplete="current-password"
+                    className="pr-10"
+                  />
+                  <button
+                    type="button"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    onClick={() => setShowPassword(!showPassword)}
+                    tabIndex={-1}
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+                {errors.password && (
+                  <p className="text-destructive text-xs mt-1">{errors.password.message}</p>
+                )}
+              </div>
+
+              <Button type="submit" className="w-full" disabled={submitting || justLoggedIn}>
+                {submitting || justLoggedIn ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    {justLoggedIn ? "Redirecting..." : "Logging in..."}
+                  </>
+                ) : (
+                  "Log In"
+                )}
+              </Button>
+            </form>
+
+            <p className="text-sm text-muted-foreground text-center mt-5">
+              No account?{" "}
+              <Link href="/signup" className="text-primary font-medium hover:underline">
+                Sign up
+              </Link>
+            </p>
+          </>
+        )}
       </div>
     </div>
   );

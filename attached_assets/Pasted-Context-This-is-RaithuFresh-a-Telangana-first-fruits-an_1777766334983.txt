@@ -1,0 +1,253 @@
+Context:
+This is RaithuFresh, a Telangana-first fruits and vegetables marketplace for farmers, buyers, agents, and admins.
+
+Final product goal:
+The final goal is to publish RaithuFresh as a real Android app on Google Play Store and a real iOS app on Apple App Store.
+For now, continue building the web/PWA MVP, but keep everything mobile-app-ready for a future free/open-source Capacitor-style wrapper.
+
+Rules:
+- Focus only on fruits and vegetables.
+- Use only free tools, free tiers, open-source libraries, and mock/local alternatives.
+- Do not use paid services or paid APIs.
+- Do not add background push notifications yet.
+- Do not add Web Push, VAPID keys, Push API subscription storage, or notification servers.
+- Do not use paid stock images.
+- Do not use copyrighted brand images.
+- Do not hotlink images from random websites.
+- Do not touch DealNest/deals/coupons/stores/threads code or data.
+- Do not add delivery, online payments, admin promotion tools, Edge Functions, or paid services.
+- Do not use service_role key.
+- Do not expose secrets.
+- Do not weaken RLS.
+- Use only fake/mock names, phone numbers, emails, villages, and test details during testing.
+- Do not use real personal data.
+
+Visual assets / UI realism rule:
+Use existing local SVG assets where useful:
+- empty-produce.svg
+- icon-fruit.svg
+- icon-vegetable.svg
+- icon-farmer-week.svg
+
+Do not use external images.
+Do not add paid assets.
+
+Task:
+Run a Buyer Dashboard QA + Polish phase.
+
+Current state:
+- Buyer Dashboard exists at /buyer.
+- Buyer Reservation Detail exists at /buyer/reservations/:id.
+- Logged-in buyer reservations are linked by reservations.buyer_user_id.
+- Guest reservations still work with buyer_user_id = null.
+- Buyer can cancel only own pending reservations.
+- Farmer Dashboard QA passed.
+- Mobile-readiness is important for future Android/iOS packaging.
+
+Goal:
+Deeply verify buyer-side reservation flows, fix bugs found, and polish Buyer Dashboard/Reservation Detail UX if needed.
+
+Important:
+Do not add unrelated new features.
+If a bug is found, apply the smallest safe fix.
+Do not change RLS unless absolutely required.
+
+Part 1 — Buyer Dashboard access and role QA
+
+Use fake/mock buyer only.
+
+Fake buyer:
+- Name: Ravi Test Buyer
+- Phone: 9876500001
+- Email: fakebuyer@example.com
+
+Verify:
+1. Logged-out user sees login gate at /buyer.
+2. Buyer role can access /buyer.
+3. Farmer role cannot access /buyer unless intentionally allowed.
+4. Agent role cannot access /buyer unless intentionally allowed.
+5. Admin override can access if intentionally supported.
+6. Navbar shows Buyer Dashboard only for buyer/admin roles.
+7. Mobile navigation shows correct buyer links.
+8. Protected route messages are clear and mobile-friendly.
+
+Part 2 — Reservation creation QA
+
+Verify:
+1. Guest reservation still works.
+2. Guest reservation saves buyer_user_id = null.
+3. Logged-in buyer reservation saves buyer_user_id = auth.uid().
+4. Reservation from Browse works.
+5. Reservation from Produce Detail works.
+6. Reservation from Farmer Profile works.
+7. Reservation from More From This Farmer works.
+8. Quantity validation works.
+9. Quantity cannot exceed available quantity.
+10. Success message differs correctly:
+   - Guest: tells user to log in next time to track history.
+   - Logged-in buyer: tells user they can track in Buyer Dashboard.
+11. Payment wording says:
+   “Cash or UPI directly to farmer.”
+12. No online payment/checkout wording appears.
+
+Part 3 — Buyer Dashboard list QA
+
+Verify:
+1. Buyer sees only own reservations.
+2. Buyer does not see another buyer’s reservations.
+3. Guest cannot read reservations.
+4. Reservation cards show:
+   - produce name
+   - category
+   - farmer name
+   - village/district
+   - quantity
+   - estimated total
+   - status
+   - reserved date
+   - payment method
+   - pickup location
+5. Buyer phone is not publicly exposed.
+6. Farmer phone appears only through Contact Farmer dialog.
+7. Empty state is clear.
+8. Loading state is clear.
+9. Error state is clear.
+
+Part 4 — Filters/search/sort QA
+
+Verify:
+1. All tab works.
+2. Pending tab works.
+3. Confirmed tab works.
+4. Completed tab works.
+5. Cancelled tab works.
+6. Count badges are correct.
+7. Search works by:
+   - produce name
+   - farmer name
+   - village
+   - district
+   - status
+8. Clear filters works.
+9. Sort Newest first works.
+10. Sort Oldest first works.
+11. Sort Quantity high to low works.
+12. Sort By status works.
+13. No blank/broken state when no results match.
+
+Part 5 — Buyer cancellation QA
+
+Verify:
+1. Buyer can cancel own pending reservation.
+2. Cancel request asks for confirmation.
+3. Cancelled status persists in Supabase.
+4. Cancel button disappears after cancellation.
+5. Buyer cannot cancel confirmed reservation.
+6. Buyer cannot cancel completed reservation.
+7. Buyer cannot cancel already cancelled reservation.
+8. Buyer cannot cancel another buyer’s reservation.
+9. Buyer cannot update status to confirmed/completed.
+10. Buyer cannot update buyer_name, buyer_phone, listing_id, quantity_kg, payment_method, created_at.
+11. Farmer Dashboard sees cancelled status correctly.
+12. Admin Dashboard sees cancelled status correctly.
+
+Part 6 — Buyer Reservation Detail QA
+
+Verify:
+1. /buyer/reservations/:id is protected.
+2. Buyer can open own reservation detail.
+3. Buyer cannot open another buyer’s reservation detail.
+4. Invalid reservation id shows not-found/access-denied state.
+5. View Listing works.
+6. View Farmer Profile uses actual farmer id, not listing id.
+7. Contact Farmer works.
+8. WhatsApp/tel/copy work.
+9. Open pickup location uses free OpenStreetMap/search link only.
+10. Cancel pending reservation works from detail page.
+11. Cancel button disappears after cancellation.
+12. Detail page updates status without page reload.
+13. Mobile layout is clean.
+
+Part 7 — Mobile readiness QA
+
+Verify on mobile width:
+1. Buyer Dashboard does not overflow horizontally.
+2. Filter tabs/chips are touch-friendly.
+3. Search input is usable.
+4. Sort dropdown is usable.
+5. Reservation cards are readable.
+6. Action buttons are large enough for touch.
+7. Reservation Detail page is readable.
+8. Contact Farmer dialog is usable.
+9. No desktop-only interaction is required.
+10. Web Share/clipboard/tel/WhatsApp have fallbacks.
+
+Part 8 — Cross-page regression
+
+Verify:
+- Landing Page works.
+- Waitlist form works.
+- Browse Produce works.
+- Produce Detail works.
+- Farmer Profile works.
+- Farmer Dashboard still works after prior QA fixes.
+- Agent Dashboard works.
+- Admin Dashboard works.
+- Login/Signup work.
+- Contact Farmer dialog works.
+- WhatsApp/tel/copy still work.
+- Share Listing still works.
+- PWA files still exist.
+
+Part 9 — Security/RLS verification
+
+Verify:
+- Buyer sees only own reservations.
+- Buyer cannot read another buyer’s reservation row.
+- Buyer cannot update protected reservation fields.
+- Buyer cannot delete reservations.
+- Buyer cannot access Farmer Dashboard.
+- Buyer cannot access Agent Dashboard.
+- No buyer phone is exposed on public pages.
+- No secrets printed.
+- No service_role key used.
+- No RLS weakening.
+- No paid services used.
+
+Part 10 — Fix bugs only if found
+
+If bugs are found:
+- Fix the smallest safe issue.
+- Do not redesign the app.
+- Do not add unrelated features.
+- Do not change database/RLS unless the bug requires it.
+- If database/RLS change is required, explain before applying.
+
+Part 11 — Documentation
+
+Update README with:
+- Buyer Dashboard QA summary
+- Any bugs fixed
+- Buyer reservation flow verification
+- Buyer cancellation behavior
+- Buyer Reservation Detail verification
+- Mobile-readiness note for future Android/iOS app packaging
+- Fake/mock testing rule
+- No paid services used
+
+Final report format:
+Return a table with:
+- Area checked
+- Test case
+- Result
+- Bug found
+- Fix made
+- Files changed
+
+Also include:
+- TypeScript result
+- Console error result
+- Mobile-readiness result
+- RLS/security result
+- Remaining Buyer Dashboard limitations
+- Recommended next phase

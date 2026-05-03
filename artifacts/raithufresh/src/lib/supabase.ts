@@ -725,7 +725,13 @@ export async function cancelBuyerReservation(reservationId: string): Promise<boo
  * Farmer phone is included for ContactFarmerDialog (pickup coordination).
  * buyer_phone is intentionally NOT selected — buyers know their own phone.
  */
-export async function getReservationsForCurrentBuyer(): Promise<BuyerReservation[]> {
+/**
+ * Returns BuyerReservation[] on success (may be empty []), null on fetch error.
+ * Callers should treat null as a network/DB error and show an error state.
+ * Returns [] (not null) for the non-error cases: Supabase not configured, or
+ * user not logged in (shouldn't happen inside a ProtectedRoute).
+ */
+export async function getReservationsForCurrentBuyer(): Promise<BuyerReservation[] | null> {
   if (!isSupabaseConfigured()) return [];
   const { data: { user } } = await getSupabase().auth.getUser();
   if (!user) return [];
@@ -740,7 +746,7 @@ export async function getReservationsForCurrentBuyer(): Promise<BuyerReservation
 
   if (error) {
     console.warn("getReservationsForCurrentBuyer error:", error.message);
-    return [];
+    return null;
   }
   return (data ?? []) as unknown as BuyerReservation[];
 }

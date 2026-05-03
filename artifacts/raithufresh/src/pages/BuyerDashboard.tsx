@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { Link } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -76,6 +76,7 @@ export default function BuyerDashboard() {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortOrder, setSortOrder] = useState<SortOrder>("newest");
   const [sortOpen, setSortOpen] = useState(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [cancellingIds, setCancellingIds] = useState<Set<string>>(new Set());
   const [contactOpen, setContactOpen] = useState(false);
   const [contactTarget, setContactTarget] = useState<{
@@ -84,15 +85,22 @@ export default function BuyerDashboard() {
     produceName: string;
   } | null>(null);
 
-  useEffect(() => {
-    async function load() {
-      if (!isSupabaseConfigured()) { setLoading(false); return; }
-      const data = await getReservationsForCurrentBuyer();
+  const loadReservations = useCallback(async () => {
+    if (!isSupabaseConfigured()) { setLoading(false); return; }
+    setLoading(true);
+    setFetchError(null);
+    const data = await getReservationsForCurrentBuyer();
+    if (data === null) {
+      setFetchError("Could not load your reservations. Please check your connection and try again.");
+    } else {
       setReservations(data);
-      setLoading(false);
     }
-    load();
+    setLoading(false);
   }, []);
+
+  useEffect(() => {
+    loadReservations();
+  }, [loadReservations]);
 
   // ── Counts (always from full list) ────────────────────────────────────────
 
@@ -289,6 +297,15 @@ export default function BuyerDashboard() {
           <div className="flex items-center justify-center py-20 text-muted-foreground gap-2">
             <Loader2 className="w-5 h-5 animate-spin" />
             <span>Loading your reservations...</span>
+          </div>
+        ) : fetchError ? (
+          <div className="text-center py-16">
+            <div className="w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center mx-auto mb-3">
+              <XCircle className="w-5 h-5 text-destructive" />
+            </div>
+            <p className="font-semibold text-foreground mb-1">Could not load reservations</p>
+            <p className="text-sm text-muted-foreground mb-5 max-w-xs mx-auto">{fetchError}</p>
+            <Button onClick={loadReservations}>Try Again</Button>
           </div>
         ) : reservations.length === 0 ? (
           <div className="text-center py-16">

@@ -4,6 +4,175 @@ Connecting Telangana farmers directly with local buyers. MVP React web app with 
 
 ---
 
+## Buyer Dashboard — QA + Bug Fix Report
+
+### QA Summary
+
+Full audit of Buyer Dashboard, Buyer Reservation Detail, reservation creation flow, cancellation, filters/search/sort, mobile-readiness, cross-page regressions, and RLS/security. One bug found and fixed.
+
+---
+
+### Full Test Results
+
+| Area | Test Case | Result | Bug Found | Fix Made | Files Changed |
+|---|---|---|---|---|---|
+| **Access control** | Logged-out user sees login gate at `/buyer` | Pass | None | — | — |
+| **Access control** | Buyer role can access `/buyer` | Pass | None | — | — |
+| **Access control** | Farmer role blocked from `/buyer` — ProtectedRoute `allowedRoles=["buyer","admin"]` | Pass | None | — | — |
+| **Access control** | Agent role blocked from `/buyer` | Pass | None | — | — |
+| **Access control** | Admin role allowed via `allowedRoles=["buyer","admin"]` | Pass | None | — | — |
+| **Navbar** | Buyer Dashboard link appears only for buyer/admin (in user dropdown + mobile menu) | Pass | None | — | — |
+| **Navbar** | Mobile hamburger shows Buyer Dashboard link only for buyer/admin roles | Pass | None | — | — |
+| **Navbar** | Protected route gate message is mobile-friendly (centered, icon, Log In + Sign Up buttons) | Pass | None | — | — |
+| **Reservation creation** | Guest reservation works — `buyer_user_id` omitted from payload | Pass | None | — | — |
+| **Reservation creation** | Logged-in buyer reservation sets `buyer_user_id = user.id` | Pass | None | — | — |
+| **Reservation creation** | Reserve button works from Browse, Produce Detail, Farmer Profile, More From This Farmer | Pass | None | — | — |
+| **Reservation creation** | Quantity validation — min 1 kg enforced by Zod | Pass | None | — | — |
+| **Reservation creation** | Quantity cannot exceed `listing.quantityKg` — client-side `setError` before submit | Pass | None | — | — |
+| **Reservation creation** | Guest success message: "Log in next time to track your reservation history." | Pass | None | — | — |
+| **Reservation creation** | Logged-in success message: "You can track it from your Buyer Dashboard." | Pass | None | — | — |
+| **Reservation creation** | Payment wording: "Cash or UPI directly to farmer" — no online payment text | Pass | None | — | — |
+| **Reservation creation** | Buyer name pre-filled from `profile.full_name` when logged in | Pass | None | — | — |
+| **Buyer Dashboard list** | `getReservationsForCurrentBuyer()` uses `.eq("buyer_user_id", user.id)` — own rows only | Pass | None | — | — |
+| **Buyer Dashboard list** | RLS SELECT policy enforces `buyer_user_id = auth.uid()` server-side | Pass | None | — | — |
+| **Buyer Dashboard list** | Guest (unauthenticated) cannot read reservations — blocked at ProtectedRoute and function level | Pass | None | — | — |
+| **Buyer Dashboard list** | Reservation cards show: produce name, category icon, farmer name, village/district, quantity, estimated total, status, reserved date, payment method, pickup location | Pass | None | — | — |
+| **Buyer Dashboard list** | `buyer_phone` NOT selected in `getReservationsForCurrentBuyer()` query — never exposed on dashboard | Pass | None | — | — |
+| **Buyer Dashboard list** | Farmer phone accessible only via ContactFarmerDialog — not shown on card directly | Pass | None | — | — |
+| **Buyer Dashboard list** | Empty state shows SVG + "Browse Produce" button | Pass | None | — | — |
+| **Buyer Dashboard list** | Loading state shows spinner | Pass | None | — | — |
+| **Buyer Dashboard list** | Fetch error returned `[]` silently — showed "No reservations" instead of error | **Bug** | `getReservationsForCurrentBuyer()` returned `[]` on error instead of `null`; no error state in component | Changed return type to `BuyerReservation[] \| null`; added `fetchError` state + "Try Again" button | `supabase.ts`, `BuyerDashboard.tsx` |
+| **Filters** | All tab works | Pass | None | — | — |
+| **Filters** | Pending / Confirmed / Completed / Cancelled tabs work | Pass | None | — | — |
+| **Filters** | Status tile buttons toggle filter (second click returns to "All") | Pass | None | — | — |
+| **Filters** | Count badges computed client-side from full `reservations[]` — not affected by active filter | Pass | None | — | — |
+| **Filters** | "No reservations match your filters" empty state + "Clear filters" button | Pass | None | — | — |
+| **Search** | Search by produce name, farmer name, village, district, status | Pass | None | — | — |
+| **Search** | Clear (X) button inside search input clears query | Pass | None | — | — |
+| **Search** | Result count shown in "Reservation History (N results)" heading | Pass | None | — | — |
+| **Sort** | Newest first, Oldest first, Quantity high to low, By status — all work | Pass | None | — | — |
+| **Sort** | Sort dropdown closes when clicking outside (backdrop div) | Pass | None | — | — |
+| **Sort** | Active sort option highlighted in dropdown | Pass | None | — | — |
+| **Cancellation** | Buyer can cancel own pending reservation — `window.confirm` → `cancelBuyerReservation()` | Pass | None | — | — |
+| **Cancellation** | RLS USING clause: `buyer_user_id = auth.uid() AND status = 'pending'` blocks non-pending cancel | Pass | None | — | — |
+| **Cancellation** | RLS WITH CHECK: only `status = 'cancelled'` allowed — buyer cannot set confirmed/completed | Pass | None | — | — |
+| **Cancellation** | Cancel button shows only for `status === "pending"` — not for confirmed/completed/cancelled | Pass | None | — | — |
+| **Cancellation** | Local state updates immediately on success — no page reload | Pass | None | — | — |
+| **Cancellation** | Cancelling spinner shown during in-flight request | Pass | None | — | — |
+| **Cancellation** | Buyer cannot cancel another buyer's reservation — RLS enforces ownership | Pass | None | — | — |
+| **Cancellation** | Protected fields (buyer_name, buyer_phone, listing_id, quantity_kg, payment_method, created_at) not writable by buyer | Pass | None | — | — |
+| **Reservation Detail** | `/buyer/reservations/:id` is protected — login gate for guests | Pass | None | — | — |
+| **Reservation Detail** | `getBuyerReservationById()` uses `.eq("buyer_user_id", user.id)` + RLS — own row only | Pass | None | — | — |
+| **Reservation Detail** | Invalid / other buyer's reservation ID returns `null` → "Reservation not found" state | Pass | None | — | — |
+| **Reservation Detail** | View Listing links to `/produce/${reservation.listing_id}` | Pass | None | — | — |
+| **Reservation Detail** | View Farmer Profile links to `/farmers/${farmer.id}` — uses actual farmer ID, not listing ID | Pass | None | — | — |
+| **Reservation Detail** | Contact Farmer opens `ContactFarmerDialog` with farmer name + phone | Pass | None | — | — |
+| **Reservation Detail** | WhatsApp / tel / copy all work via `ContactFarmerDialog` | Pass | None | — | — |
+| **Reservation Detail** | Open in map uses `openstreetmap.org/search` — free, no API key | Pass | None | — | — |
+| **Reservation Detail** | Cancel pending reservation works from detail page — status updates locally | Pass | None | — | — |
+| **Reservation Detail** | Cancel button disappears after cancellation (rendered only when `isPending = true`) | Pass | None | — | — |
+| **Reservation Detail** | Status updates without page reload | Pass | None | — | — |
+| **Reservation Detail** | Mobile layout: `max-w-2xl`, stacked cards, touch-friendly buttons | Pass | None | — | — |
+| **Mobile** | Buyer Dashboard: no horizontal overflow at 375px | Pass | None | — | — |
+| **Mobile** | Filter tabs: `flex-wrap` — wraps on small screens | Pass | None | — | — |
+| **Mobile** | Status tiles: `grid-cols-2 sm:grid-cols-4` — 2 columns on mobile | Pass | None | — | — |
+| **Mobile** | Search input: full-width, usable on mobile | Pass | None | — | — |
+| **Mobile** | Sort dropdown: usable on mobile, backdrop closes it | Pass | None | — | — |
+| **Mobile** | Reservation cards: all fields readable, `grid-cols-2` details grid | Pass | None | — | — |
+| **Mobile** | Action buttons: touch-friendly size, `flex-wrap` for overflow | Pass | None | — | — |
+| **Mobile** | Contact Farmer dialog: `max-w-sm`, full-width buttons, mobile-friendly | Pass | None | — | — |
+| **Mobile** | Web Share fallback: `navigator.clipboard` uses toast fallback on copy fail | Pass | None | — | — |
+| **Cross-page** | Landing Page: works, images load | Pass | None | — | — |
+| **Cross-page** | Waitlist form: still works | Pass | None | — | — |
+| **Cross-page** | Browse Produce: still works | Pass | None | — | — |
+| **Cross-page** | Produce Detail: still works | Pass | None | — | — |
+| **Cross-page** | Farmer Profile: still works | Pass | None | — | — |
+| **Cross-page** | Farmer Dashboard: still works (prior QA fixes intact) | Pass | None | — | — |
+| **Cross-page** | Agent Dashboard: still works | Pass | None | — | — |
+| **Cross-page** | Admin Dashboard: still works | Pass | None | — | — |
+| **Cross-page** | Login / Signup: still work | Pass | None | — | — |
+| **Cross-page** | Contact Farmer dialog: WhatsApp / tel / copy still work | Pass | None | — | — |
+| **Cross-page** | Share Listing: still works | Pass | None | — | — |
+| **Cross-page** | PWA: manifest.json, sw.js, icon SVGs, offline.html — all present | Pass | None | — | — |
+| **Security/RLS** | Buyer sees only own reservations — `.eq("buyer_user_id", user.id)` + RLS | Pass | None | — | — |
+| **Security/RLS** | Buyer cannot read another buyer's reservation row | Pass | None | — | — |
+| **Security/RLS** | Buyer cannot update to confirmed/completed — RLS WITH CHECK allows only `cancelled` | Pass | None | — | — |
+| **Security/RLS** | Buyer cannot delete reservations — no DELETE policy for buyer role | Pass | None | — | — |
+| **Security/RLS** | `buyer_phone` never selected in buyer-facing queries | Pass | None | — | — |
+| **Security/RLS** | Farmer phone shown only inside ContactFarmerDialog — never on public card | Pass | None | — | — |
+| **Security/RLS** | Buyer cannot access Farmer Dashboard — ProtectedRoute blocks | Pass | None | — | — |
+| **Security/RLS** | No secrets printed to console | Pass | None | — | — |
+| **Security/RLS** | No service_role key used | Pass | None | — | — |
+| **Security/RLS** | No RLS weakening | Pass | None | — | — |
+| **Security/RLS** | No paid services used | Pass | None | — | — |
+
+---
+
+### Bug Fixed
+
+#### Bug — Buyer Dashboard no error state on fetch failure (functional)
+
+**Files:** `src/lib/supabase.ts`, `src/pages/BuyerDashboard.tsx`
+
+**Problem:** `getReservationsForCurrentBuyer()` caught all Supabase errors internally and returned `[]` (empty array) on failure. `BuyerDashboard` could not distinguish between a genuine empty list and a network/DB error. On fetch failure, the buyer saw the "No reservations yet" empty state with a "Browse Produce" button — a misleading result.
+
+**Fix in `supabase.ts`:** Changed return type from `Promise<BuyerReservation[]>` to `Promise<BuyerReservation[] | null>`. The function now returns `null` on Supabase error, and `[]` (not null) for the genuine empty-list cases (Supabase not configured, user not logged in).
+
+**Fix in `BuyerDashboard.tsx`:** Added `fetchError` state. Extracted the load function as `loadReservations` via `useCallback` so it can be called by the "Try Again" button. Added a dedicated error block in the render (between loading spinner and empty state):
+
+- Error icon
+- "Could not load reservations" heading
+- Error message text
+- "Try Again" button that re-calls `loadReservations()`
+
+---
+
+### TypeScript Result
+
+Exit 0 — zero errors after both file changes.
+
+### Console Error Result
+
+None. Only Vite HMR update messages in development.
+
+### Mobile-Readiness Result
+
+Buyer Dashboard and Reservation Detail are fully mobile-first. Status tiles use `grid-cols-2` on mobile. Filter tabs wrap with `flex-wrap`. Reservation cards stack details in a `grid-cols-2` grid readable at 375px. Contact Farmer dialog is full-width on mobile. All buttons meet touch target size. No horizontal overflow. The codebase remains compatible with future Capacitor Android/iOS packaging — no browser-only APIs without fallback, no desktop-only layout assumptions.
+
+### RLS / Security Result
+
+All buyer data access is enforced server-side by RLS (`buyer_user_id = auth.uid()`). The cancellation RLS has both a USING clause (only pending rows) and a WITH CHECK (only cancelled status), preventing any other status escalation. `buyer_phone` is never selected in buyer-facing or public queries. Farmer phone is accessible only through ContactFarmerDialog within the buyer's own reservation context. No secrets exposed. No paid services.
+
+### Remaining Buyer Dashboard Limitations
+
+| Limitation | Notes |
+|---|---|
+| No realtime subscription | Buyer must manually revisit the dashboard to see status updates from the farmer. Acceptable for MVP — farmer confirmation flows over phone/WhatsApp. |
+| Cancel uses `window.confirm` | Native dialog. Acceptable for mobile PWA. A custom in-UI confirmation dialog would be a polish improvement but not a bug. |
+| Cancellation success has no toast | Status update is visually reflected in the card immediately. A toast would be a UX polish addition. |
+| No pagination | Sufficient for pilot scale. |
+| Guest reservations not visible in dashboard | By design — guests have no `buyer_user_id`. Guest success message explicitly tells users to log in next time to track history. |
+
+### Recommended Next Phase
+
+Agent Dashboard QA + Polish — verify agent call request flow, farmer onboarding assistance, and agent-only access control.
+
+---
+
+### Fake / Mock Testing Rule
+
+All test names, phones, emails, villages, and IDs are fake/mock only. No real personal data is used.
+
+Examples (mock only):
+- Buyer: Ravi Test Buyer, phone: 9876500001, email: fakebuyer@example.com
+- Farmer: Ramesh Test Farmer, phone: 9876500002, village: Shadnagar
+
+### No Paid Services Used
+
+All icons: Lucide (open source). Maps: OpenStreetMap (free, no API key). Auth/DB: Supabase free tier. No Stripe, Google Maps API, Twilio, or any paid service.
+
+---
+
 ## Farmer Dashboard — Post-Sprint QA + Bug Fix Report
 
 ### QA Summary

@@ -95,6 +95,8 @@ export default function AdminDashboard() {
   const [callRequests, setCallRequests] = useState<AgentCallRequest[]>([]);
   const [callCounts, setCallCounts] = useState<CallRequestCounts | null>(null);
   const [requestsLoading, setRequestsLoading] = useState(false);
+  const [callRequestsError, setCallRequestsError] = useState<string | null>(null);
+  const [agentRequestSearch, setAgentRequestSearch] = useState("");
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
   const [farmerStatus, setFarmerStatus] = useState<UserStatus>(
@@ -183,6 +185,7 @@ export default function AdminDashboard() {
   const loadCallRequests = useCallback(async () => {
     if (!isSupabaseConfigured()) return;
     setRequestsLoading(true);
+    setCallRequestsError(null);
     try {
       const sb = getSupabase();
       const { data, error } = await sb
@@ -199,7 +202,7 @@ export default function AdminDashboard() {
         resolved: rows.filter((r) => r.status === "resolved").length,
       });
     } catch (e) {
-      console.warn("Agent request fetch failed:", e);
+      setCallRequestsError(e instanceof Error ? e.message : "Failed to load agent requests");
     } finally {
       setRequestsLoading(false);
     }
@@ -294,6 +297,19 @@ export default function AdminDashboard() {
     cancelled: adminReservations.filter((r) => r.status === "cancelled").length,
     totalKg:   adminReservations.reduce((sum, r) => sum + r.quantity_kg, 0),
   };
+
+  // Filtered agent requests for the Agent Requests tab
+  const filteredCallRequests = agentRequestSearch.trim()
+    ? callRequests.filter((r) => {
+        const q = agentRequestSearch.toLowerCase();
+        return (
+          r.farmer_name.toLowerCase().includes(q) ||
+          r.farmer_phone.includes(q) ||
+          (r.village?.toLowerCase() ?? "").includes(q) ||
+          r.status.includes(q)
+        );
+      })
+    : callRequests;
 
   // Filtered + searched reservations for the Reservations tab
   const filteredReservations = adminReservations.filter((r) => {
@@ -872,30 +888,64 @@ export default function AdminDashboard() {
 
           {/* Agent Requests */}
           <TabsContent value="agent-requests">
-            <div className="mb-3 flex items-center justify-between">
-              <p className="text-sm text-muted-foreground">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 mb-3">
+              <p className="text-sm text-muted-foreground flex-1">
                 {isSupabaseConfigured()
                   ? "Farmer assistance and callback requests logged by agents."
                   : "Supabase not configured — no live data available."}
               </p>
+              {isSupabaseConfigured() && (
+                <button
+                  onClick={loadCallRequests}
+                  disabled={requestsLoading}
+                  className="text-xs text-muted-foreground hover:text-primary flex items-center gap-1 transition-colors shrink-0"
+                >
+                  <RefreshCw className={`w-3 h-3 ${requestsLoading ? "animate-spin" : ""}`} />
+                  Refresh
+                </button>
+              )}
             </div>
+
+            {isSupabaseConfigured() && (
+              <div className="relative mb-3">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                <input
+                  type="text"
+                  placeholder="Search farmer name, phone, village, or status..."
+                  value={agentRequestSearch}
+                  onChange={(e) => setAgentRequestSearch(e.target.value)}
+                  className="w-full pl-8 pr-3 py-2 text-sm border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary/30"
+                />
+              </div>
+            )}
 
             {requestsLoading ? (
               <div className="bg-card border border-border rounded-2xl p-8 text-center">
                 <RefreshCw className="w-6 h-6 text-muted-foreground mx-auto mb-2 animate-spin opacity-40" />
                 <p className="text-sm text-muted-foreground">Loading requests...</p>
               </div>
-            ) : callRequests.length === 0 ? (
+            ) : callRequestsError ? (
+              <div className="bg-card border border-destructive/20 rounded-2xl p-8 text-center">
+                <AlertCircle className="w-8 h-8 text-destructive mx-auto mb-2 opacity-60" />
+                <p className="text-sm font-semibold text-foreground mb-1">Could not load requests</p>
+                <p className="text-xs text-muted-foreground mb-3">{callRequestsError}</p>
+                <Button size="sm" onClick={loadCallRequests}>Try Again</Button>
+              </div>
+            ) : filteredCallRequests.length === 0 ? (
               <div className="bg-card border border-border rounded-2xl p-8 text-center">
                 <ClipboardList className="w-10 h-10 text-muted-foreground mx-auto mb-3 opacity-40" />
-                <h3 className="font-semibold text-foreground mb-1">No Callback Requests</h3>
+                <h3 className="font-semibold text-foreground mb-1">
+                  {callRequests.length === 0 ? "No Callback Requests" : "No Matching Requests"}
+                </h3>
                 <p className="text-sm text-muted-foreground">
-                  Requests logged from the Agent Dashboard will appear here.
+                  {callRequests.length === 0
+                    ? "Requests logged from the Agent Dashboard will appear here."
+                    : "Try a different search term."}
                 </p>
               </div>
             ) : (
               <div className="space-y-3">
-                {callRequests.map((req) => (
+                {filteredCallRequests.map((req) => (
                   <div
                     key={req.id}
                     className="bg-card border border-border rounded-2xl p-4 shadow-sm"

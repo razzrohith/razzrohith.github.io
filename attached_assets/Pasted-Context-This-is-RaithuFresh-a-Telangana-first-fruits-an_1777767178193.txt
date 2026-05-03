@@ -1,0 +1,314 @@
+Context:
+This is RaithuFresh, a Telangana-first fruits and vegetables marketplace for farmers, buyers, agents, and admins.
+
+Final product goal:
+The final goal is to publish RaithuFresh as a real Android app on Google Play Store and a real iOS app on Apple App Store.
+For now, continue building the web/PWA MVP, but keep everything mobile-app-ready for a future free/open-source Capacitor-style wrapper.
+
+Rules:
+- Focus only on fruits and vegetables.
+- Use only free tools, free tiers, open-source libraries, and mock/local alternatives.
+- Do not use paid services or paid APIs.
+- Do not add background push notifications yet.
+- Do not add Web Push, VAPID keys, Push API subscription storage, or notification servers.
+- Do not use paid stock images.
+- Do not use copyrighted brand images.
+- Do not hotlink images from random websites.
+- Do not touch DealNest/deals/coupons/stores/threads code or data.
+- Do not add delivery, online payments, admin promotion tools, Edge Functions, admin promotion tools, or paid services.
+- Do not use service_role key.
+- Do not expose secrets.
+- Do not weaken RLS.
+- Use only fake/mock names, phone numbers, emails, villages, and test details during testing.
+- Do not use real personal data.
+- Keep UI mobile-first and touch-friendly for future Android/iOS app packaging.
+
+Important execution rule:
+This is a large multi-phase request.
+
+Before coding, inspect the project and decide whether you can safely complete all phases in one run.
+
+If you cannot safely complete all phases in one run, stop and report:
+1. How many tasks/phases you can safely handle at once.
+2. Which exact phases should be done first.
+3. Why the full request is too large.
+4. A recommended split plan.
+
+If you can safely complete it, proceed phase by phase.
+
+Do not make risky database/RLS changes without explaining first.
+Do not partially implement a feature and call it done.
+After each phase, run TypeScript and check for obvious runtime/console errors.
+
+Task:
+Complete the next 5 RaithuFresh web MVP phases together if safe.
+
+Phases:
+1. Buyer Dashboard QA + Polish
+2. Agent Dashboard Operations Polish + QA
+3. Admin Dashboard Final Operations Polish + QA
+4. Profile Management Phase
+5. End-to-End Pilot Flow QA
+
+Phase 1 — Buyer Dashboard QA + Polish
+
+Current state:
+- Buyer Dashboard exists at /buyer.
+- Buyer Reservation Detail exists at /buyer/reservations/:id.
+- Logged-in buyer reservations are linked by reservations.buyer_user_id.
+- Guest reservations still work with buyer_user_id = null.
+- Buyer can cancel only own pending reservations.
+
+Verify and polish:
+- Buyer Dashboard access by role.
+- Navbar Buyer Dashboard visibility.
+- Mobile nav buyer links.
+- Guest reservation still works.
+- Logged-in buyer reservation saves buyer_user_id.
+- Reservation from Browse works.
+- Reservation from Produce Detail works.
+- Reservation from Farmer Profile works.
+- Reservation from More From This Farmer works.
+- Quantity validation works.
+- Payment wording says: “Cash or UPI directly to farmer.”
+- No online payment/checkout wording appears.
+- Buyer sees only own reservations.
+- Buyer does not see another buyer’s reservations.
+- Guest cannot read reservations.
+- Filters/search/sort work.
+- Cancel own pending reservation works.
+- Cannot cancel confirmed/completed/cancelled reservations.
+- Buyer cannot update protected fields.
+- Buyer Reservation Detail works.
+- View Listing works.
+- View Farmer Profile uses actual farmer id.
+- Contact Farmer works.
+- WhatsApp/tel/copy work.
+- Open pickup location uses free OpenStreetMap/search link only.
+- Mobile layout is clean.
+
+Fix only bugs found.
+
+Phase 2 — Agent Dashboard Operations Polish + QA
+
+Goal:
+Make Agent Dashboard clearer and more useful for assisted farmer operations.
+
+Audit and improve:
+- Agent Dashboard access by role.
+- Agent/admin can access.
+- Buyer/farmer cannot access.
+- Callback request creation works.
+- Request list loads.
+- Status filters:
+  - All
+  - Pending
+  - Called
+  - Resolved
+- Search by farmer name, phone, village, status.
+- Status update works:
+  - pending
+  - called
+  - resolved
+- Clear empty/loading/error states.
+- Mobile layout is touch-friendly.
+- No buyer reservation data is exposed.
+- No admin-only data is exposed.
+- No paid SMS/WhatsApp API.
+- If phone/WhatsApp contact is added, use only free tel: and wa.me deep links.
+- Use fake/mock farmer details only.
+
+If useful and safe, add small polish:
+- Status count cards.
+- Better request cards.
+- Clear “Assisted Farmer Mode” explanation.
+- Manual refresh button.
+- Better call note wording.
+
+Do not add new database tables unless absolutely required.
+Do not weaken RLS.
+
+Phase 3 — Admin Dashboard Final Operations Polish + QA
+
+Goal:
+Make Admin Dashboard cleaner for pilot monitoring.
+
+Audit and improve:
+- Admin-only access.
+- Non-admin users blocked.
+- Farmers section loads/looks clear.
+- Buyers/users section does not expose unnecessary data.
+- Agents section is clear.
+- Listings section is clear.
+- Reservations tab works.
+- Agent Requests tab works.
+- Status filters/search work where useful.
+- Admin can update reservation status.
+- Admin can update agent request status.
+- No admin promotion tool.
+- No service_role key.
+- No sensitive data on public pages.
+- Mobile layout works.
+- Empty/loading/error states are clear.
+
+If useful and safe, add small polish:
+- Admin summary cards.
+- Filter/search inside admin tabs.
+- Clear status badges.
+- Better “MVP admin limitations” notes in UI or README.
+
+Do not add destructive admin actions.
+Do not add delete buttons unless already safely supported by RLS.
+Do not weaken RLS.
+
+Phase 4 — Profile Management Phase
+
+Goal:
+Allow logged-in users to safely update their own profile without changing role.
+
+Add or polish a profile page/section if missing.
+
+Route suggestion:
+- /profile
+
+Allowed:
+- buyer
+- farmer
+- agent
+- admin
+
+Users can update only:
+- full_name
+- phone
+- village
+- district
+
+Users cannot update:
+- role
+- id
+- created_at
+- admin status
+- user_id
+
+Requirements:
+- Use existing user_profiles table and existing safe column-level grants.
+- Do not allow role editing in UI.
+- Do not allow admin self-promotion.
+- Show current user name, phone, role, village, district.
+- Role should be read-only.
+- Add profile link in Navbar for logged-in users.
+- Mobile-friendly form.
+- Clear success/error messages.
+- Use fake/mock data for testing.
+
+If any RLS issue blocks safe profile update, stop and report the exact issue before changing policies.
+
+Phase 5 — End-to-End Pilot Flow QA
+
+Run full app QA after the above work.
+
+Test with fake/mock data only.
+
+Pilot flow:
+1. Landing page loads.
+2. Waitlist form works for Buyer/Farmer/Agent.
+3. Signup works for Buyer/Farmer/Agent.
+4. Login/logout works.
+5. Farmer creates listing.
+6. Browse shows active listing.
+7. Produce Detail loads listing.
+8. Farmer Profile shows farmer listings.
+9. Buyer reserves listing.
+10. Buyer sees reservation in Buyer Dashboard.
+11. Buyer opens Reservation Detail.
+12. Farmer sees reservation in Farmer Dashboard.
+13. Farmer confirms reservation.
+14. Buyer sees updated status.
+15. Admin sees reservation.
+16. Agent creates callback request.
+17. Admin sees agent request.
+18. Profile update works.
+19. Protected routes block wrong roles.
+20. Public pages do not expose buyer phone.
+21. Contact Farmer dialog works.
+22. WhatsApp/tel/copy work.
+23. Share Listing works.
+24. PWA files still exist.
+25. Mobile layout works on core pages.
+
+Security/RLS verification:
+- Guest can browse public active listings.
+- Guest cannot read reservations.
+- Buyer can read only own reservations.
+- Farmer can read only own listing reservations.
+- Agent can read/manage agent requests only if agent/admin.
+- Admin can access admin dashboard.
+- User cannot change own role.
+- No service_role key in frontend.
+- No SUPABASE_DB_URL in frontend.
+- No secrets printed.
+- No paid services used.
+
+Mobile-readiness check:
+Verify mobile width for:
+- Landing
+- Browse
+- Produce Detail
+- Farmer Profile
+- Buyer Dashboard
+- Buyer Reservation Detail
+- Farmer Dashboard
+- Agent Dashboard
+- Admin Dashboard
+- Login
+- Signup
+- Profile
+- Contact dialog
+- Reservation modal
+
+Fix:
+- horizontal overflow
+- too-small buttons
+- unreadable cards
+- broken modals
+- desktop-only interactions
+
+Documentation:
+Update README with:
+- Buyer Dashboard QA/polish summary
+- Agent Dashboard polish summary
+- Admin Dashboard polish summary
+- Profile Management behavior
+- End-to-end pilot QA summary
+- Mobile-readiness note for future Android/iOS app packaging
+- Fake/mock testing rule
+- No paid services used
+- Known limitations
+
+Final report format:
+Return a detailed table with:
+
+- Phase
+- Area checked
+- Issue found
+- Fix made
+- Files changed
+- Test result
+
+Also include:
+- TypeScript result
+- Console error result
+- RLS/security result
+- Mobile-readiness result
+- No-paid-services confirmation
+- Any remaining bugs
+- Any remaining limitations
+- Recommended next phase
+
+Important:
+If you complete all 5 phases, say clearly:
+“All 5 requested phases completed.”
+
+If you only complete part of them, say clearly:
+“Completed phases: X, Y. Not completed: Z.”
+Then explain exactly why.

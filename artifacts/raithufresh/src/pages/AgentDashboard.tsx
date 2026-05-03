@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import {
   Users, Plus, Phone, Calendar, ClipboardList, TrendingUp,
   CheckCircle2, PhoneCall, Clock, RefreshCw, XCircle,
+  MessageCircle, Search,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -98,6 +99,8 @@ export default function AgentDashboard() {
   const [requestsError, setRequestsError] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [assistanceSubmitting, setAssistanceSubmitting] = useState(false);
+  const [requestFilter, setRequestFilter] = useState<"all" | AgentCallRequestStatus>("all");
+  const [requestSearch, setRequestSearch] = useState("");
 
   const assignedFarmers = mockFarmers.filter((f) =>
     demoAgent.assignedFarmerIds.includes(f.id)
@@ -266,6 +269,27 @@ export default function AgentDashboard() {
       0
     );
 
+  const requestCounts = {
+    all: requests.length,
+    pending: requests.filter((r) => r.status === "pending").length,
+    called: requests.filter((r) => r.status === "called").length,
+    resolved: requests.filter((r) => r.status === "resolved").length,
+  };
+
+  const filteredRequests = requests.filter((req) => {
+    if (requestFilter !== "all" && req.status !== requestFilter) return false;
+    if (requestSearch.trim()) {
+      const q = requestSearch.toLowerCase();
+      return (
+        req.farmer_name.toLowerCase().includes(q) ||
+        req.farmer_phone.includes(q) ||
+        (req.village?.toLowerCase() ?? "").includes(q) ||
+        req.status.includes(q)
+      );
+    }
+    return true;
+  });
+
   // ── Render ───────────────────────────────────────────────────────────────
 
   return (
@@ -283,6 +307,19 @@ export default function AgentDashboard() {
           <Badge className="bg-primary/10 text-primary border-primary/20">
             {demoAgent.commissionRate}% Commission
           </Badge>
+        </div>
+
+        {/* Assisted Farmer Mode explanation */}
+        <div className="bg-blue-50 border border-blue-200 rounded-2xl px-4 py-3 mb-6 flex items-start gap-3">
+          <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center shrink-0 mt-0.5">
+            <Phone className="w-4 h-4 text-blue-700" />
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-blue-800 mb-0.5">Assisted Farmer Mode</p>
+            <p className="text-xs text-blue-700 leading-relaxed">
+              You are operating on behalf of farmers who need help listing produce and managing reservations. Log callback requests, update stock, schedule calls, and help farmers get online — all from this dashboard. No SMS or paid services are used; all farmer contact is via phone call or WhatsApp deep link.
+            </p>
+          </div>
         </div>
 
         {/* Commission summary */}
@@ -507,6 +544,57 @@ export default function AgentDashboard() {
             )}
           </div>
 
+          {/* Status count cards */}
+          {requests.length > 0 && (
+            <div className="grid grid-cols-3 gap-2 mb-3">
+              {[
+                { label: "Pending",  count: requestCounts.pending,  color: "bg-amber-50  text-amber-700  border-amber-100",  status: "pending"  as AgentCallRequestStatus },
+                { label: "Called",   count: requestCounts.called,   color: "bg-blue-50   text-blue-700   border-blue-100",   status: "called"   as AgentCallRequestStatus },
+                { label: "Resolved", count: requestCounts.resolved, color: "bg-green-50  text-green-700  border-green-100",  status: "resolved" as AgentCallRequestStatus },
+              ].map((c) => (
+                <button
+                  key={c.status}
+                  onClick={() => setRequestFilter(requestFilter === c.status ? "all" : c.status)}
+                  className={`rounded-xl border p-2.5 text-left transition-all ${c.color} ${requestFilter === c.status ? "ring-2 ring-offset-1 ring-current" : "opacity-80 hover:opacity-100"}`}
+                >
+                  <div className="text-xl font-bold leading-none">{c.count}</div>
+                  <div className="text-xs mt-0.5 opacity-80">{c.label}</div>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Search + filter */}
+          {requests.length > 0 && (
+            <div className="space-y-2 mb-3">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                <input
+                  type="text"
+                  placeholder="Search farmer name, phone, village, status..."
+                  value={requestSearch}
+                  onChange={(e) => setRequestSearch(e.target.value)}
+                  className="w-full pl-8 pr-3 py-2 text-sm border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary/30"
+                />
+              </div>
+              <div className="flex gap-1.5 flex-wrap">
+                {(["all", "pending", "called", "resolved"] as const).map((f) => (
+                  <button
+                    key={f}
+                    onClick={() => setRequestFilter(f)}
+                    className={`px-3 py-1 text-xs rounded-full border transition-colors ${
+                      requestFilter === f
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "border-border text-muted-foreground hover:border-primary hover:text-primary"
+                    }`}
+                  >
+                    {f === "all" ? `All (${requestCounts.all})` : STATUS_LABELS[f]}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {requestsLoading ? (
             <div className="text-sm text-muted-foreground py-4 text-center">
               Loading requests...
@@ -520,13 +608,13 @@ export default function AgentDashboard() {
               <p className="text-xs text-muted-foreground mb-3 max-w-xs mx-auto">{requestsError}</p>
               <Button size="sm" onClick={loadRequests}>Try Again</Button>
             </div>
-          ) : requests.length === 0 ? (
+          ) : filteredRequests.length === 0 ? (
             <div className="text-sm text-muted-foreground py-4 text-center">
-              No callback requests yet.
+              {requests.length === 0 ? "No callback requests yet." : "No requests match your search or filter."}
             </div>
           ) : (
             <div className="space-y-3">
-              {requests.map((req) => (
+              {filteredRequests.map((req) => (
                 <div
                   key={req.id}
                   className="border border-border rounded-xl p-4 hover:border-primary/30 transition-colors"
@@ -537,9 +625,21 @@ export default function AgentDashboard() {
                         <span className="font-semibold text-foreground text-sm">
                           {req.farmer_name}
                         </span>
-                        <span className="text-xs text-muted-foreground">
+                        <a
+                          href={`tel:+91${req.farmer_phone}`}
+                          className="text-xs text-primary hover:underline inline-flex items-center gap-0.5"
+                        >
                           +91 {req.farmer_phone}
-                        </span>
+                        </a>
+                        <a
+                          href={`https://wa.me/91${req.farmer_phone}?text=${encodeURIComponent(`Hello ${req.farmer_name}, calling from RaithuFresh regarding your listing assistance.`)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-0.5 text-xs text-green-700 hover:text-green-800 transition-colors"
+                        >
+                          <MessageCircle className="w-3 h-3" />
+                          WhatsApp
+                        </a>
                         {req.village && (
                           <span className="text-xs text-muted-foreground">· {req.village}</span>
                         )}

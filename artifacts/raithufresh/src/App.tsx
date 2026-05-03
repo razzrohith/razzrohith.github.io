@@ -16,6 +16,7 @@ import BuyerDashboard from "@/pages/BuyerDashboard";
 import BuyerReservationDetail from "@/pages/BuyerReservationDetail";
 import LoginPage from "@/pages/LoginPage";
 import SignupPage from "@/pages/SignupPage";
+import ProfilePage from "@/pages/ProfilePage";
 import InstallBanner from "@/components/InstallBanner";
 
 const queryClient = new QueryClient();
@@ -68,6 +69,14 @@ function Router() {
         {(params) => (
           <ProtectedRoute allowedRoles={["buyer", "admin"]}>
             <BuyerReservationDetail id={params.id ?? ""} />
+          </ProtectedRoute>
+        )}
+      </Route>
+
+      <Route path="/profile">
+        {() => (
+          <ProtectedRoute allowedRoles={["buyer", "farmer", "agent", "admin"]}>
+            <ProfilePage />
           </ProtectedRoute>
         )}
       </Route>

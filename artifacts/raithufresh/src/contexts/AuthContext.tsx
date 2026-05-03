@@ -19,6 +19,7 @@ type AuthContextValue = {
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
   signUp: (data: SignUpData) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
+  refreshProfile: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue>({
@@ -29,6 +30,7 @@ const AuthContext = createContext<AuthContextValue>({
   signIn: async () => ({ error: "Auth not ready" }),
   signUp: async () => ({ error: "Auth not ready" }),
   signOut: async () => {},
+  refreshProfile: async () => {},
 });
 
 // ── Provider ───────────────────────────────────────────────────────────────
@@ -86,6 +88,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return result;
   };
 
+  const refreshProfile = useCallback(async () => {
+    if (user) await loadProfile(user);
+  }, [user, loadProfile]);
+
   const handleSignOut = async () => {
     await sbSignOut();
     setUser(null);
@@ -102,6 +108,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         signIn: handleSignIn,
         signUp: handleSignUp,
         signOut: handleSignOut,
+        refreshProfile,
       }}
     >
       {children}

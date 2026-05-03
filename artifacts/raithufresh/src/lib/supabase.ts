@@ -829,3 +829,17 @@ export type AgentCallRequest = {
   status: AgentCallRequestStatus;
   created_at: string;
 };
+
+export async function updateUserProfile(
+  updates: Partial<Pick<UserProfile, "full_name" | "phone" | "village" | "district">>
+): Promise<{ error: string | null }> {
+  if (!isSupabaseConfigured()) return { error: "Supabase is not configured." };
+  const { data: { user } } = await getSupabase().auth.getUser();
+  if (!user) return { error: "Not authenticated." };
+  const { error } = await getSupabase()
+    .from("user_profiles")
+    .update(updates)
+    .eq("id", user.id);
+  if (error) return { error: error.message };
+  return { error: null };
+}

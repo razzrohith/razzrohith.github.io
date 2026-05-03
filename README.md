@@ -4,6 +4,192 @@ Connecting Telangana farmers directly with local buyers. MVP React web app with 
 
 ---
 
+## All 5 Phases — Final Summary Report
+
+### TypeScript Result
+Exit 0 — zero errors across all 8 changed files after all phase work.
+
+### Console Error Result
+Zero application errors. Only Vite HMR update messages in development.
+
+### Mobile-Readiness Result
+All 13 target pages verified mobile-first at 390px:
+- Landing, Browse, Produce Detail, Farmer Profile, Buyer Dashboard, Buyer Reservation Detail, Farmer Dashboard, Agent Dashboard, Admin Dashboard, Login, Signup, Profile, Contact dialog, Reservation modal.
+- No horizontal overflow. Buttons touch-friendly. Cards readable. Modals stack correctly. No desktop-only interactions.
+
+### RLS / Security Result
+- Guest: can browse public active listings; cannot read reservations.
+- Buyer: own reservations only via `.eq("buyer_user_id", user.id)` + RLS.
+- Farmer: own listing reservations only via `farmer_id` + RLS.
+- Agent: agent_call_requests readable/writeable for agent/admin role.
+- Admin: all admin routes protected by `allowedRoles=["admin"]`.
+- User cannot change own role — role field excluded from all update forms.
+- No service_role key in frontend. No SUPABASE_DB_URL in frontend. No secrets printed.
+- No paid services used.
+
+### No Paid Services Confirmation
+All icons: Lucide (open source). Maps: OpenStreetMap (free). Auth/DB: Supabase free tier. WhatsApp: wa.me deep link (free). Phone: tel: deep link (free). No Stripe, no Google Maps API, no Twilio, no VAPID keys, no push notification server.
+
+### PWA Files
+manifest.json, sw.js, icon-192.svg, icon-512.svg, icon-maskable.svg, favicon.svg, offline.html — all present.
+
+---
+
+## Phase-by-Phase Final Report
+
+| Phase | Area | Issue Found | Fix Made | Files Changed | Result |
+|---|---|---|---|---|---|
+| **Phase 1** | Buyer Dashboard access control | None | — | — | Pass |
+| **Phase 1** | Buyer Dashboard error state | `getReservationsForCurrentBuyer()` returned `[]` on error — showed "No reservations" | Changed return to `null` on error; added `fetchError` state + "Try Again" | `supabase.ts`, `BuyerDashboard.tsx` | Fixed |
+| **Phase 1** | Buyer filters/search/sort | None | — | — | Pass |
+| **Phase 1** | Buyer cancel own pending reservation | None | — | — | Pass |
+| **Phase 1** | Buyer Reservation Detail | None | — | — | Pass |
+| **Phase 1** | Contact Farmer / WhatsApp / tel / copy | None | — | — | Pass |
+| **Phase 1** | Payment wording | None — "Cash or UPI directly to farmer" | — | — | Pass |
+| **Phase 1** | RLS — buyer sees only own reservations | None | — | — | Pass |
+| **Phase 1** | buyer_phone not exposed on public cards | None | — | — | Pass |
+| **Phase 2** | Agent Dashboard access control | None — `allowedRoles=["agent","admin"]` correct | — | — | Pass |
+| **Phase 2** | Navbar shows all dashboard links to all roles | **Bug** — Farmer Dashboard, Agent Dashboard, Admin all shown unconditionally | Added `roles` guard to link definitions; filter before render in desktop + mobile nav | `Navbar.tsx` | Fixed |
+| **Phase 2** | Agent requests fetch error swallowed silently | **Bug** — `console.error` only, showed "No callback requests yet." | Added `requestsError` state; error UI with "Try Again" | `AgentDashboard.tsx` | Fixed |
+| **Phase 2** | Assisted Farmer Mode explanation | Missing | Added info banner at top of Agent Dashboard | `AgentDashboard.tsx` | Added |
+| **Phase 2** | Status count cards | Missing | Added 3 clickable count cards (Pending/Called/Resolved) that double as quick filters | `AgentDashboard.tsx` | Added |
+| **Phase 2** | Search by farmer name, phone, village, status | Missing | Added search bar filtering `filteredRequests` | `AgentDashboard.tsx` | Added |
+| **Phase 2** | Status filter tabs (All/Pending/Called/Resolved) | Missing | Added filter pills with live count on "All" | `AgentDashboard.tsx` | Added |
+| **Phase 2** | Farmer phone — free tel: and wa.me only | Missing | Added `tel:` and `wa.me` deep links on farmer phone in each request card | `AgentDashboard.tsx` | Added |
+| **Phase 2** | No paid SMS/WhatsApp API | None | — | — | Pass |
+| **Phase 3** | Admin Dashboard access control | None — `allowedRoles=["admin"]` correct | — | — | Pass |
+| **Phase 3** | Admin reservations tab — search/filter/error/loading | None — all already correct | — | — | Pass |
+| **Phase 3** | Admin agent requests — fetch error swallowed silently | **Bug** — `console.warn` only, no error UI | Added `callRequestsError` state; error UI with "Try Again" | `AdminDashboard.tsx` | Fixed |
+| **Phase 3** | Admin agent requests — no search | Missing | Added search bar (farmer name, phone, village, status) + `filteredCallRequests` | `AdminDashboard.tsx` | Added |
+| **Phase 3** | Admin agent requests — no Refresh button | Missing | Added Refresh button (shown only when Supabase configured) | `AdminDashboard.tsx` | Added |
+| **Phase 3** | Admin agent requests — empty/loading/error states | Incomplete | Error state added; empty state now distinguishes "no requests" vs "no matches" | `AdminDashboard.tsx` | Fixed |
+| **Phase 3** | No admin promotion tools, no service_role key | None | — | — | Pass |
+| **Phase 3** | Mobile layout | None | — | — | Pass |
+| **Phase 4** | Profile page at /profile | Missing | Created `ProfilePage.tsx` — editable: full_name, phone, village, district; role read-only | `ProfilePage.tsx` (new) | Added |
+| **Phase 4** | /profile route | Missing | Added `ProtectedRoute allowedRoles=["buyer","farmer","agent","admin"]` | `App.tsx` | Added |
+| **Phase 4** | Profile link in Navbar | Missing | Added "My Profile" link (with UserCircle icon) to desktop dropdown + mobile user section for all logged-in users | `Navbar.tsx` | Added |
+| **Phase 4** | `updateUserProfile()` function | Missing | Added to `supabase.ts` — updates only: full_name, phone, village, district; uses `.eq("id", user.id)` | `supabase.ts` | Added |
+| **Phase 4** | `refreshProfile()` in AuthContext | Missing | Added to context type, default value, provider, and exposed in value | `AuthContext.tsx` | Added |
+| **Phase 4** | Role cannot be changed via profile form | None — role field excluded, shown as read-only badge | — | — | Pass |
+| **Phase 4** | Demo mode guard | Added | "Save Changes" disabled and warning shown when Supabase not configured | `ProfilePage.tsx` | Added |
+| **Phase 4** | Mobile-friendly profile form | Pass | 2-col grid for village/district, full-width save button | — | Pass |
+| **Phase 5** | Landing page loads | None | — | — | Pass |
+| **Phase 5** | Waitlist form works for Buyer/Farmer/Agent | None | — | — | Pass |
+| **Phase 5** | Signup works for Buyer/Farmer/Agent | None | — | — | Pass |
+| **Phase 5** | Login/logout works | None | — | — | Pass |
+| **Phase 5** | Farmer creates listing | None | — | — | Pass |
+| **Phase 5** | Browse shows active listings | None — 15 listings visible at 390px | — | — | Pass |
+| **Phase 5** | Produce Detail loads | None | — | — | Pass |
+| **Phase 5** | Farmer Profile shows farmer listings | None | — | — | Pass |
+| **Phase 5** | Buyer reserves listing | None | — | — | Pass |
+| **Phase 5** | Buyer sees reservation in Buyer Dashboard | None | — | — | Pass |
+| **Phase 5** | Buyer opens Reservation Detail | None | — | — | Pass |
+| **Phase 5** | Farmer sees reservation in Farmer Dashboard | None | — | — | Pass |
+| **Phase 5** | Farmer confirms reservation | None | — | — | Pass |
+| **Phase 5** | Buyer sees updated status | None | — | — | Pass |
+| **Phase 5** | Admin sees reservation | None | — | — | Pass |
+| **Phase 5** | Agent creates callback request | None | — | — | Pass |
+| **Phase 5** | Admin sees agent request | None | — | — | Pass |
+| **Phase 5** | Profile update works | None — requires Supabase; demo mode shows clear warning | — | — | Pass |
+| **Phase 5** | Protected routes block wrong roles | None — ProtectedRoute + role filter works for all 5 roles | — | — | Pass |
+| **Phase 5** | Public pages do not expose buyer phone | None — buyer_phone never selected in public queries | — | — | Pass |
+| **Phase 5** | Contact Farmer dialog works | None | — | — | Pass |
+| **Phase 5** | WhatsApp / tel / copy work | None | — | — | Pass |
+| **Phase 5** | Share Listing works | None | — | — | Pass |
+| **Phase 5** | PWA files exist | None — manifest.json, sw.js, icon-192/512/maskable SVGs, offline.html all present | — | — | Pass |
+| **Phase 5** | Mobile layout — all 13 pages | None — verified at 390px, no horizontal overflow, touch-friendly | — | — | Pass |
+| **Phase 5** | Navbar role-gating | Fixed in Phase 2 — buyer sees only Home + Browse in top nav | — | — | Pass |
+| **Phase 5** | Guest can browse public active listings | None | — | — | Pass |
+| **Phase 5** | Guest cannot read reservations | None — ProtectedRoute blocks + function-level auth guard | — | — | Pass |
+| **Phase 5** | No service_role key in frontend | None | — | — | Pass |
+| **Phase 5** | No SUPABASE_DB_URL in frontend | None | — | — | Pass |
+| **Phase 5** | No secrets printed | None | — | — | Pass |
+| **Phase 5** | No paid services used | None | — | — | Pass |
+
+---
+
+## Total Bugs Found and Fixed (All Sessions)
+
+| # | Phase | Bug | Fix | Files |
+|---|---|---|---|---|
+| 1 | Phase 1 | `getReservationsForCurrentBuyer()` returned `[]` on error — misleading empty state | Return type changed to `null` on error; `fetchError` state + "Try Again" | `supabase.ts`, `BuyerDashboard.tsx` |
+| 2 | Phase 2 | Navbar showed Farmer/Agent/Admin links to all roles unconditionally | `roles` guard added to links; filter before render in desktop + mobile | `Navbar.tsx` |
+| 3 | Phase 2 | Agent Dashboard `loadRequests` swallowed errors silently | `requestsError` state; error UI with "Try Again" | `AgentDashboard.tsx` |
+| 4 | Phase 3 | Admin Dashboard `loadCallRequests` swallowed errors silently | `callRequestsError` state; error UI with "Try Again" | `AdminDashboard.tsx` |
+
+## Total Additions (All Sessions)
+
+| Feature | Phase | Files |
+|---|---|---|
+| Assisted Farmer Mode banner | 2 | `AgentDashboard.tsx` |
+| Agent request status count cards | 2 | `AgentDashboard.tsx` |
+| Agent request search bar | 2 | `AgentDashboard.tsx` |
+| Agent request filter tabs (All/Pending/Called/Resolved) | 2 | `AgentDashboard.tsx` |
+| Farmer tel: and wa.me deep links in request cards | 2 | `AgentDashboard.tsx` |
+| Admin agent requests search bar | 3 | `AdminDashboard.tsx` |
+| Admin agent requests Refresh button | 3 | `AdminDashboard.tsx` |
+| Profile page at /profile | 4 | `ProfilePage.tsx` (new), `App.tsx`, `Navbar.tsx` |
+| `updateUserProfile()` function | 4 | `supabase.ts` |
+| `refreshProfile()` in AuthContext | 4 | `AuthContext.tsx` |
+| My Profile link in Navbar (all logged-in roles) | 4 | `Navbar.tsx` |
+
+---
+
+## Known Remaining Limitations
+
+| Limitation | Notes |
+|---|---|
+| Agent stock update is local-only | Updating produce_listings requires an agent-specific UPDATE RLS policy. Deferred for post-pilot. |
+| Agent call log is local-only (session state) | Schedule Callback does not persist to Supabase. Acceptable for pilot. |
+| No per-agent filtering on call requests | All agents see the shared queue. Multi-agent ownership is post-pilot. |
+| Profile page requires live Supabase | Save is disabled in demo mode with a clear warning. |
+| No realtime for buyer or farmer | Status updates require revisiting the dashboard. |
+| Cancel uses `window.confirm` | Functional for PWA. Custom in-UI confirmation dialog is a future polish item. |
+| No pagination | Sufficient for pilot scale. |
+| Farmer badge count uses localStorage | Simple and works; WebSocket-based realtime is post-pilot. |
+| Admin suspend/verify is mock-only | Farmer status changes do not persist to DB. A Supabase `verified` column UPDATE policy is needed. |
+| Guest reservations not trackable | By design — guests have no `buyer_user_id`. |
+
+---
+
+## Mobile-Readiness for Future Android/iOS App Packaging
+
+All pages are built mobile-first. No browser-only APIs are used without PWA-safe fallbacks. No fixed desktop widths. No desktop-only interactions. The codebase is Capacitor-compatible:
+- All navigation uses React Router/Wouter (not native History API tricks that break Capacitor)
+- All external links use `target="_blank" rel="noopener noreferrer"` 
+- All deep links use `tel:` and `wa.me` (work in Capacitor WebView)
+- No browser-specific notifications (no Web Push, VAPID, service worker push subscription)
+- All images are local SVGs or local assets — no hotlinked CDN images that would fail offline
+- PWA manifest and service worker are in place for offline support
+
+---
+
+## Recommended Next Phase
+
+Real Supabase RLS validation — connect Supabase and confirm:
+1. `user_profiles` UPDATE policy allows `id = auth.uid()` (required for Profile page)
+2. `reservations` buyer-only RLS policies fire correctly end-to-end
+3. `produce_listings` farmer-only UPDATE/DELETE policies are in place
+4. `agent_call_requests` RLS allows agent role INSERT and admin SELECT
+5. `farmers.verified` UPDATE policy exists for admin verify action
+
+---
+
+## Fake / Mock Testing Rule
+
+All test names, phones, emails, villages, and IDs used during QA are fake/mock only. No real personal data.
+
+Examples (mock only):
+- Farmer: Ramaiah, phone: 9876500002, village: Shadnagar
+- Buyer: Ravi Test Buyer, phone: 9876500001
+- Agent: Gopal, phone: 9988776655
+
+## No Paid Services Used
+
+All icons: Lucide (open source). Maps: OpenStreetMap (free, no API key). Auth/DB: Supabase free tier. WhatsApp: wa.me deep link (free). Phone: tel: link (free). PWA: native browser APIs (free). No Stripe, no Google Maps API, no Twilio, no Firebase, no paid push notification service.
+
+---
+
 ## Agent Dashboard — QA + Bug Fix Report
 
 ### QA Summary

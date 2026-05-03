@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
-import { Menu, X, Leaf, LogOut, ChevronDown, ClipboardList } from "lucide-react";
+import { Menu, X, Leaf, LogOut, ChevronDown, ClipboardList, UserCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
@@ -105,6 +105,14 @@ export default function Navbar() {
                     <p className="text-xs font-medium text-foreground truncate">{displayName}</p>
                     <p className="text-xs text-muted-foreground truncate">{user.email}</p>
                   </div>
+                  <Link
+                    href="/profile"
+                    onClick={() => setUserMenuOpen(false)}
+                    className="w-full text-left px-3 py-2 text-sm text-foreground hover:bg-muted flex items-center gap-2"
+                  >
+                    <UserCircle className="w-4 h-4 text-primary" />
+                    My Profile
+                  </Link>
                   {(role === "buyer" || role === "admin") && (
                     <Link
                       href="/buyer"
@@ -182,6 +190,18 @@ export default function Navbar() {
                   </Badge>
                 )}
               </div>
+              <Link
+                href="/profile"
+                onClick={() => setOpen(false)}
+                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-2 ${
+                  location === "/profile"
+                    ? "bg-primary text-primary-foreground"
+                    : "text-foreground hover:bg-muted"
+                }`}
+              >
+                <UserCircle className="w-4 h-4" />
+                My Profile
+              </Link>
               {(role === "buyer" || role === "admin") && (
                 <Link
                   href="/buyer"

@@ -6,7 +6,7 @@ import { z } from "zod";
 import { toast } from "sonner";
 import {
   Users, Plus, Phone, Calendar, ClipboardList, TrendingUp,
-  CheckCircle2, PhoneCall, Clock, RefreshCw,
+  CheckCircle2, PhoneCall, Clock, RefreshCw, XCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -95,6 +95,7 @@ export default function AgentDashboard() {
   // Assistance request state
   const [requests, setRequests] = useState<AgentCallRequest[]>([]);
   const [requestsLoading, setRequestsLoading] = useState(false);
+  const [requestsError, setRequestsError] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [assistanceSubmitting, setAssistanceSubmitting] = useState(false);
 
@@ -124,6 +125,7 @@ export default function AgentDashboard() {
   const loadRequests = useCallback(async () => {
     if (!isSupabaseConfigured()) return;
     setRequestsLoading(true);
+    setRequestsError(null);
     try {
       const sb = getSupabase();
       const { data, error } = await sb
@@ -134,7 +136,7 @@ export default function AgentDashboard() {
       if (error) throw error;
       setRequests((data as AgentCallRequest[]) ?? []);
     } catch (err) {
-      console.error("Failed to load agent call requests:", err);
+      setRequestsError(err instanceof Error ? err.message : "Failed to load requests");
     } finally {
       setRequestsLoading(false);
     }
@@ -508,6 +510,15 @@ export default function AgentDashboard() {
           {requestsLoading ? (
             <div className="text-sm text-muted-foreground py-4 text-center">
               Loading requests...
+            </div>
+          ) : requestsError ? (
+            <div className="text-center py-6">
+              <div className="w-10 h-10 rounded-full bg-destructive/10 flex items-center justify-center mx-auto mb-2">
+                <XCircle className="w-4 h-4 text-destructive" />
+              </div>
+              <p className="text-sm font-semibold text-foreground mb-1">Could not load requests</p>
+              <p className="text-xs text-muted-foreground mb-3 max-w-xs mx-auto">{requestsError}</p>
+              <Button size="sm" onClick={loadRequests}>Try Again</Button>
             </div>
           ) : requests.length === 0 ? (
             <div className="text-sm text-muted-foreground py-4 text-center">

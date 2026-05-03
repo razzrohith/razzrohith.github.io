@@ -13,12 +13,14 @@ const ROLE_COLORS: Record<string, string> = {
   buyer: "bg-amber-100 text-amber-700 border-amber-200",
 };
 
-const links = [
+type NavLink = { href: string; label: string; roles?: string[] };
+
+const links: NavLink[] = [
   { href: "/", label: "Home" },
   { href: "/browse", label: "Browse Produce" },
-  { href: "/farmer", label: "Farmer Dashboard" },
-  { href: "/agent", label: "Agent Dashboard" },
-  { href: "/admin", label: "Admin" },
+  { href: "/farmer", label: "Farmer Dashboard", roles: ["farmer", "admin"] },
+  { href: "/agent", label: "Agent Dashboard", roles: ["agent", "admin"] },
+  { href: "/admin", label: "Admin", roles: ["admin"] },
 ];
 
 export default function Navbar() {
@@ -62,7 +64,7 @@ export default function Navbar() {
 
         {/* Desktop nav */}
         <div className="hidden md:flex items-center gap-1">
-          {links.map((l) => (
+          {links.filter((l) => !l.roles || (role && l.roles.includes(role))).map((l) => (
             <Link
               key={l.href}
               href={l.href}
@@ -148,7 +150,7 @@ export default function Navbar() {
       {/* Mobile menu */}
       {open && (
         <div className="md:hidden border-t border-border bg-white px-4 py-3 flex flex-col gap-1">
-          {links.map((l) => (
+          {links.filter((l) => !l.roles || (role && l.roles.includes(role))).map((l) => (
             <Link
               key={l.href}
               href={l.href}

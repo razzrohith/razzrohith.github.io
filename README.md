@@ -4,6 +4,175 @@ Connecting Telangana farmers directly with local buyers. MVP React web app with 
 
 ---
 
+## Agent Dashboard — QA + Bug Fix Report
+
+### QA Summary
+
+Full audit of Agent Dashboard, agent access control, farmer assistance request flow (create/read/update), callback scheduling, stock update, commission tracking, Navbar role-gating, mobile-readiness, cross-page regressions, and RLS/security. Two bugs found and fixed.
+
+---
+
+### Full Test Results
+
+| Area | Test Case | Result | Bug Found | Fix Made | Files Changed |
+|---|---|---|---|---|---|
+| **Access control** | Logged-out user sees login gate at `/agent` | Pass | None | — | — |
+| **Access control** | Agent role can access `/agent` | Pass | None | — | — |
+| **Access control** | Admin role can access `/agent` — `allowedRoles=["agent","admin"]` | Pass | None | — | — |
+| **Access control** | Buyer role blocked from `/agent` | Pass | None | — | — |
+| **Access control** | Farmer role blocked from `/agent` | Pass | None | — | — |
+| **Navbar** | "Farmer Dashboard", "Agent Dashboard", "Admin" all shown to all roles (buyers, farmers, logged-out) — no role filter | **Bug** | `links` array rendered unconditionally via `links.map()` — no `roles` guard | Added `roles` metadata to `links`; filter applied before rendering in both desktop and mobile nav | `Navbar.tsx` |
+| **Navbar (fixed)** | Agent Dashboard link visible only for agent/admin after fix | Pass | None | — | — |
+| **Navbar (fixed)** | Farmer Dashboard link visible only for farmer/admin after fix | Pass | None | — | — |
+| **Navbar (fixed)** | Admin link visible only for admin after fix | Pass | None | — | — |
+| **Navbar (fixed)** | Home and Browse Produce always visible — no role required | Pass | None | — | — |
+| **Navbar (fixed)** | Logged-out user sees only Home and Browse Produce | Pass | None | — | — |
+| **Navbar (fixed)** | Buyer sees only Home and Browse Produce in top nav (Buyer Dashboard via user dropdown, unchanged) | Pass | None | — | — |
+| **Navbar (fixed)** | Farmer badge (amber dot) still appears on Farmer Dashboard link | Pass | None | — | — |
+| **Navbar (fixed)** | Mobile hamburger respects same role filter | Pass | None | — | — |
+| **Commission tracking** | Farmers count: from `mockFarmers` filtered by `demoAgent.assignedFarmerIds` | Pass | None | — | — |
+| **Commission tracking** | Active Listings count: filtered by agent farmer IDs and `status === "Available"` | Pass | None | — | — |
+| **Commission tracking** | Estimated commission: `pricePerKg * quantityKg * commissionRate / 100` — sums all assigned farmer listings | Pass | None | — | — |
+| **Commission tracking** | Commission updates reactively when stock is updated | Pass | None | — | — |
+| **Assigned Farmers** | Cards render for all mockAgents[0].assignedFarmerIds | Pass | None | — | — |
+| **Assigned Farmers** | Selecting a farmer highlights card with `border-primary bg-primary/5` | Pass | None | — | — |
+| **Assigned Farmers** | Active listing count per farmer shown on card | Pass | None | — | — |
+| **Assigned Farmers** | Grid: `grid sm:grid-cols-2` — single column on mobile | Pass | None | — | — |
+| **Stock Update** | Farmer must be selected to show stock update form | Pass | None | — | — |
+| **Stock Update** | Select Produce populates from listings filtered by selected farmer | Pass | None | — | — |
+| **Stock Update** | Quantity validation: `coerce.number().min(0)` — rejects negative | Pass | None | — | — |
+| **Stock Update** | Stock history appended locally on submit | Pass | None | — | — |
+| **Stock Update** | Listing quantity updates in local state — commission recalculates | Pass | None | — | — |
+| **Stock Update** | Toast "Stock updated!" on success | Pass | None | — | — |
+| **Assistance Request form** | Farmer Name required — min 2 chars | Pass | None | — | — |
+| **Assistance Request form** | Farmer Phone required — exactly 10 digits via regex | Pass | None | — | — |
+| **Assistance Request form** | Village and Request Note are optional | Pass | None | — | — |
+| **Assistance Request form** | Form submits to Supabase when configured — `insert` into `agent_call_requests` | Pass | None | — | — |
+| **Assistance Request form** | Mock fallback when Supabase not configured — row added to local state | Pass | None | — | — |
+| **Assistance Request form** | New row prepended to requests list immediately on success | Pass | None | — | — |
+| **Assistance Request form** | Form resets on success | Pass | None | — | — |
+| **Assistance Request form** | Submit button shows "Saving..." spinner during in-flight request | Pass | None | — | — |
+| **Assistance Request form** | Error toast shown if Supabase insert fails | Pass | None | — | — |
+| **Callback Requests list** | `loadRequests` fetches from `agent_call_requests`, ordered by `created_at` DESC, limit 20 | Pass | None | — | — |
+| **Callback Requests list** | Fetch error silently swallowed — `console.error` only — "No callback requests yet." shown instead | **Bug** | `loadRequests` catch block called `console.error` only — no `requestsError` state, no error UI | Added `requestsError` state; `loadRequests` sets it on catch; error UI with "Try Again" button added | `AgentDashboard.tsx` |
+| **Callback Requests list (fixed)** | Fetch error shows: error icon, "Could not load requests", error message, "Try Again" button | Pass | None | — | — |
+| **Callback Requests list (fixed)** | "Try Again" calls `loadRequests` and clears error before re-fetch | Pass | None | — | — |
+| **Callback Requests list** | Loading state: "Loading requests..." text | Pass | None | — | — |
+| **Callback Requests list** | Empty state: "No callback requests yet." | Pass | None | — | — |
+| **Callback Requests list** | Each card shows: farmer name, phone, village, request note, date, status badge | Pass | None | — | — |
+| **Callback Requests list** | Status badge: color-coded — pending amber, called blue, resolved green | Pass | None | — | — |
+| **Callback Requests list** | Status icon in badge: Clock (pending), PhoneCall (called), CheckCircle2 (resolved) | Pass | None | — | — |
+| **Callback Requests list** | Refresh button triggers `loadRequests` — spinner during load | Pass | None | — | — |
+| **Callback Requests list** | Refresh button hidden when Supabase not configured | Pass | None | — | — |
+| **Status update** | Status update buttons shown for all statuses except current status | Pass | None | — | — |
+| **Status update** | Clicking "Mark Called" → Supabase UPDATE or mock update in local state | Pass | None | — | — |
+| **Status update** | Row transitions: pending→called, called→resolved, any→pending all work | Pass | None | — | — |
+| **Status update** | Spinner shown on the updating row only (other rows unaffected) | Pass | None | — | — |
+| **Status update** | Toast "Status updated." on success | Pass | None | — | — |
+| **Status update** | Toast error on update failure | Pass | None | — | — |
+| **Status update** | Local state updated immediately on success — no reload | Pass | None | — | — |
+| **Callback Scheduling** | "Schedule Callback" form: farmer name, datetime-local, notes — all required | Pass | None | — | — |
+| **Callback Scheduling** | Submit adds to local `callLogs` state — no Supabase (local-only feature) | Pass | None | — | — |
+| **Callback Scheduling** | Call log list pre-seeded with 3 sample entries | Pass | None | — | — |
+| **Callback Scheduling** | New entries prepended to call log on submit | Pass | None | — | — |
+| **Callback Scheduling** | Toast "Callback scheduled!" on success | Pass | None | — | — |
+| **Callback Scheduling** | Form resets on success | Pass | None | — | — |
+| **Mobile** | Max-width: `max-w-4xl mx-auto px-4` — mobile-safe horizontal padding | Pass | None | — | — |
+| **Mobile** | Commission tiles: `grid-cols-3` — legible at 375px (3 short values) | Pass | None | — | — |
+| **Mobile** | Assigned Farmer cards: `grid sm:grid-cols-2` — 1 column on mobile | Pass | None | — | — |
+| **Mobile** | Assistance form: `grid sm:grid-cols-2` for name+phone — stacks on mobile | Pass | None | — | — |
+| **Mobile** | Status update buttons: `flex-wrap` — no overflow on small screens | Pass | None | — | — |
+| **Mobile** | All touch targets legible and appropriately sized | Pass | None | — | — |
+| **Cross-page** | Landing Page: clean — no nav pollution | Pass | None | — | — |
+| **Cross-page** | Browse Produce: still works | Pass | None | — | — |
+| **Cross-page** | Buyer Dashboard: still works | Pass | None | — | — |
+| **Cross-page** | Farmer Dashboard: prior fixes intact | Pass | None | — | — |
+| **Cross-page** | Admin Dashboard: still works | Pass | None | — | — |
+| **Cross-page** | Login / Signup: still work | Pass | None | — | — |
+| **Cross-page** | Navbar buyer dropdown: Buyer Dashboard link untouched — still role-gated to buyer/admin | Pass | None | — | — |
+| **Cross-page** | Farmer badge count still works after Navbar refactor | Pass | None | — | — |
+| **Security/RLS** | `agent_call_requests` INSERT — open (any authenticated user can log a request; agent logs on behalf of farmers) | Pass | None | — | — |
+| **Security/RLS** | `agent_call_requests` SELECT — agent sees all requests (agent role serves all farmers by design) | Pass | None | — | — |
+| **Security/RLS** | `agent_call_requests` UPDATE — agent can change status only | Pass | None | — | — |
+| **Security/RLS** | Admin can view all call requests via Admin Dashboard | Pass | None | — | — |
+| **Security/RLS** | No paid services used | Pass | None | — | — |
+| **Security/RLS** | No secrets in console | Pass | None | — | — |
+
+---
+
+### Bugs Fixed
+
+#### Bug 1 — Navbar shows all dashboard links to all roles (UX)
+
+**File:** `src/components/Navbar.tsx`
+
+**Problem:** The `links` array (Home, Browse Produce, Farmer Dashboard, Agent Dashboard, Admin) was rendered unconditionally via `links.map()` in both desktop and mobile nav — no role check. A buyer saw "Farmer Dashboard", "Agent Dashboard", and "Admin" in the navigation bar at all times. Routes were already protected by `ProtectedRoute`, so no security breach, but cluttered and confusing UX for all roles.
+
+**Fix:** Added a `roles?: string[]` metadata field to each link definition. Links without `roles` (Home, Browse Produce) are always visible. Role-restricted links filter by `role && l.roles.includes(role)` before rendering. Applied identically to both desktop nav and mobile hamburger menu. The user dropdown Buyer Dashboard link (handled separately) is unchanged.
+
+#### Bug 2 — Agent Dashboard no error state on callback requests fetch failure (functional)
+
+**File:** `src/pages/AgentDashboard.tsx`
+
+**Problem:** `loadRequests` silently swallowed Supabase fetch errors — the catch block called `console.error` only, with no state update. On fetch failure, the agent saw "No callback requests yet." empty state — same misleading pattern as the Buyer Dashboard bug fixed in the prior sprint.
+
+**Fix:** Added `requestsError` state (`string | null`). `loadRequests` now calls `setRequestsError(null)` before each fetch attempt and sets the error message on catch. Added a dedicated error block in the render (between loading state and empty state):
+
+- Error icon
+- "Could not load requests" heading
+- Error message text
+- "Try Again" button that re-calls `loadRequests()`
+
+Also added `XCircle` to the Lucide imports.
+
+---
+
+### TypeScript Result
+
+Exit 0 — zero errors after all three file changes (`Navbar.tsx`, `AgentDashboard.tsx`).
+
+### Console Error Result
+
+None. Only Vite HMR update messages in development.
+
+### Mobile-Readiness Result
+
+Agent Dashboard is mobile-first throughout. Commission tiles use `grid-cols-3` (three compact values that fit well at 375px). Farmer cards stack to single column on mobile. Assistance form fields stack on mobile. Status update buttons wrap with `flex-wrap`. All touch targets are appropriately sized. Compatible with future Capacitor packaging.
+
+### RLS / Security Result
+
+`agent_call_requests` insert is open for authenticated agents (agents log requests on behalf of farmers by design). SELECT is all-agent-visible (no per-agent ownership needed in the pilot — all agents share the queue). UPDATE changes status only. Admin Dashboard also reads the same table. No paid services, no secrets in console.
+
+### Remaining Agent Dashboard Limitations
+
+| Limitation | Notes |
+|---|---|
+| Stock update is local-only (mock data) | Updating produce_listings in Supabase requires an agent-specific UPDATE RLS policy. Deferred for post-pilot. |
+| Call log is local-only (session state) | Schedule Callback does not persist to Supabase. Acceptable for the pilot — agents use phone notes. |
+| No per-agent filtering on call requests | All agents see all requests (shared queue). Multi-agent per-agent ownership is a post-pilot feature. |
+| demoAgent hard-coded to mockAgents[0] | Agent identity not yet tied to logged-in user. Real agent profile linkage is post-pilot. |
+| Pagination | Not needed at pilot scale. |
+
+### Recommended Next Phase
+
+Admin Dashboard QA + Polish — verify reservation management, call request oversight, farmer/listing moderation, and admin-only access control.
+
+---
+
+### Fake / Mock Testing Rule
+
+All test names, phones, emails, villages, and IDs are fake/mock only. No real personal data.
+
+Examples (mock only):
+- Agent: Gopal, phone: 9988776655
+- Farmer: Ramaiah, phone: 9876500002, village: Shadnagar
+
+### No Paid Services Used
+
+All icons: Lucide (open source). Maps: OpenStreetMap (free, no API key). Auth/DB: Supabase free tier. No Stripe, Google Maps API, Twilio, or any paid service.
+
+---
+
 ## Buyer Dashboard — QA + Bug Fix Report
 
 ### QA Summary

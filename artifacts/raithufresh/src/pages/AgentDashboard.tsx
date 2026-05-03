@@ -320,8 +320,21 @@ export default function AgentDashboard() {
           <div>
             <p className="text-sm font-semibold text-blue-800 mb-0.5">Assisted Farmer Mode</p>
             <p className="text-xs text-blue-700 leading-relaxed">
-              You are operating on behalf of farmers who need help listing produce and managing reservations. Log callback requests, update stock, schedule calls, and help farmers get online — all from this dashboard. No SMS or paid services are used; all farmer contact is via phone call or WhatsApp deep link.
+              You are operating on behalf of farmers who need help listing produce and managing reservations. All farmer contact is via phone call or WhatsApp.
             </p>
+            <div className="mt-3 grid gap-2">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-blue-600/70">Simple Steps:</p>
+              {[
+                { en: "Add a callback request when a farmer needs help", te: "రైతుకు సహాయం కావాలన్నప్పుడు కాల్‌బ్యాక్ అభ్యర్థనను జోడించండి" },
+                { en: "Call or WhatsApp the farmer using the buttons below", te: "క్రింద ఉన్న బటన్లను ఉపయోగించి రైతుకు కాల్ లేదా వాట్సాప్ చేయండి" },
+                { en: "Update the status after you help the farmer", te: "మీరు రైతుకు సహాయం చేసిన తర్వాత స్థితిని అప్‌డేట్ చేయండి" },
+              ].map((step, i) => (
+                <div key={i} className="flex gap-2 text-xs">
+                  <span className="shrink-0 font-bold text-blue-500">{i + 1}.</span>
+                  <BilingualLabel en={step.en} te={step.te} />
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 

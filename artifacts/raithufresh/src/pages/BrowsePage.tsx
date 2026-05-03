@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "wouter";
 import { motion } from "framer-motion";
-import { Search, MapPin, Calendar, Phone, Loader2, Share2, X } from "lucide-react";
+import { Search, MapPin, Calendar, Phone, Loader2, Share2, X, RefreshCw } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -396,7 +396,7 @@ export default function BrowsePage() {
             </div>
 
             {listings.length === 0 ? (
-              <div className="text-center py-16">
+              <div className="text-center py-16 px-6 bg-card border border-border border-dashed rounded-2xl">
                 <img
                   src="/assets/empty-produce.svg"
                   alt="No produce available"
@@ -404,10 +404,20 @@ export default function BrowsePage() {
                   height={96}
                   className="mx-auto mb-4 opacity-70"
                 />
-                <p className="font-medium text-foreground mb-1">No produce listed yet</p>
-                <p className="text-sm text-muted-foreground">
-                  Check back soon — farmers are being added.
+                <p className="font-medium text-foreground mb-1">
+                  <BilingualLabel en="No produce listed yet" te="ఇంకా ఎటువంటి పంటలు లేవు" />
                 </p>
+                <p className="text-sm text-muted-foreground mb-6">
+                  <BilingualLabel 
+                    en="Check back soon — farmers are adding their fresh harvest every day." 
+                    te="త్వరలో మళ్లీ తనిఖీ చేయండి — రైతులు ప్రతిరోజూ తమ తాజా పంట వివరాలను జోడిస్తున్నారు."
+                    orientation="stacked"
+                  />
+                </p>
+                <Button variant="outline" onClick={() => window.location.reload()}>
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  <BilingualLabel en="Refresh Page" te="పేజీని రీఫ్రెష్ చేయండి" />
+                </Button>
               </div>
             ) : sorted.length === 0 ? (
               <div className="text-center py-16 text-muted-foreground">

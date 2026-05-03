@@ -201,6 +201,36 @@ export default function BuyerDashboard() {
           {user?.email && <p className="text-xs text-muted-foreground">{user.email}</p>}
         </div>
 
+        {/* Onboarding card */}
+        <div className="bg-primary/5 border border-primary/10 rounded-2xl p-5 mb-6">
+          <h3 className="font-semibold text-primary mb-3 flex items-center gap-2">
+            <BadgeCheck className="w-4 h-4" />
+            <BilingualLabel en="How it works" te="ఇది ఎలా పనిచేస్తుంది" />
+          </h3>
+          <div className="grid gap-3">
+            {[
+              { en: "Browse produce from nearby farmers", te: "దగ్గరలోని రైతుల నుండి పంటలను చూడండి" },
+              { en: "Reserve what you need", te: "మీకు కావలసిన దానిని రిజర్వ్ చేయండి" },
+              { en: "Contact farmer to confirm pickup", te: "పికప్ కోసం రైతును సంప్రదించండి" },
+              { en: "Pay farmer directly during pickup", te: "పికప్ సమయంలో రైతుకు నేరుగా పే చేయండి" },
+            ].map((step, i) => (
+              <div key={i} className="flex gap-3 text-sm">
+                <span className="flex items-center justify-center w-5 h-5 rounded-full bg-primary/20 text-primary text-[10px] font-bold shrink-0">
+                  {i + 1}
+                </span>
+                <BilingualLabel en={step.en} te={step.te} />
+              </div>
+            ))}
+          </div>
+          <div className="mt-4 flex gap-2">
+            <Link href="/browse">
+              <Button size="sm" className="h-auto py-1.5 px-4 text-xs">
+                <BilingualLabel en="Browse Produce" te="పంటలను చూడండి" />
+              </Button>
+            </Link>
+          </div>
+        </div>
+
         {/* Status tiles */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
           {ALL_STATUSES.map((status) => {

@@ -150,8 +150,13 @@ export default function ReservationModal({ open, onClose, listing }: Props) {
                   <p className="text-destructive text-xs mt-1">{errors.buyerPhone.message}</p>
                 )}
               </div>
-              <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 text-sm text-amber-800">
-                Payment: Cash or UPI directly to farmer
+              <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 text-sm text-amber-800 space-y-1">
+                <p className="font-semibold flex items-center gap-1.5">
+                  <BilingualLabel en="No online payment" te="ఆన్‌లైన్ పేమెంట్ లేదు" />
+                </p>
+                <p className="text-xs">
+                  <BilingualLabel en="Pay the farmer directly during pickup." te="పికప్ సమయంలో రైతుకు నేరుగా చెల్లించండి." />
+                </p>
               </div>
               <Button type="submit" className="w-full h-auto py-2" disabled={submitting}>
                 {submitting ? "Sending..." : (
@@ -169,11 +174,25 @@ export default function ReservationModal({ open, onClose, listing }: Props) {
             <p className="text-muted-foreground text-sm leading-relaxed">
               {submittedAsLoggedIn
                 ? "Your reservation request has been sent to the farmer. You can track it from your Buyer Dashboard."
-                : "Reservation request sent. Contact the farmer before pickup to confirm availability. Log in next time to track your reservation history."}
+                : "Reservation request sent. Contact the farmer before pickup to confirm availability."}
             </p>
-            <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 text-sm text-amber-800 w-full text-left">
-              <span className="font-medium">Payment:</span> Cash or UPI directly to the farmer at
-              pickup. No online payment required.
+            <p className="text-xs text-muted-foreground px-4 italic">
+              <BilingualLabel 
+                en="The farmer may confirm or cancel based on availability. Please call or WhatsApp before going." 
+                te="అందుబాటును బట్టి రైతు ధృవీకరించవచ్చు లేదా రద్దు చేయవచ్చు. వెళ్లే ముందు దయచేసి కాల్ లేదా వాట్సాప్ చేయండి."
+                orientation="stacked"
+              />
+            </p>
+            <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 text-sm text-amber-800 w-full text-left space-y-1">
+              <p className="font-semibold">
+                <BilingualLabel en="Pay directly at pickup" te="పికప్ వద్ద నేరుగా చెల్లించండి" />
+              </p>
+              <p className="text-xs">
+                <BilingualLabel 
+                  en="Pay by cash or UPI directly to the farmer. No online payment is collected here." 
+                  te="రైతుకు నగదు లేదా UPI ద్వారా నేరుగా చెల్లించండి. ఇక్కడ ఎటువంటి ఆన్‌లైన్ పేమెంట్ తీసుకోబడదు."
+                />
+              </p>
             </div>
             {submittedAsLoggedIn && (
               <Link href="/buyer" onClick={handleClose} className="w-full">

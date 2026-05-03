@@ -425,10 +425,23 @@ export default function AdminDashboard() {
             Connected to Supabase — showing live counts
           </p>
         ) : (
-          <p className="text-xs text-muted-foreground mb-6">
+          <p className="text-xs text-muted-foreground mb-4">
             Supabase not configured — showing mock data
           </p>
         )}
+
+        {/* Admin guidance */}
+        <div className="bg-primary/5 border border-primary/10 rounded-2xl p-4 mb-6">
+          <h3 className="font-semibold text-primary mb-2 flex items-center gap-2 text-sm">
+            <ClipboardList className="w-4 h-4" />
+            Admin Overview
+          </h3>
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            Use this page to monitor reservations, farmer activity, and agent requests. 
+            Check the <span className="font-medium text-foreground">Reservations</span> and 
+            <span className="font-medium text-foreground"> Agent Requests</span> tabs for pending items that need attention.
+          </p>
+        </div>
 
         {/* Platform analytics */}
         <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-2">

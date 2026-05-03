@@ -616,6 +616,37 @@ export default function FarmerDashboard() {
           </Badge>
         </motion.div>
 
+        {/* Getting started onboarding */}
+        {listings.length === 0 && (
+          <div className="bg-primary/5 border border-primary/10 rounded-2xl p-5 mb-8">
+            <h3 className="font-semibold text-primary mb-3 flex items-center gap-2">
+              <CheckCircle className="w-4 h-4" />
+              <BilingualLabel en="Getting Started" te="మొదలు పెట్టండి" />
+            </h3>
+            <div className="grid gap-3">
+              {[
+                { en: "Add your first produce listing", te: "మీ మొదటి పంట వివరాలను జోడించండి" },
+                { en: "Enter quantity and price per kg", te: "పరిమాణం మరియు కేజీ ధరను నమోదు చేయండి" },
+                { en: "Add pickup village and phone number", te: "పికప్ గ్రామం మరియు ఫోన్ నంబర్‌ను జోడించండి" },
+                { en: "Wait for buyers to reserve your crop", te: "కొనుగోలుదారులు మీ పంటను రిజర్వ్ చేసే వరకు వేచి ఉండండి" },
+              ].map((step, i) => (
+                <div key={i} className="flex gap-3 text-sm">
+                  <span className="flex items-center justify-center w-5 h-5 rounded-full bg-primary/20 text-primary text-[10px] font-bold shrink-0">
+                    {i + 1}
+                  </span>
+                  <BilingualLabel en={step.en} te={step.te} />
+                </div>
+              ))}
+            </div>
+            <div className="mt-5">
+              <Button onClick={() => setShowForm(true)} className="w-full sm:w-auto h-auto py-2.5 px-6 shadow-md shadow-primary/20">
+                <Plus className="w-4 h-4 mr-2" />
+                <BilingualLabel en="Add My First Listing" te="నా మొదటి పంటను జోడించండి" />
+              </Button>
+            </div>
+          </div>
+        )}
+
         {/* ── My Listings ───────────────────────────────────────────────── */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
@@ -760,8 +791,22 @@ export default function FarmerDashboard() {
 
           {/* Empty */}
           {!isLoading && !listingsError && listings.length === 0 && (
-            <div className="text-center py-10 text-muted-foreground bg-card border border-border rounded-2xl">
-              No listings yet. Add your first produce listing above.
+            <div className="text-center py-12 px-6 bg-card border border-border border-dashed rounded-2xl">
+              <Package className="w-10 h-10 text-muted-foreground/30 mx-auto mb-4" />
+              <p className="font-medium text-foreground mb-1">
+                <BilingualLabel en="No listings yet" te="ఇంకా ఎటువంటి పంటలు లేవు" />
+              </p>
+              <p className="text-sm text-muted-foreground mb-6">
+                <BilingualLabel 
+                  en="Add your first produce listing so buyers can find and reserve it." 
+                  te="కొనుగోలుదారులు కనుగొని రిజర్వ్ చేయడానికి మీ మొదటి పంట వివరాలను జోడించండి."
+                  orientation="stacked"
+                />
+              </p>
+              <Button variant="outline" onClick={() => setShowForm(true)} className="h-auto py-2">
+                <Plus className="w-4 h-4 mr-2" />
+                <BilingualLabel en="Add New Listing" te="కొత్త పంటను జోడించండి" />
+              </Button>
             </div>
           )}
 

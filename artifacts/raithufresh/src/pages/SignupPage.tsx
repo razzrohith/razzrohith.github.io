@@ -379,16 +379,22 @@ export default function SignupPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="buyer">
-                      <BilingualLabel en="Buyer" te="కొనుగోలుదారు" />
+                      <BilingualLabel en="Buyer — I want to buy fruits and vegetables" te="కొనుగోలుదారు — నేను పండ్లు మరియు కూరగాయలు కొనాలనుకుంటున్నాను" />
                     </SelectItem>
                     <SelectItem value="farmer">
-                      <BilingualLabel en="Farmer" te="రైతు" />
+                      <BilingualLabel en="Farmer — I want to sell my produce" te="రైతు — నేను నా పంటను అమ్మాలనుకుంటున్నాను" />
                     </SelectItem>
                     <SelectItem value="agent">
-                      <BilingualLabel en="Agent" te="ఏజెంట్" />
+                      <BilingualLabel en="Agent — I help farmers manage requests" te="ఏజెంట్ — నేను రైతులకు సహాయం చేస్తాను" />
                     </SelectItem>
                   </SelectContent>
                 </Select>
+                <p className="text-[10px] text-muted-foreground mt-1.5 px-1">
+                  <BilingualLabel 
+                    en="Choose the role that matches how you will use RaithuFresh." 
+                    te="మీరు రైతుఫ్రెష్‌ని ఎలా ఉపయోగిస్తారో దానికి సరిపోయే రోల్‌ను ఎంచుకోండి."
+                  />
+                </p>
                 {errors.role && (
                   <p className="text-destructive text-xs mt-1">{errors.role.message}</p>
                 )}

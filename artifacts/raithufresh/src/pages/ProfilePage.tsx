@@ -116,6 +116,15 @@ export default function ProfilePage() {
           </div>
         </div>
 
+        <div className="bg-primary/5 border border-primary/10 rounded-2xl p-4 mb-4">
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            <BilingualLabel 
+              en="Keep your phone number and village updated so buyers or farmers can find you easily." 
+              te="కొనుగోలుదారులు లేదా రైతులు మిమ్మల్ని సులభంగా కనుగొనడానికి మీ ఫోన్ నంబర్ మరియు గ్రామాన్ని ఎప్పటికప్పుడు అప్‌డేట్ చేయండి."
+            />
+          </p>
+        </div>
+
         <div className="bg-card border border-border rounded-2xl p-5 shadow-sm mb-4">
           {/* Role — read-only */}
           <div className="flex items-center gap-2 mb-5 pb-4 border-b border-border">

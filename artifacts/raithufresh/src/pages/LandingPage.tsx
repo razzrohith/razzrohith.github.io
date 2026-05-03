@@ -259,7 +259,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── Trust Indicators Strip ── */}
-      <section className="py-8 px-4 bg-white border-b border-border">
+      <section className="py-8 px-4 bg-card border-b border-border">
         <div className="max-w-4xl mx-auto">
           <p className="text-center text-sm text-muted-foreground mb-6">
             Built for local pickup. Farmers list fresh fruits and vegetables, buyers reserve and contact directly.
@@ -375,7 +375,7 @@ export default function LandingPage() {
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
                     transition={{ delay: i * 0.1, duration: 0.4 }}
-                    className="bg-white border border-border rounded-2xl p-5 flex flex-col gap-3 shadow-sm"
+                    className="bg-card border border-border rounded-2xl p-5 flex flex-col gap-3 shadow-sm"
                   >
                     <div className="flex items-center gap-3">
                       <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
@@ -400,7 +400,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── Farmer of the Week ── */}
-      <section className="py-14 px-4 bg-white">
+      <section className="py-14 px-4 bg-card">
         <div className="max-w-4xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -507,7 +507,7 @@ export default function LandingPage() {
                 <span>Loading farmers...</span>
               </div>
             ) : landingFarmers.length === 0 ? (
-              <div className="text-center py-14 text-muted-foreground bg-white rounded-xl border border-border">
+              <div className="text-center py-14 text-muted-foreground bg-card rounded-xl border border-border">
                 <p className="text-sm">No farmers active right now.</p>
                 <p className="text-xs mt-1">Check back soon.</p>
               </div>
@@ -522,7 +522,7 @@ export default function LandingPage() {
                       whileInView={{ opacity: 1, y: 0 }}
                       viewport={{ once: true }}
                       transition={{ delay: i * 0.07, duration: 0.35 }}
-                      className="bg-white border border-border rounded-2xl p-5 shadow-sm flex flex-col gap-3"
+                      className="bg-card border border-border rounded-2xl p-5 shadow-sm flex flex-col gap-3"
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
@@ -592,7 +592,7 @@ export default function LandingPage() {
                 <span>Loading listings...</span>
               </div>
             ) : landingListings.length === 0 ? (
-              <div className="text-center py-14 text-muted-foreground bg-white rounded-xl border border-border flex flex-col items-center gap-2">
+              <div className="text-center py-14 text-muted-foreground bg-card rounded-xl border border-border flex flex-col items-center gap-2">
                 <img
                   src="/assets/empty-produce.svg"
                   alt="No listings found"
@@ -625,7 +625,7 @@ export default function LandingPage() {
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true }}
                         transition={{ delay: i * 0.07, duration: 0.35 }}
-                        className="bg-white border border-border rounded-2xl p-5 shadow-sm flex flex-col gap-3"
+                        className="bg-card border border-border rounded-2xl p-5 shadow-sm flex flex-col gap-3"
                       >
                         <div className="flex items-start justify-between gap-2">
                           <div>
@@ -708,7 +708,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── Problem ── */}
-      <section className="py-14 px-4 bg-white">
+      <section className="py-14 px-4 bg-card">
         <div className="max-w-4xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -754,7 +754,7 @@ export default function LandingPage() {
               <BilingualLabel en="Why RaithuFresh?" te="రైతుఫ్రెష్ ఎందుకు?" />
             </h2>
             <div className="grid md:grid-cols-2 gap-8">
-              <div className="bg-white rounded-xl p-6 border border-border shadow-sm">
+              <div className="bg-card rounded-xl p-6 border border-border shadow-sm">
                 <div className="flex items-center gap-2 mb-4">
                   <Tractor className="w-5 h-5 text-primary" />
                   <h3 className="font-semibold text-foreground text-lg">For Farmers</h3>
@@ -775,7 +775,7 @@ export default function LandingPage() {
                   </Link>
                 )}
               </div>
-              <div className="bg-white rounded-xl p-6 border border-border shadow-sm">
+              <div className="bg-card rounded-xl p-6 border border-border shadow-sm">
                 <div className="flex items-center gap-2 mb-4">
                   <Users className="w-5 h-5 text-secondary" />
                   <h3 className="font-semibold text-foreground text-lg">For Buyers</h3>
@@ -802,7 +802,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── CTA Banner ── */}
-      <section className="py-14 px-4 bg-white">
+      <section className="py-14 px-4 bg-card">
         <div className="max-w-2xl mx-auto text-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}

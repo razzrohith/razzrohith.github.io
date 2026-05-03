@@ -238,7 +238,7 @@ export default function BuyerDashboard() {
                     className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors border ${
                       isActive
                         ? "bg-primary text-primary-foreground border-primary"
-                        : "bg-white text-foreground border-border hover:bg-muted"
+                        : "bg-card text-foreground border-border hover:bg-muted"
                     }`}
                   >
                     <span className="capitalize text-xs">
@@ -248,7 +248,7 @@ export default function BuyerDashboard() {
                         <BilingualLabel en={STATUS_LABEL[tab as ReservationStatus].en} te={STATUS_LABEL[tab as ReservationStatus].te} />
                       )}
                     </span>
-                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${isActive ? "bg-white/20 text-primary-foreground" : "bg-muted text-muted-foreground"}`}>
+                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${isActive ? "bg-card/20 text-primary-foreground" : "bg-muted text-muted-foreground"}`}>
                       {count}
                     </span>
                   </button>
@@ -260,13 +260,13 @@ export default function BuyerDashboard() {
             <div className="relative">
               <button
                 onClick={() => setSortOpen((o) => !o)}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm border bg-white text-foreground border-border hover:bg-muted transition-colors"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm border bg-card text-foreground border-border hover:bg-muted transition-colors"
               >
                 <ArrowUpDown className="w-3.5 h-3.5 text-muted-foreground" />
                 <span className="text-xs">{SORT_LABELS[sortOrder]}</span>
               </button>
               {sortOpen && (
-                <div className="absolute right-0 top-full mt-1 bg-white border border-border rounded-xl shadow-lg z-20 min-w-[180px] py-1">
+                <div className="absolute right-0 top-full mt-1 bg-card border border-border rounded-xl shadow-lg z-20 min-w-[180px] py-1">
                   {(Object.keys(SORT_LABELS) as SortOrder[]).map((opt) => (
                     <button
                       key={opt}

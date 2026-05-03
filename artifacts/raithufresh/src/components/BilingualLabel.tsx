@@ -1,5 +1,6 @@
 import React from "react";
 import { cn } from "@/lib/utils";
+import { useAppPreferences } from "@/contexts/AppPreferencesContext";
 
 interface BilingualLabelProps {
   en: string;
@@ -20,6 +21,12 @@ export default function BilingualLabel({
   orientation = "inline",
   separator = "/",
 }: BilingualLabelProps) {
+  const { isTeluguEnabled } = useAppPreferences();
+
+  if (!isTeluguEnabled) {
+    return <span className={enClassName}>{en}</span>;
+  }
+
   if (orientation === "stacked") {
     return (
       <div className={cn("flex flex-col", className)}>

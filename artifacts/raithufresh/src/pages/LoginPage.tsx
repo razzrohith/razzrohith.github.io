@@ -64,8 +64,9 @@ export default function LoginPage() {
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div>
-            <Label>Email</Label>
+            <Label htmlFor="login-email">Email</Label>
             <Input
+              id="login-email"
               type="email"
               placeholder="you@example.com"
               {...register("email")}
@@ -77,9 +78,10 @@ export default function LoginPage() {
           </div>
 
           <div>
-            <Label>Password</Label>
+            <Label htmlFor="login-password">Password</Label>
             <div className="relative">
               <Input
+                id="login-password"
                 type={showPassword ? "text" : "password"}
                 placeholder="Your password"
                 {...register("password")}
@@ -88,6 +90,7 @@ export default function LoginPage() {
               />
               <button
                 type="button"
+                aria-label={showPassword ? "Hide password" : "Show password"}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                 onClick={() => setShowPassword(!showPassword)}
                 tabIndex={-1}

@@ -497,6 +497,7 @@ export default function BrowsePage() {
                           className="shrink-0 px-2"
                           onClick={() => handleShare(listing)}
                           title="Share this listing"
+                          aria-label="Share this listing"
                         >
                           <Share2 className="w-3.5 h-3.5" />
                         </Button>

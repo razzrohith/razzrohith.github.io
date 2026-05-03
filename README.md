@@ -4,7 +4,63 @@ Connecting Telangana farmers directly with local buyers. MVP React web app with 
 
 ---
 
-## Phase 6–8: QA, Mobile Polish, Visual Polish + RLS Validation (Latest)
+## Phase 9/10: RLS Functional Validation + Accessibility/Performance Audit (Latest)
+
+### TypeScript Result
+Exit 0 — zero errors after all Phase 9/10 changes.
+
+### RLS Functional Test Results (via Supabase REST API — anon user)
+
+> Note: Direct PostgreSQL connection (`SUPABASE_DB_URL` pooler) is not reachable from the Replit sandbox (DNS). All validation was performed via the Supabase REST API using the `anon` key, which is equivalent for functional RLS testing.
+
+| Table | Test | Result |
+|---|---|---|
+| `produce_listings` | anon SELECT | PASS — returns rows, all `status=active` |
+| `reservations` | anon SELECT | PASS — 0 rows (RLS blocks reads by anon) |
+| `user_profiles` | anon SELECT | PASS — 0 rows (RLS blocks reads by anon) |
+| `farmers` | anon SELECT | PASS — 8 rows returned, all `verified=true` |
+| `agent_call_requests` | anon SELECT | PASS — HTTP 401 permission denied |
+| `waitlist_leads` | anon SELECT | PASS — 0 rows (RLS blocks reads by anon) |
+| `reservations` | anon INSERT (guest) | PASS — HTTP 409 (policy allows INSERT; FK rejects invalid test UUID) |
+| `user_profiles` | anon INSERT role=admin | PASS — HTTP 401 blocked |
+
+### Accessibility Fixes (Phase 10)
+
+| Issue | Files | Fix |
+|---|---|---|
+| Show/hide password button had no `aria-label` (icon-only button) | `LoginPage.tsx`, `SignupPage.tsx` | Added `aria-label={showPassword ? "Hide password" : "Show password"}` |
+| Share button had `title` attribute only — not read by most screen readers | `BrowsePage.tsx`, `FarmerProfilePage.tsx` | Added `aria-label="Share this listing"` alongside existing `title` |
+| Email and Password `<Label>` not associated with `<Input>` via `htmlFor`/`id` | `LoginPage.tsx` | Added `htmlFor="login-email"` / `id="login-email"` and `htmlFor="login-password"` / `id="login-password"` |
+
+### Performance / UX Fixes (Phase 9)
+
+| Issue | Files | Fix |
+|---|---|---|
+| `window.confirm()` for cancel reservation — blocks UI thread, no styling, bad on mobile | `BuyerDashboard.tsx`, `BuyerReservationDetail.tsx` | Replaced with `AlertDialog` from `@radix-ui/react-alert-dialog` — accessible, styled, non-blocking |
+
+### Cancel Confirmation Flow (Before/After)
+
+**Before:** `window.confirm("Cancel...?")` — native browser dialog, unstyled, blocks the thread, cannot be dismissed on Android without tapping OK/Cancel.
+
+**After:** Radix AlertDialog with:
+- Title: "Cancel Reservation?"
+- Description: "Cancel your reservation request for `{produce name}`? This cannot be undone."
+- Actions: "Keep Reservation" (cancel) + "Yes, Cancel" (destructive red button)
+- Fully keyboard/screen-reader accessible; managed via state (`cancelConfirm` / `showCancelConfirm`)
+
+### Performance Audit Summary (No Issues Found)
+
+| Check | Result |
+|---|---|
+| Double-submit guards | All forms: `LoginPage`, `SignupPage`, `ProfilePage`, `AgentDashboard`, `FarmerDashboard`, `AdminDashboard` have `submitting`/`saving` state with `disabled` button |
+| Duplicate `useEffect` | None found in any page |
+| Console errors | Zero — only Vite HMR messages |
+| Console warnings | Intentional Supabase fallback notices in `supabase.ts` only |
+| Unnecessary re-renders | `BuyerDashboard` already uses `useMemo`/`useCallback` for filtered/sorted lists |
+
+---
+
+## Phase 6–8: QA, Mobile Polish, Visual Polish + RLS Validation
 
 ### TypeScript Result
 Exit 0 — zero errors after all Phase 6–8 changes.

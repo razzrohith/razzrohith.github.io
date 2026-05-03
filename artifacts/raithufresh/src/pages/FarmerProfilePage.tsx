@@ -392,6 +392,7 @@ export default function FarmerProfilePage() {
                       variant="outline"
                       className="shrink-0 px-2"
                       title="Share this listing"
+                      aria-label="Share this listing"
                       onClick={() =>
                         shareListing({
                           name: listing.name,

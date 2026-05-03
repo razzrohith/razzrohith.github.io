@@ -7,6 +7,16 @@ import {
   ShieldCheck, User,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import Navbar from "@/components/Navbar";
 import ContactFarmerDialog from "@/components/ContactFarmerDialog";
 import {
@@ -53,6 +63,7 @@ export default function BuyerReservationDetailPage({ id }: Props) {
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [cancelling, setCancelling] = useState(false);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [contactOpen, setContactOpen] = useState(false);
 
   useEffect(() => {
@@ -70,13 +81,14 @@ export default function BuyerReservationDetailPage({ id }: Props) {
     load();
   }, [id]);
 
-  const handleCancel = async () => {
+  const handleCancel = () => {
     if (!reservation) return;
-    const produce = reservation.produce_listings?.produce_name ?? "this produce";
-    const confirmed = window.confirm(
-      `Cancel your reservation request for "${produce}"? This cannot be undone.`
-    );
-    if (!confirmed) return;
+    setShowCancelConfirm(true);
+  };
+
+  const executeCancelConfirmed = async () => {
+    if (!reservation) return;
+    setShowCancelConfirm(false);
     setCancelling(true);
     const ok = await cancelBuyerReservation(reservation.id);
     setCancelling(false);
@@ -378,6 +390,30 @@ export default function BuyerReservationDetailPage({ id }: Props) {
           produceName={listing?.produce_name ?? "produce"}
         />
       )}
+
+      <AlertDialog open={showCancelConfirm} onOpenChange={setShowCancelConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancel Reservation?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Cancel your reservation request for{" "}
+              <span className="font-medium text-foreground">
+                {reservation?.produce_listings?.produce_name ?? "this produce"}
+              </span>
+              ? This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep Reservation</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={executeCancelConfirmed}
+            >
+              Yes, Cancel
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

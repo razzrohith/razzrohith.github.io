@@ -8,6 +8,16 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import Navbar from "@/components/Navbar";
 import ContactFarmerDialog from "@/components/ContactFarmerDialog";
 import { useAuth } from "@/contexts/AuthContext";
@@ -78,6 +88,7 @@ export default function BuyerDashboard() {
   const [sortOpen, setSortOpen] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [cancellingIds, setCancellingIds] = useState<Set<string>>(new Set());
+  const [cancelConfirm, setCancelConfirm] = useState<{ id: string; name: string } | null>(null);
   const [contactOpen, setContactOpen] = useState(false);
   const [contactTarget, setContactTarget] = useState<{
     name: string;
@@ -149,11 +160,14 @@ export default function BuyerDashboard() {
 
   // ── Cancel handler ────────────────────────────────────────────────────────
 
-  const handleCancel = async (reservationId: string, produceName: string) => {
-    const confirmed = window.confirm(
-      `Cancel your reservation request for "${produceName}"? This cannot be undone.`
-    );
-    if (!confirmed) return;
+  const handleCancel = (reservationId: string, produceName: string) => {
+    setCancelConfirm({ id: reservationId, name: produceName });
+  };
+
+  const executeCancelConfirmed = async () => {
+    if (!cancelConfirm) return;
+    const { id: reservationId } = cancelConfirm;
+    setCancelConfirm(null);
     setCancellingIds((prev) => new Set(prev).add(reservationId));
     const ok = await cancelBuyerReservation(reservationId);
     setCancellingIds((prev) => { const n = new Set(prev); n.delete(reservationId); return n; });
@@ -490,6 +504,30 @@ export default function BuyerDashboard() {
           produceName={contactTarget.produceName}
         />
       )}
+
+      <AlertDialog open={cancelConfirm !== null} onOpenChange={(open) => { if (!open) setCancelConfirm(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancel Reservation?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Cancel your reservation request for{" "}
+              <span className="font-medium text-foreground">
+                {cancelConfirm?.name ?? "this produce"}
+              </span>
+              ? This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep Reservation</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={executeCancelConfirmed}
+            >
+              Yes, Cancel
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

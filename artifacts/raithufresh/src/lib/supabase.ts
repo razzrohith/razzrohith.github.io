@@ -85,18 +85,38 @@ export async function signIn(
   return { error: null };
 }
 
-export async function signUp(data: SignUpData): Promise<{ error: string | null }> {
-  if (!isSupabaseConfigured()) return { error: "Supabase is not configured." };
+export async function signUp(
+  data: SignUpData
+): Promise<{ error: string | null; needsEmailConfirmation: boolean }> {
+  if (!isSupabaseConfigured())
+    return { error: "Supabase is not configured.", needsEmailConfirmation: false };
   const sb = getSupabase();
 
+  // Store profile fields in user_metadata so they can be recovered
+  // on first login even if the INSERT below fails (e.g. when email
+  // confirmation is enabled and there is no auth session yet).
   const { data: authData, error: signUpError } = await sb.auth.signUp({
     email: data.email,
     password: data.password,
+    options: {
+      data: {
+        full_name: data.fullName.trim(),
+        phone: data.phone.trim(),
+        role: data.role,
+        village: data.village?.trim() || null,
+      },
+    },
   });
 
-  if (signUpError) return { error: signUpError.message };
-  if (!authData.user) return { error: "Signup failed — no user returned." };
+  if (signUpError) return { error: signUpError.message, needsEmailConfirmation: false };
+  if (!authData.user) return { error: "Signup failed — no user returned.", needsEmailConfirmation: false };
 
+  const needsEmailConfirmation = !authData.session;
+
+  // Attempt to insert the profile. This will succeed when email confirmation
+  // is disabled (session exists immediately). When confirmation is required
+  // there is no session so RLS will block the INSERT; the profile will be
+  // created by AuthContext.loadProfile on the first login instead.
   const { error: profileError } = await sb.from("user_profiles").insert({
     id: authData.user.id,
     full_name: data.fullName.trim(),
@@ -105,13 +125,15 @@ export async function signUp(data: SignUpData): Promise<{ error: string | null }
     village: data.village?.trim() || null,
   });
 
-  if (profileError) {
-    return { error: `Account created but profile save failed: ${profileError.message}` };
+  if (profileError && !needsEmailConfirmation) {
+    return {
+      error: `Account created but profile save failed: ${profileError.message}`,
+      needsEmailConfirmation: false,
+    };
   }
 
-  // If role is farmer AND there's an active session (email confirmation disabled),
-  // create the farmers row immediately. If no session (confirmation pending),
-  // the dashboard will create it on first login.
+  // If farmer role and session exists, create the farmers row immediately.
+  // Without a session the FarmerDashboard will create it on first login.
   if (data.role === "farmer" && authData.session) {
     const { error: farmerError } = await sb.from("farmers").insert({
       user_id: authData.user.id,
@@ -122,12 +144,11 @@ export async function signUp(data: SignUpData): Promise<{ error: string | null }
       verified: false,
     });
     if (farmerError) {
-      // Non-fatal: dashboard will create the farmers row on first login
       console.warn("Farmer row creation at signup failed:", farmerError.message);
     }
   }
 
-  return { error: null };
+  return { error: null, needsEmailConfirmation };
 }
 
 export async function signOut(): Promise<void> {

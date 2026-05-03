@@ -17,7 +17,7 @@ type AuthContextValue = {
   role: UserRole | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
-  signUp: (data: SignUpData) => Promise<{ error: string | null }>;
+  signUp: (data: SignUpData) => Promise<{ error: string | null; needsEmailConfirmation: boolean }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
 };
@@ -28,7 +28,7 @@ const AuthContext = createContext<AuthContextValue>({
   role: null,
   loading: true,
   signIn: async () => ({ error: "Auth not ready" }),
-  signUp: async () => ({ error: "Auth not ready" }),
+  signUp: async () => ({ error: "Auth not ready", needsEmailConfirmation: false }),
   signOut: async () => {},
   refreshProfile: async () => {},
 });
@@ -41,7 +41,52 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   const loadProfile = useCallback(async (u: User) => {
-    const p = await getCurrentUserProfile(u.id);
+    let p = await getCurrentUserProfile(u.id);
+
+    // If no profile exists but the user has metadata (set during signUp),
+    // create the profile now using the authenticated session. This handles
+    // the case where email confirmation was required at signup time, so the
+    // INSERT in signUp had no auth session and was blocked by RLS.
+    if (!p && u.user_metadata?.role) {
+      const meta = u.user_metadata as {
+        full_name?: string;
+        phone?: string;
+        role?: string;
+        village?: string;
+      };
+      const sb = getSupabase();
+      const { error } = await sb.from("user_profiles").insert({
+        id: u.id,
+        full_name: meta.full_name ?? null,
+        phone: meta.phone ?? null,
+        role: meta.role ?? null,
+        village: meta.village ?? null,
+      });
+      if (!error) {
+        p = await getCurrentUserProfile(u.id);
+        // If role is farmer and no farmers row exists, create it now
+        if (meta.role === "farmer" && p) {
+          const { data: existing } = await sb
+            .from("farmers")
+            .select("id")
+            .eq("user_id", u.id)
+            .maybeSingle();
+          if (!existing) {
+            await sb.from("farmers").insert({
+              user_id: u.id,
+              name: meta.full_name ?? "Farmer",
+              phone: meta.phone ?? null,
+              village: meta.village ?? null,
+              assisted_mode: false,
+              verified: false,
+            });
+          }
+        }
+      } else {
+        console.warn("AuthContext: profile auto-create failed:", error.message);
+      }
+    }
+
     setProfile(p);
   }, []);
 
@@ -53,7 +98,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const sb = getSupabase();
 
-    // Check current session
     sb.auth.getSession().then(async ({ data: { session } }) => {
       const u = session?.user ?? null;
       setUser(u);
@@ -61,7 +105,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false);
     });
 
-    // Listen for auth changes
     const { data: { subscription } } = sb.auth.onAuthStateChange(
       async (_event, session) => {
         const u = session?.user ?? null;
@@ -79,13 +122,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [loadProfile]);
 
   const handleSignIn = async (email: string, password: string) => {
-    const result = await sbSignIn(email, password);
-    return result;
+    return sbSignIn(email, password);
   };
 
   const handleSignUp = async (data: SignUpData) => {
-    const result = await sbSignUp(data);
-    return result;
+    return sbSignUp(data);
   };
 
   const refreshProfile = useCallback(async () => {

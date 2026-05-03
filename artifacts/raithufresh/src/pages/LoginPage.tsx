@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -17,11 +17,26 @@ const loginSchema = z.object({
 });
 type LoginForm = z.infer<typeof loginSchema>;
 
+function roleDashboard(role: string | null): string {
+  if (role === "farmer") return "/farmer";
+  if (role === "agent") return "/agent";
+  if (role === "admin") return "/admin";
+  return "/buyer";
+}
+
 export default function LoginPage() {
   const [, navigate] = useLocation();
-  const { signIn } = useAuth();
+  const { signIn, role } = useAuth();
   const [submitting, setSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [justLoggedIn, setJustLoggedIn] = useState(false);
+
+  // Redirect to role dashboard once role is known after login
+  useEffect(() => {
+    if (justLoggedIn && role !== null) {
+      navigate(roleDashboard(role));
+    }
+  }, [justLoggedIn, role, navigate]);
 
   const { register, handleSubmit, formState: { errors } } = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
@@ -38,8 +53,9 @@ export default function LoginPage() {
     if (error) {
       toast.error(error);
     } else {
-      toast.success("Logged in successfully.");
-      navigate("/");
+      toast.success("Welcome back!");
+      setJustLoggedIn(true);
+      // useEffect above handles navigation once role loads
     }
   };
 
@@ -103,11 +119,11 @@ export default function LoginPage() {
             )}
           </div>
 
-          <Button type="submit" className="w-full" disabled={submitting}>
-            {submitting ? (
+          <Button type="submit" className="w-full" disabled={submitting || justLoggedIn}>
+            {submitting || justLoggedIn ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Logging in...
+                {justLoggedIn ? "Redirecting..." : "Logging in..."}
               </>
             ) : (
               "Log In"

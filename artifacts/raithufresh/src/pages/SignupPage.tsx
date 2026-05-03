@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link, useLocation } from "wouter";
+import { useState, useEffect } from "react";
+import { Link, useLocation, useSearch } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -26,16 +26,50 @@ const signupSchema = z.object({
 });
 type SignupForm = z.infer<typeof signupSchema>;
 
+const VALID_ROLES = ["buyer", "farmer", "agent"] as const;
+type ValidRole = typeof VALID_ROLES[number];
+
+function roleDashboard(role: string | null): string {
+  if (role === "farmer") return "/farmer";
+  if (role === "agent") return "/agent";
+  return "/buyer";
+}
+
 export default function SignupPage() {
   const [, navigate] = useLocation();
-  const { signUp } = useAuth();
+  const search = useSearch();
+  const { signUp, role } = useAuth();
   const [submitting, setSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [roleValue, setRoleValue] = useState("");
+  const [justSignedUp, setJustSignedUp] = useState(false);
+
+  // Read ?role= from URL (e.g. /signup?role=buyer)
+  const params = new URLSearchParams(search);
+  const urlRole = params.get("role");
+  const preRole: ValidRole | "" =
+    VALID_ROLES.includes(urlRole as ValidRole) ? (urlRole as ValidRole) : "";
+
+  const [roleValue, setRoleValue] = useState<string>(preRole);
 
   const {
     register, handleSubmit, setValue, formState: { errors },
   } = useForm<SignupForm>({ resolver: zodResolver(signupSchema) });
+
+  // Pre-select role from URL on mount
+  useEffect(() => {
+    if (preRole) {
+      setValue("role", preRole, { shouldValidate: false });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // If email confirmation is disabled, profile + role will load immediately
+  // and we can redirect to the dashboard automatically.
+  useEffect(() => {
+    if (justSignedUp && role !== null) {
+      navigate(roleDashboard(role));
+    }
+  }, [justSignedUp, role, navigate]);
 
   const onSubmit = async (data: SignupForm) => {
     if (!isSupabaseConfigured()) {
@@ -43,7 +77,7 @@ export default function SignupPage() {
       return;
     }
     setSubmitting(true);
-    const { error } = await signUp({
+    const { error, needsEmailConfirmation } = await signUp({
       email: data.email,
       password: data.password,
       fullName: data.fullName,
@@ -55,12 +89,19 @@ export default function SignupPage() {
 
     if (error) {
       toast.error(error);
-    } else {
+      return;
+    }
+
+    if (needsEmailConfirmation) {
       toast.success(
-        "Account created! Check your email to confirm, then log in.",
-        { duration: 6000 }
+        "Account created! Check your email and click the confirmation link, then log in.",
+        { duration: 8000 }
       );
       navigate("/login");
+    } else {
+      toast.success("Account created! Welcome to RaithuFresh.");
+      setJustSignedUp(true);
+      // useEffect handles redirect once role loads from AuthContext
     }
   };
 
@@ -98,7 +139,12 @@ export default function SignupPage() {
             <Label>
               Phone <span className="text-destructive">*</span>
             </Label>
-            <Input placeholder="10-digit mobile number" maxLength={10} {...register("phone")} />
+            <Input
+              placeholder="10-digit mobile number"
+              maxLength={10}
+              inputMode="numeric"
+              {...register("phone")}
+            />
             {errors.phone && (
               <p className="text-destructive text-xs mt-1">{errors.phone.message}</p>
             )}
@@ -148,7 +194,7 @@ export default function SignupPage() {
 
           <div>
             <Label>
-              Role <span className="text-destructive">*</span>
+              I am a <span className="text-destructive">*</span>
             </Label>
             <Select
               value={roleValue}
@@ -176,11 +222,11 @@ export default function SignupPage() {
             <Input placeholder="e.g. Shadnagar" {...register("village")} />
           </div>
 
-          <Button type="submit" className="w-full" disabled={submitting}>
-            {submitting ? (
+          <Button type="submit" className="w-full" disabled={submitting || justSignedUp}>
+            {submitting || justSignedUp ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Creating account...
+                {justSignedUp ? "Redirecting..." : "Creating account..."}
               </>
             ) : (
               "Create Account"
@@ -189,7 +235,7 @@ export default function SignupPage() {
         </form>
 
         <p className="text-xs text-muted-foreground text-center mt-4">
-          Admin accounts are assigned manually. Contact the platform admin if you need admin access.
+          Admin accounts are assigned manually by the platform admin.
         </p>
 
         <p className="text-sm text-muted-foreground text-center mt-3">

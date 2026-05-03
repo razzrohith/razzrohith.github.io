@@ -1,8 +1,5 @@
-import { useRef, useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "wouter";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import { motion } from "framer-motion";
 import {
   Leaf, Users, CheckCircle, ArrowRight, Tractor, MapPin,
@@ -10,16 +7,10 @@ import {
   Phone, Banknote, ClipboardList, Search,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from "@/components/ui/select";
 import Navbar from "@/components/Navbar";
 import {
   isSupabaseConfigured,
-  getSupabase,
   getLandingFarmers,
   getLandingListings,
   getLandingStats,
@@ -32,7 +23,7 @@ import {
 
 const STEP_ICONS = [ClipboardList, Search, Phone, Banknote] as const;
 
-const pilotSteps = [
+const steps = [
   {
     step: "1",
     title: "Farmer Lists Produce",
@@ -41,17 +32,17 @@ const pilotSteps = [
   {
     step: "2",
     title: "Buyer Reserves Nearby",
-    desc: "Buyer browses active listings nearby and reserves the quantity needed.",
+    desc: "Buyer browses active listings and reserves the quantity needed.",
   },
   {
     step: "3",
     title: "Buyer Contacts Farmer",
-    desc: "Buyer calls or messages the farmer directly to confirm before pickup.",
+    desc: "Buyer calls or messages the farmer directly to confirm pickup.",
   },
   {
     step: "4",
     title: "Cash or UPI at Pickup",
-    desc: "Payment is made directly to the farmer at pickup. No online payment.",
+    desc: "Payment is made directly to the farmer. No online payment needed.",
   },
 ];
 
@@ -68,18 +59,6 @@ const buyerBenefits = [
   "Lower prices — no retail markup",
   "Support local Telangana farmers",
 ];
-
-// ── Waitlist schema ───────────────────────────────────────────────────────────
-
-const schema = z.object({
-  name: z.string().min(2, "Enter your full name (at least 2 characters)"),
-  phone: z.string().length(10, "Enter a valid 10-digit mobile number"),
-  role: z.enum(["Buyer", "Farmer", "Agent"], {
-    required_error: "Please select your role",
-  }),
-  village: z.string().min(2, "Enter your village or town name"),
-});
-type FormValues = z.infer<typeof schema>;
 
 // ── Small helpers ─────────────────────────────────────────────────────────────
 
@@ -120,20 +99,6 @@ function CategoryIcon({ category, size = 20 }: { category: string; size?: number
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function LandingPage() {
-  const waitlistRef = useRef<HTMLDivElement>(null);
-
-  // ── Waitlist form state ──────────────────────────────────────────────────
-  const [submitted, setSubmitted] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const [roleValue, setRoleValue] = useState<string>("");
-
-  const {
-    register,
-    handleSubmit,
-    setValue,
-    formState: { errors },
-  } = useForm<FormValues>({ resolver: zodResolver(schema) });
-
   // ── Landing data ─────────────────────────────────────────────────────────
   const [landingFarmers, setLandingFarmers] = useState<LandingFarmer[]>([]);
   const [landingListings, setLandingListings] = useState<SupabaseListing[]>([]);
@@ -171,44 +136,10 @@ export default function LandingPage() {
     listingCountByFarmer[l.farmer_id] = (listingCountByFarmer[l.farmer_id] ?? 0) + 1;
   });
 
-  // Farmer of the Week — highest rated verified farmer
   const farmerOfWeek: LandingFarmer | null = landingFarmers[0] ?? null;
   const farmerOfWeekListings: SupabaseListing[] = farmerOfWeek
     ? landingListings.filter((l) => l.farmer_id === farmerOfWeek.id).slice(0, 3)
     : [];
-
-  // ── Handlers ─────────────────────────────────────────────────────────────
-
-  const scrollToWaitlistWithRole = (role: "Buyer" | "Farmer" | "Agent") => {
-    setRoleValue(role);
-    setValue("role", role, { shouldValidate: false });
-    setTimeout(() => {
-      waitlistRef.current?.scrollIntoView({ behavior: "smooth" });
-    }, 50);
-  };
-
-  const onSubmit = async (data: FormValues) => {
-    if (submitting) return;
-    setSubmitting(true);
-    try {
-      if (isSupabaseConfigured()) {
-        const { error } = await getSupabase()
-          .from("waitlist_leads")
-          .insert({
-            name: data.name,
-            phone: data.phone,
-            role: data.role.toLowerCase(),
-            town: data.village,
-          });
-        if (error) console.warn("Supabase waitlist error:", error.message);
-      }
-    } catch (e) {
-      console.warn("Waitlist save failed, using local fallback:", e);
-    } finally {
-      setSubmitting(false);
-      setSubmitted(true);
-    }
-  };
 
   // ── Render ────────────────────────────────────────────────────────────────
 
@@ -228,7 +159,7 @@ export default function LandingPage() {
               transition={{ duration: 0.5 }}
             >
               <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-1.5 rounded-full text-sm font-medium mb-5">
-                <Leaf className="w-4 h-4" /> Now in Telangana — Pilot Phase
+                <Leaf className="w-4 h-4" /> Now in Telangana
               </div>
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground mb-4 leading-tight">
                 Raithu<span className="text-primary">Fresh</span>
@@ -240,21 +171,16 @@ export default function LandingPage() {
                 Connecting Telangana farmers with local buyers. No middlemen. Fair prices. Fresh produce.
               </p>
               <div className="flex flex-col sm:flex-row gap-3">
-                <Button
-                  size="lg"
-                  className="text-base px-7"
-                  onClick={() => scrollToWaitlistWithRole("Buyer")}
-                >
-                  Join as Buyer
-                </Button>
-                <Button
-                  size="lg"
-                  variant="secondary"
-                  className="text-base px-7"
-                  onClick={() => scrollToWaitlistWithRole("Farmer")}
-                >
-                  Join as Farmer
-                </Button>
+                <Link href="/signup?role=buyer">
+                  <Button size="lg" className="text-base px-7 w-full sm:w-auto">
+                    Join as Buyer
+                  </Button>
+                </Link>
+                <Link href="/signup?role=farmer">
+                  <Button size="lg" variant="secondary" className="text-base px-7 w-full sm:w-auto">
+                    Join as Farmer
+                  </Button>
+                </Link>
                 <Link href="/browse">
                   <Button size="lg" variant="outline" className="text-base px-7 w-full sm:w-auto">
                     Browse Produce <ArrowRight className="w-4 h-4 ml-1" />
@@ -272,7 +198,7 @@ export default function LandingPage() {
             >
               <img
                 src="/assets/hero-produce.svg"
-                alt="Fresh fruits and vegetables from Telangana farmers — mango, tomato, brinjal, banana, chili"
+                alt="Fresh fruits and vegetables from Telangana farmers"
                 width={480}
                 height={380}
                 className="w-full max-w-md drop-shadow-sm select-none"
@@ -291,7 +217,6 @@ export default function LandingPage() {
           </p>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
 
-            {/* Verified Farmers */}
             <motion.div
               initial={{ opacity: 0, y: 12 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -306,7 +231,6 @@ export default function LandingPage() {
               <span className="text-xs text-muted-foreground leading-tight">Verified Farmers</span>
             </motion.div>
 
-            {/* Active Listings */}
             <motion.div
               initial={{ opacity: 0, y: 12 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -321,7 +245,6 @@ export default function LandingPage() {
               <span className="text-xs text-muted-foreground leading-tight">Active Listings</span>
             </motion.div>
 
-            {/* Districts Covered */}
             <motion.div
               initial={{ opacity: 0, y: 12 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -336,7 +259,6 @@ export default function LandingPage() {
               <span className="text-xs text-muted-foreground leading-tight">Districts</span>
             </motion.div>
 
-            {/* Fruit Listings */}
             <motion.div
               initial={{ opacity: 0, y: 12 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -344,19 +266,13 @@ export default function LandingPage() {
               transition={{ delay: 0.18, duration: 0.35 }}
               className="flex flex-col items-center gap-1.5 bg-amber-50 rounded-xl p-4 text-center"
             >
-              <img
-                src="/assets/icon-fruit.svg"
-                alt="Fruit"
-                width={24}
-                height={24}
-              />
+              <img src="/assets/icon-fruit.svg" alt="Fruit" width={24} height={24} />
               <span className="text-2xl font-bold text-amber-600 leading-none">
                 {dataLoading ? "—" : (landingStats?.fruitListings ?? 0)}
               </span>
               <span className="text-xs text-muted-foreground leading-tight">Fruit Listings</span>
             </motion.div>
 
-            {/* Vegetable Listings */}
             <motion.div
               initial={{ opacity: 0, y: 12 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -364,12 +280,7 @@ export default function LandingPage() {
               transition={{ delay: 0.24, duration: 0.35 }}
               className="flex flex-col items-center gap-1.5 bg-violet-50 rounded-xl p-4 text-center"
             >
-              <img
-                src="/assets/icon-vegetable.svg"
-                alt="Vegetable"
-                width={24}
-                height={24}
-              />
+              <img src="/assets/icon-vegetable.svg" alt="Vegetable" width={24} height={24} />
               <span className="text-2xl font-bold text-violet-600 leading-none">
                 {dataLoading ? "—" : (landingStats?.vegetableListings ?? 0)}
               </span>
@@ -380,41 +291,43 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── How the Pilot Works ── */}
+      {/* ── How It Works ── */}
       <section className="py-14 px-4 bg-primary/5">
-        <div className="max-w-5xl mx-auto">
+        <div className="max-w-4xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5 }}
           >
-            <div className="text-center mb-10">
-              <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
-                How the Pilot Works
-              </h2>
-              <p className="text-muted-foreground">Simple steps. No app needed. No online payment.</p>
-            </div>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
-              {pilotSteps.map((s, i) => {
+            <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-2 text-center">
+              How It Works
+            </h2>
+            <p className="text-center text-muted-foreground text-sm mb-8">
+              Simple steps to connect farmers with buyers.
+            </p>
+            <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-4">
+              {steps.map((s, i) => {
                 const Icon = STEP_ICONS[i];
                 return (
                   <motion.div
                     key={s.step}
-                    initial={{ opacity: 0, y: 20 }}
+                    initial={{ opacity: 0, y: 16 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
                     transition={{ delay: i * 0.1, duration: 0.4 }}
-                    className="bg-white rounded-xl p-5 border border-border shadow-sm text-center flex flex-col items-center gap-2"
+                    className="bg-white border border-border rounded-2xl p-5 flex flex-col gap-3 shadow-sm"
                   >
-                    <div className="w-11 h-11 rounded-full bg-primary/8 flex items-center justify-center mb-1">
-                      <Icon className="w-5 h-5 text-primary" />
-                    </div>
-                    <div className="w-7 h-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold text-sm">
-                      {s.step}
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                        <Icon className="w-5 h-5 text-primary" />
+                      </div>
+                      <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                        Step {s.step}
+                      </span>
                     </div>
                     <h3 className="font-semibold text-foreground text-sm">{s.title}</h3>
-                    <p className="text-muted-foreground text-xs leading-relaxed">{s.desc}</p>
+                    <p className="text-xs text-muted-foreground leading-relaxed">{s.desc}</p>
                   </motion.div>
                 );
               })}
@@ -424,119 +337,84 @@ export default function LandingPage() {
       </section>
 
       {/* ── Farmer of the Week ── */}
-      {!dataLoading && farmerOfWeek && (
-        <section className="py-14 px-4 bg-amber-50/60 border-y border-amber-100">
-          <div className="max-w-5xl mx-auto">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5 }}
-            >
-              {/* Header badge */}
-              <div className="flex items-center gap-3 mb-7">
-                <img
-                  src="/assets/icon-farmer-week.svg"
-                  alt="Farmer of the week award"
-                  width={52}
-                  height={52}
-                  className="shrink-0"
-                />
-                <div>
-                  <p className="text-xs font-semibold text-amber-600 uppercase tracking-widest mb-0.5">
-                    Farmer of the Week
-                  </p>
-                  <h2 className="text-2xl md:text-3xl font-bold text-foreground leading-tight">
-                    {farmerOfWeek.name}
-                  </h2>
-                </div>
+      <section className="py-14 px-4 bg-white">
+        <div className="max-w-4xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+          >
+            <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
+              <div>
+                <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-1">
+                  Farmer of the Week
+                </h2>
+                <p className="text-muted-foreground text-sm">
+                  Our highest rated verified farmer this week.
+                </p>
               </div>
+              <Link href="/browse">
+                <Button variant="outline" size="sm">
+                  See All Farmers <ArrowRight className="w-3.5 h-3.5 ml-1" />
+                </Button>
+              </Link>
+            </div>
 
-              <div className="grid md:grid-cols-2 gap-6">
-
-                {/* Farmer profile card */}
-                <div className="bg-white rounded-2xl p-6 border border-amber-100 shadow-sm flex flex-col gap-4">
-                  <div className="flex items-start justify-between gap-2">
-                    <p className="text-sm text-muted-foreground flex items-center gap-1">
-                      <MapPin className="w-3.5 h-3.5 shrink-0" />
-                      {[farmerOfWeek.village, farmerOfWeek.district].filter(Boolean).join(", ")}
-                    </p>
+            {dataLoading ? (
+              <div className="flex items-center justify-center py-14 text-muted-foreground gap-2">
+                <Loader2 className="w-5 h-5 animate-spin" />
+                <span>Loading...</span>
+              </div>
+            ) : !farmerOfWeek ? (
+              <div className="text-center py-14 text-muted-foreground bg-muted/30 rounded-xl border border-border">
+                <p className="text-sm">No verified farmers yet.</p>
+                <p className="text-xs mt-1">Check back soon.</p>
+              </div>
+            ) : (
+              <div className="bg-gradient-to-br from-primary/5 to-secondary/5 border border-border rounded-2xl p-6 flex flex-col sm:flex-row gap-6 items-start">
+                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center shrink-0 text-2xl font-bold text-primary">
+                  {farmerOfWeek.name.charAt(0).toUpperCase()}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap mb-1">
+                    <h3 className="font-bold text-foreground text-lg">{farmerOfWeek.name}</h3>
                     {farmerOfWeek.verified && (
-                      <div className="flex items-center gap-1 text-xs text-primary font-semibold shrink-0">
-                        <BadgeCheck className="w-4 h-4" />
-                        Verified
-                      </div>
+                      <span className="inline-flex items-center gap-1 text-xs text-primary font-medium">
+                        <BadgeCheck className="w-3.5 h-3.5" /> Verified
+                      </span>
                     )}
                   </div>
-                  <StarRating rating={farmerOfWeek.rating} />
-                  <p className="text-sm text-muted-foreground">
-                    {(() => {
-                      const c = listingCountByFarmer[farmerOfWeek.id] ?? 0;
-                      return c > 0
-                        ? `${c} active listing${c !== 1 ? "s" : ""} available now`
-                        : "No active listings right now";
-                    })()}
-                  </p>
-                  <div className="flex flex-col sm:flex-row gap-2 pt-1">
-                    <Link href={`/farmers/${farmerOfWeek.id}`} className="flex-1">
-                      <Button size="sm" className="w-full">
-                        View Farmer Profile
-                      </Button>
-                    </Link>
-                    <Link href={`/browse`} className="flex-1">
-                      <Button size="sm" variant="outline" className="w-full">
-                        Browse Their Produce
-                      </Button>
-                    </Link>
+                  {farmerOfWeek.rating && <StarRating rating={farmerOfWeek.rating} />}
+                  <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
+                    <MapPin className="w-3 h-3 shrink-0" />
+                    {[farmerOfWeek.village, farmerOfWeek.district].filter(Boolean).join(", ")}
                   </div>
+
+                  {farmerOfWeekListings.length > 0 && (
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      {farmerOfWeekListings.map((l) => (
+                        <Badge key={l.id} variant="secondary" className="text-xs">
+                          {l.produce_name} — Rs {l.price_per_kg}/kg
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+
+                  <Link href={`/farmers/${farmerOfWeek.id}`} className="mt-4 inline-block">
+                    <Button variant="outline" size="sm">
+                      View Profile <ArrowRight className="w-3.5 h-3.5 ml-1" />
+                    </Button>
+                  </Link>
                 </div>
-
-                {/* Farmer's top listings */}
-                {farmerOfWeekListings.length > 0 ? (
-                  <div className="flex flex-col gap-3">
-                    {farmerOfWeekListings.map((listing) => {
-                      const harvestDate = listing.harvest_datetime
-                        ? listing.harvest_datetime.split("T")[0]
-                        : null;
-                      return (
-                        <div
-                          key={listing.id}
-                          className="bg-white rounded-xl px-4 py-3 border border-amber-100 shadow-sm flex items-center justify-between gap-3"
-                        >
-                          <div className="flex items-center gap-3 min-w-0">
-                            <CategoryIcon category={listing.category} size={32} />
-                            <div className="min-w-0">
-                              <p className="font-medium text-foreground text-sm truncate">
-                                {listing.produce_name}
-                              </p>
-                              <p className="text-xs text-muted-foreground">
-                                Rs {listing.price_per_kg}/kg · {listing.quantity_kg} kg available
-                                {harvestDate ? ` · Harvest ${harvestDate}` : ""}
-                              </p>
-                            </div>
-                          </div>
-                          <Link href={`/produce/${listing.id}`} className="shrink-0">
-                            <Button size="sm" variant="ghost" className="text-xs h-7 px-2">
-                              View <ArrowRight className="w-3 h-3 ml-0.5" />
-                            </Button>
-                          </Link>
-                        </div>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-center bg-white rounded-2xl border border-amber-100 p-8 text-center text-muted-foreground text-sm">
-                    No active listings from this farmer right now.
-                  </div>
-                )}
               </div>
-            </motion.div>
-          </div>
-        </section>
-      )}
+            )}
+          </motion.div>
+        </div>
+      </section>
 
-      {/* ── Nearby Verified Farmers ── */}
-      <section className="py-14 px-4 bg-white">
+      {/* ── Nearby Farmers ── */}
+      <section className="py-14 px-4 bg-muted/30">
         <div className="max-w-5xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -547,15 +425,15 @@ export default function LandingPage() {
             <div className="flex items-center justify-between mb-8 flex-wrap gap-3">
               <div>
                 <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-1">
-                  Nearby Verified Farmers
+                  Active Farmers
                 </h2>
                 <p className="text-muted-foreground text-sm">
-                  Farmers listing fresh produce directly from Telangana.
+                  Farmers currently listing produce on RaithuFresh.
                 </p>
               </div>
               <Link href="/browse">
                 <Button variant="outline" size="sm">
-                  Browse All Produce <ArrowRight className="w-3.5 h-3.5 ml-1" />
+                  Browse All <ArrowRight className="w-3.5 h-3.5 ml-1" />
                 </Button>
               </Link>
             </div>
@@ -566,20 +444,13 @@ export default function LandingPage() {
                 <span>Loading farmers...</span>
               </div>
             ) : landingFarmers.length === 0 ? (
-              <div className="text-center py-14 text-muted-foreground bg-muted/30 rounded-xl flex flex-col items-center gap-2">
-                <img
-                  src="/assets/empty-produce.svg"
-                  alt="No farmers found"
-                  width={100}
-                  height={80}
-                  className="opacity-70"
-                />
-                <p className="text-sm">No verified farmers listed yet.</p>
-                <p className="text-xs">Check back soon as the pilot grows.</p>
+              <div className="text-center py-14 text-muted-foreground bg-white rounded-xl border border-border">
+                <p className="text-sm">No farmers active right now.</p>
+                <p className="text-xs mt-1">Check back soon.</p>
               </div>
             ) : (
               <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {landingFarmers.map((farmer, i) => {
+                {landingFarmers.slice(0, 6).map((farmer, i) => {
                   const count = listingCountByFarmer[farmer.id] ?? 0;
                   return (
                     <motion.div
@@ -588,15 +459,17 @@ export default function LandingPage() {
                       whileInView={{ opacity: 1, y: 0 }}
                       viewport={{ once: true }}
                       transition={{ delay: i * 0.07, duration: 0.35 }}
-                      className="bg-card border border-border rounded-2xl p-5 shadow-sm flex flex-col gap-3"
+                      className="bg-white border border-border rounded-2xl p-5 shadow-sm flex flex-col gap-3"
                     >
                       <div className="flex items-start justify-between gap-2">
-                        <div>
-                          <h3 className="font-semibold text-foreground text-base">{farmer.name}</h3>
-                          <p className="text-sm text-muted-foreground flex items-center gap-1 mt-0.5">
-                            <MapPin className="w-3.5 h-3.5 shrink-0" />
-                            {[farmer.village, farmer.district].filter(Boolean).join(", ")}
-                          </p>
+                        <div className="min-w-0">
+                          <h3 className="font-semibold text-foreground truncate">{farmer.name}</h3>
+                          <div className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5">
+                            <MapPin className="w-3 h-3 shrink-0" />
+                            <span className="truncate">
+                              {[farmer.village, farmer.district].filter(Boolean).join(", ")}
+                            </span>
+                          </div>
                         </div>
                         {farmer.verified && (
                           <div className="flex items-center gap-1 text-xs text-primary font-medium shrink-0">
@@ -637,7 +510,7 @@ export default function LandingPage() {
             <div className="flex items-center justify-between mb-8 flex-wrap gap-3">
               <div>
                 <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-1">
-                  Fresh Listings Near You
+                  Fresh Listings
                 </h2>
                 <p className="text-muted-foreground text-sm">
                   Active produce available for pickup from Telangana farmers.
@@ -793,7 +666,7 @@ export default function LandingPage() {
                 <h3 className="font-semibold text-foreground mb-2">For Buyers</h3>
                 <p className="text-muted-foreground text-sm">
                   Buyers in towns and cities pay retail prices for produce that passed through
-                  3-4 middlemen — by which time it is 3-5 days old.
+                  3–4 middlemen — by which time it is 3–5 days old.
                 </p>
               </div>
             </div>
@@ -827,13 +700,11 @@ export default function LandingPage() {
                     </li>
                   ))}
                 </ul>
-                <Button
-                  className="mt-5 w-full"
-                  variant="outline"
-                  onClick={() => scrollToWaitlistWithRole("Farmer")}
-                >
-                  Join as Farmer
-                </Button>
+                <Link href="/signup?role=farmer" className="mt-5 block">
+                  <Button className="w-full" variant="outline">
+                    Join as Farmer
+                  </Button>
+                </Link>
               </div>
               <div className="bg-white rounded-xl p-6 border border-border shadow-sm">
                 <div className="flex items-center gap-2 mb-4">
@@ -848,149 +719,49 @@ export default function LandingPage() {
                     </li>
                   ))}
                 </ul>
-                <Button
-                  className="mt-5 w-full"
-                  onClick={() => scrollToWaitlistWithRole("Buyer")}
-                >
-                  Join as Buyer
-                </Button>
+                <Link href="/signup?role=buyer" className="mt-5 block">
+                  <Button className="w-full">
+                    Join as Buyer
+                  </Button>
+                </Link>
               </div>
             </div>
           </motion.div>
         </div>
       </section>
 
-      {/* ── Waitlist Form ── */}
-      <section id="waitlist" ref={waitlistRef} className="py-14 px-4 bg-white">
-        <div className="max-w-lg mx-auto">
+      {/* ── CTA Banner ── */}
+      <section className="py-14 px-4 bg-white">
+        <div className="max-w-2xl mx-auto text-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5 }}
           >
-            <div className="text-center mb-8">
-              <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
-                Join the Waitlist
-              </h2>
-              <p className="text-muted-foreground">
-                Be among the first when RaithuFresh launches in your area.
-              </p>
-            </div>
-
-            {submitted ? (
-              <div className="flex flex-col items-center gap-4 py-10 text-center bg-card border border-border rounded-2xl p-6 shadow-sm">
-                <CheckCircle className="w-14 h-14 text-primary" />
-                <h3 className="text-lg font-semibold text-foreground">You are on the list!</h3>
-                <p className="text-muted-foreground text-sm">
-                  We will contact you when RaithuFresh launches near you. Thank you for your interest.
-                </p>
-                <Link href="/browse">
-                  <Button variant="outline" size="sm" className="mt-2">
-                    Browse Produce Now <ArrowRight className="w-3.5 h-3.5 ml-1" />
-                  </Button>
-                </Link>
-              </div>
-            ) : (
-              <form
-                onSubmit={handleSubmit(onSubmit)}
-                noValidate
-                className="space-y-4 bg-card border border-border rounded-2xl p-6 shadow-sm"
-              >
-                <div>
-                  <Label htmlFor="wl-name">Full Name</Label>
-                  <Input
-                    id="wl-name"
-                    placeholder="Your full name"
-                    autoComplete="name"
-                    {...register("name")}
-                    className={errors.name ? "border-destructive" : ""}
-                  />
-                  {errors.name && (
-                    <p className="text-destructive text-xs mt-1">{errors.name.message}</p>
-                  )}
-                </div>
-
-                <div>
-                  <Label htmlFor="wl-phone">Mobile Number</Label>
-                  <Input
-                    id="wl-phone"
-                    placeholder="10-digit mobile number"
-                    maxLength={10}
-                    inputMode="numeric"
-                    autoComplete="tel"
-                    {...register("phone")}
-                    className={errors.phone ? "border-destructive" : ""}
-                  />
-                  {errors.phone && (
-                    <p className="text-destructive text-xs mt-1">{errors.phone.message}</p>
-                  )}
-                </div>
-
-                <div>
-                  <Label>I am a</Label>
-                  <Select
-                    value={roleValue}
-                    onValueChange={(v) => {
-                      setRoleValue(v);
-                      setValue("role", v as "Buyer" | "Farmer" | "Agent", {
-                        shouldValidate: true,
-                      });
-                    }}
-                  >
-                    <SelectTrigger className={errors.role ? "border-destructive" : ""}>
-                      <SelectValue placeholder="Select your role" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Buyer">Buyer — I want to buy fresh produce</SelectItem>
-                      <SelectItem value="Farmer">Farmer — I want to sell my harvest</SelectItem>
-                      <SelectItem value="Agent">Agent — I help farmers list produce</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  {errors.role ? (
-                    <p className="text-destructive text-xs mt-1">{errors.role.message}</p>
-                  ) : (
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Choose your role, then submit the form.
-                    </p>
-                  )}
-                </div>
-
-                <div>
-                  <Label htmlFor="wl-village">Village / Town</Label>
-                  <Input
-                    id="wl-village"
-                    placeholder="e.g. Shadnagar, Siddipet, Nizamabad..."
-                    {...register("village")}
-                    className={errors.village ? "border-destructive" : ""}
-                  />
-                  {errors.village && (
-                    <p className="text-destructive text-xs mt-1">{errors.village.message}</p>
-                  )}
-                </div>
-
-                <Button type="submit" className="w-full" disabled={submitting}>
-                  {submitting ? (
-                    <span className="flex items-center gap-2">
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      Saving...
-                    </span>
-                  ) : roleValue === "Buyer" ? (
-                    "Join as Buyer"
-                  ) : roleValue === "Farmer" ? (
-                    "Join as Farmer"
-                  ) : roleValue === "Agent" ? (
-                    "Join as Agent"
-                  ) : (
-                    "Join Waitlist"
-                  )}
+            <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-3">
+              Ready to Get Started?
+            </h2>
+            <p className="text-muted-foreground mb-7">
+              Sign up in under a minute. Browse active listings or list your produce today.
+            </p>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+              <Link href="/signup?role=buyer">
+                <Button size="lg" className="text-base px-8 w-full sm:w-auto">
+                  Sign Up as Buyer
                 </Button>
-
-                <p className="text-center text-xs text-muted-foreground">
-                  No spam. We will only contact you when the pilot launches near you.
-                </p>
-              </form>
-            )}
+              </Link>
+              <Link href="/signup?role=farmer">
+                <Button size="lg" variant="secondary" className="text-base px-8 w-full sm:w-auto">
+                  Sign Up as Farmer
+                </Button>
+              </Link>
+              <Link href="/browse">
+                <Button size="lg" variant="outline" className="text-base px-8 w-full sm:w-auto">
+                  Browse First <ArrowRight className="w-4 h-4 ml-1" />
+                </Button>
+              </Link>
+            </div>
           </motion.div>
         </div>
       </section>
@@ -1010,22 +781,20 @@ export default function LandingPage() {
             Browse Produce
           </Link>
           <span>·</span>
-          <button
-            className="hover:text-foreground underline underline-offset-2"
-            onClick={() => scrollToWaitlistWithRole("Farmer")}
-          >
+          <Link href="/signup?role=farmer" className="hover:text-foreground underline underline-offset-2">
             Join as Farmer
-          </button>
+          </Link>
           <span>·</span>
-          <button
-            className="hover:text-foreground underline underline-offset-2"
-            onClick={() => scrollToWaitlistWithRole("Buyer")}
-          >
+          <Link href="/signup?role=buyer" className="hover:text-foreground underline underline-offset-2">
             Join as Buyer
-          </button>
+          </Link>
+          <span>·</span>
+          <Link href="/login" className="hover:text-foreground underline underline-offset-2">
+            Log In
+          </Link>
         </div>
         <p className="mt-3 text-xs">
-          MVP pilot — No real transactions yet. Payment is Cash or UPI directly to the farmer.
+          Payment is Cash or UPI directly to the farmer at pickup.
         </p>
       </footer>
     </div>

@@ -181,12 +181,12 @@ export default function Navbar() {
             <div className="flex items-center gap-2 ml-2">
               <Link href="/login">
                 <Button variant="outline" size="sm" className="h-8 py-0">
-                  <BilingualLabel en="Log In" te="లాగిన్" />
+                  <BilingualLabel en="Log In" te="లాగిన్" variant="onLight" />
                 </Button>
               </Link>
               <Link href="/signup">
                 <Button size="sm" className="h-8 py-0">
-                  <BilingualLabel en="Sign Up" te="సైన్ అప్" />
+                  <BilingualLabel en="Sign Up" te="సైన్ అప్" variant="button" />
                 </Button>
               </Link>
             </div>
@@ -247,7 +247,7 @@ export default function Navbar() {
               <BilingualLabel 
                 en={l.label} 
                 te={l.te} 
-                teClassName={location === l.href ? "text-primary-foreground/70" : ""}
+                variant={location === l.href ? "button" : "onLight"}
               />
               {l.href === "/farmer" && farmerNewPending > 0 && (
                 <span className="inline-flex items-center justify-center min-w-[16px] h-4 px-1 text-[10px] font-bold rounded-full bg-amber-500 text-white leading-none">

@@ -216,7 +216,7 @@ export default function BuyerDashboard() {
                 <Icon className="w-4 h-4 mx-auto mb-1.5 opacity-80" />
                 <div className="text-2xl font-bold leading-none">{counts[status]}</div>
                 <div className="text-[10px] mt-1 capitalize opacity-80">
-                  <BilingualLabel en={STATUS_LABEL[status].en} te={STATUS_LABEL[status].te} orientation="stacked" />
+                  <BilingualLabel en={STATUS_LABEL[status].en} te={STATUS_LABEL[status].te} orientation="stacked" variant="onLight" />
                 </div>
               </button>
             );
@@ -243,9 +243,13 @@ export default function BuyerDashboard() {
                   >
                     <span className="capitalize text-xs">
                       {tab === "all" ? (
-                        <BilingualLabel en="All" te="అన్నీ" />
+                        <BilingualLabel en="All" te="అన్నీ" variant={isActive ? "button" : "onLight"} />
                       ) : (
-                        <BilingualLabel en={STATUS_LABEL[tab as ReservationStatus].en} te={STATUS_LABEL[tab as ReservationStatus].te} />
+                        <BilingualLabel 
+                          en={STATUS_LABEL[tab as ReservationStatus].en} 
+                          te={STATUS_LABEL[tab as ReservationStatus].te} 
+                          variant={isActive ? "button" : "onLight"}
+                        />
                       )}
                     </span>
                     <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${isActive ? "bg-card/20 text-primary-foreground" : "bg-muted text-muted-foreground"}`}>

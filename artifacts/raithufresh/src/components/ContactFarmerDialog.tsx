@@ -72,7 +72,7 @@ export default function ContactFarmerDialog({
       <DialogContent className="max-w-sm">
         <DialogHeader>
           <DialogTitle>
-            <BilingualLabel en="Contact Farmer" te="రైతును సంప్రదించండి" />
+            <BilingualLabel en="Contact Farmer" te="రైతును సంప్రదించండి" variant="onLight" />
           </DialogTitle>
         </DialogHeader>
 
@@ -88,11 +88,11 @@ export default function ContactFarmerDialog({
             <div className="flex gap-3">
               <a href={telUrl!} className="flex-1" onClick={onClose}>
                 <Button className="w-full h-auto py-2">
-                  <BilingualLabel en="Call Now" te="ఇప్పుడే కాల్ చేయండి" orientation="stacked" />
+                  <BilingualLabel en="Call Now" te="ఇప్పుడే కాల్ చేయండి" orientation="stacked" variant="button" />
                 </Button>
               </a>
               <Button variant="outline" className="flex-1 h-auto py-2" onClick={handleCopy}>
-                <BilingualLabel en="Copy" te="కాపీ" orientation="stacked" />
+                <BilingualLabel en="Copy" te="కాపీ" orientation="stacked" variant="onLight" />
               </Button>
             </div>
 
@@ -107,7 +107,7 @@ export default function ContactFarmerDialog({
                   variant="outline"
                   className="w-full text-green-700 border-green-300 hover:bg-green-50 hover:border-green-400 h-auto py-2"
                 >
-                  <BilingualLabel en="Message on WhatsApp" te="వాట్సాప్ ద్వారా సందేశం" orientation="stacked" />
+                  <BilingualLabel en="Message on WhatsApp" te="వాట్సాప్ ద్వారా సందేశం" orientation="stacked" variant="onLight" />
                 </Button>
               </a>
             )}

@@ -104,7 +104,7 @@ export default function ReservationModal({ open, onClose, listing }: Props) {
           <>
             <DialogHeader>
               <DialogTitle>
-                <BilingualLabel en="Reserve Produce" te="పంటను రిజర్వ్ చేయండి" />
+                <BilingualLabel en="Reserve Produce" te="పంటను రిజర్వ్ చేయండి" variant="onLight" />
               </DialogTitle>
               <DialogDescription>
                 {listing ? `Reserve ${listing.name} at Rs ${listing.pricePerKg}/kg` : ""}
@@ -113,7 +113,7 @@ export default function ReservationModal({ open, onClose, listing }: Props) {
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 mt-2">
               <div>
                 <Label htmlFor="qty">
-                  <BilingualLabel en="Quantity needed (kg)" te="అవసరమైన పరిమాణం (కేజీలు)" />
+                  <BilingualLabel en="Quantity needed (kg)" te="అవసరమైన పరిమాణం (కేజీలు)" variant="onLight" />
                 </Label>
                 <Input
                   id="qty"
@@ -129,7 +129,7 @@ export default function ReservationModal({ open, onClose, listing }: Props) {
               </div>
               <div>
                 <Label htmlFor="name">
-                  <BilingualLabel en="Your name" te="మీ పేరు" />
+                  <BilingualLabel en="Your name" te="మీ పేరు" variant="onLight" />
                 </Label>
                 <Input id="name" placeholder="Enter your name" {...register("buyerName")} />
                 {errors.buyerName && (
@@ -138,7 +138,7 @@ export default function ReservationModal({ open, onClose, listing }: Props) {
               </div>
               <div>
                 <Label htmlFor="phone">
-                  <BilingualLabel en="Your phone number" te="మీ ఫోన్ నంబర్" />
+                  <BilingualLabel en="Your phone number" te="మీ ఫోన్ నంబర్" variant="onLight" />
                 </Label>
                 <Input
                   id="phone"
@@ -155,7 +155,7 @@ export default function ReservationModal({ open, onClose, listing }: Props) {
               </div>
               <Button type="submit" className="w-full h-auto py-2" disabled={submitting}>
                 {submitting ? "Sending..." : (
-                  <BilingualLabel en="Send Reservation Request" te="రిజర్వేషన్ అభ్యర్థనను పంపండి" orientation="stacked" />
+                  <BilingualLabel en="Send Reservation Request" te="రిజర్వేషన్ అభ్యర్థనను పంపండి" orientation="stacked" variant="button" />
                 )}
               </Button>
             </form>

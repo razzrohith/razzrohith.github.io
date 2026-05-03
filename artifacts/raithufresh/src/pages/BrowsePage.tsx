@@ -459,16 +459,16 @@ export default function BrowsePage() {
                       <div className="grid grid-cols-2 gap-2 text-sm">
                         <div className="bg-primary/5 rounded-lg p-2 text-center">
                           <div className="font-bold text-primary text-lg">
-                            <BilingualLabel en={`Rs ${listing.pricePerKg}`} te={`Rs ${listing.pricePerKg}`} orientation="stacked" />
+                            <BilingualLabel en={`Rs ${listing.pricePerKg}`} te={`Rs ${listing.pricePerKg}`} orientation="stacked" variant="onLight" />
                           </div>
                           <div className="text-muted-foreground text-[10px]">
-                            <BilingualLabel en="per kg" te="కేజీకి" />
+                            <BilingualLabel en="per kg" te="కేజీకి" variant="onLight" />
                           </div>
                         </div>
                         <div className="bg-muted rounded-lg p-2 text-center">
                           <div className="font-bold text-foreground text-lg">{listing.quantityKg}</div>
                           <div className="text-muted-foreground text-[10px]">
-                            <BilingualLabel en="kg available" te="కేజీలు ఉన్నాయి" />
+                            <BilingualLabel en="kg available" te="కేజీలు ఉన్నాయి" variant="onLight" />
                           </div>
                         </div>
                       </div>
@@ -497,7 +497,7 @@ export default function BrowsePage() {
 
                       <div className="flex gap-2 mt-auto pt-1">
                         <Button size="sm" className="flex-1 h-auto py-2" onClick={() => handleReserve(listing)}>
-                          <BilingualLabel en="Reserve" te="రిజర్వ్" orientation="stacked" />
+                          <BilingualLabel en="Reserve" te="రిజర్వ్" orientation="stacked" variant="button" />
                         </Button>
                         <Button
                           size="sm"
@@ -505,7 +505,7 @@ export default function BrowsePage() {
                           className="flex-1 h-auto py-2"
                           onClick={() => handleContact(listing)}
                         >
-                          <BilingualLabel en="Contact" te="సంప్రదించండి" orientation="stacked" />
+                          <BilingualLabel en="Contact" te="సంప్రదించండి" orientation="stacked" variant="onLight" />
                         </Button>
                         <Button
                           size="sm"

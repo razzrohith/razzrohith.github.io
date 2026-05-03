@@ -435,7 +435,7 @@ export default function AgentDashboard() {
                   )}
                 </div>
                 <Button type="submit" size="sm" className="h-auto py-2">
-                  <BilingualLabel en="Update Stock" te="స్టాక్ అప్‌డేట్ చేయండి" orientation="stacked" />
+                  <BilingualLabel en="Update Stock" te="స్టాక్ అప్‌డేట్ చేయండి" orientation="stacked" variant="button" />
                 </Button>
               </form>
             </div>

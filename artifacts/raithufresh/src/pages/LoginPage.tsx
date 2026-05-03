@@ -166,15 +166,15 @@ export default function LoginPage() {
                     {justLoggedIn ? "Redirecting..." : "Logging in..."}
                   </>
                 ) : (
-                  <BilingualLabel en="Log In" te="లాగిన్" orientation="stacked" />
+                  <BilingualLabel en="Log In" te="లాగిన్" orientation="stacked" variant="button" />
                 )}
               </Button>
             </form>
 
             <p className="text-sm text-muted-foreground text-center mt-5">
-              <BilingualLabel en="No account?" te="ఖాతా లేదా?" />{" "}
+              <BilingualLabel en="No account?" te="ఖాతా లేదా?" variant="onLight" />{" "}
               <Link href="/signup" className="text-primary font-medium hover:underline">
-                <BilingualLabel en="Sign up" te="సైన్ అప్" />
+                <BilingualLabel en="Sign up" te="సైన్ అప్" variant="onLight" />
               </Link>
             </p>
           </>

@@ -524,10 +524,10 @@ export default function ProduceDetailPage() {
               </div>
               <div className="flex gap-3">
                 <Button className="flex-1 h-auto py-2" onClick={() => openModal(listing)}>
-                  <BilingualLabel en="Reserve Now" te="ఇప్పుడే రిజర్వ్ చేయండి" orientation="stacked" />
+                  <BilingualLabel en="Reserve Now" te="ఇప్పుడే రిజర్వ్ చేయండి" orientation="stacked" variant="button" />
                 </Button>
                 <Button variant="outline" className="flex-1 h-auto py-2" onClick={handleContact}>
-                  <BilingualLabel en="Contact Farmer" te="రైతును సంప్రదించండి" orientation="stacked" />
+                  <BilingualLabel en="Contact Farmer" te="రైతును సంప్రదించండి" orientation="stacked" variant="onLight" />
                 </Button>
               </div>
             </div>

@@ -997,7 +997,7 @@ export default function FarmerDashboard() {
                         : "bg-card text-muted-foreground border-border hover:border-primary/50 hover:text-foreground"
                     }`}
                   >
-                     <BilingualLabel en={f.label} te={f.teLabel} />
+                     <BilingualLabel en={f.label} te={f.teLabel} variant={active ? "button" : "onLight"} />
                     {count > 0 && (
                       <span className={`inline-flex items-center justify-center w-4 h-4 rounded-full text-[10px] font-bold ${
                         active ? "bg-primary-foreground/20 text-primary-foreground" : "bg-muted text-foreground"
@@ -1131,7 +1131,7 @@ export default function FarmerDashboard() {
                               {isUpdating
                                 ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
                                 : (
-                                  <BilingualLabel en="Confirm" te="నిర్ధారించండి" orientation="stacked" />
+                                  <BilingualLabel en="Confirm" te="నిర్ధారించండి" orientation="stacked" variant="button" />
                                 )}
                             </Button>
                           )}
@@ -1144,7 +1144,7 @@ export default function FarmerDashboard() {
                               {isUpdating
                                 ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
                                 : (
-                                  <BilingualLabel en="Complete" te="పూర్తి చేయండి" orientation="stacked" />
+                                  <BilingualLabel en="Complete" te="పూర్తి చేయండి" orientation="stacked" variant="button" />
                                 )}
                             </Button>
                           )}
@@ -1157,7 +1157,7 @@ export default function FarmerDashboard() {
                             {isUpdating
                               ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
                               : (
-                                <BilingualLabel en="Cancel" te="రద్దు" orientation="stacked" />
+                                <BilingualLabel en="Cancel" te="రద్దు" orientation="stacked" variant="onLight" />
                               )}
                           </Button>
                         </div>

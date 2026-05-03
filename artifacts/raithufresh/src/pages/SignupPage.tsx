@@ -412,7 +412,7 @@ export default function SignupPage() {
                     {justSignedUp ? "Redirecting..." : "Creating account..."}
                   </>
                 ) : (
-                  <BilingualLabel en="Create Account" te="ఖాతాను సృష్టించండి" orientation="stacked" />
+                  <BilingualLabel en="Create Account" te="ఖాతాను సృష్టించండి" orientation="stacked" variant="button" />
                 )}
               </Button>
             </form>
@@ -422,9 +422,9 @@ export default function SignupPage() {
             </p>
 
             <p className="text-sm text-muted-foreground text-center mt-3">
-              <BilingualLabel en="Already have an account?" te="ఇప్పటికే ఖాతా ఉందా?" />{" "}
+              <BilingualLabel en="Already have an account?" te="ఇప్పటికే ఖాతా ఉందా?" variant="onLight" />{" "}
               <Link href="/login" className="text-primary font-medium hover:underline">
-                <BilingualLabel en="Log in" te="లాగిన్" />
+                <BilingualLabel en="Log in" te="లాగిన్" variant="onLight" />
               </Link>
             </p>
           </>

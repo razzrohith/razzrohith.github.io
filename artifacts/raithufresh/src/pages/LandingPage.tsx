@@ -187,7 +187,6 @@ export default function LandingPage() {
                   en="Buy fresh fruits and vegetables directly from nearby farmers." 
                   te="తాజా పండ్లు మరియు కూరగాయలను నేరుగా రైతుల నుండి కొనండి."
                   orientation="stacked"
-                  teClassName="text-sm mt-1"
                 />
               </p>
               <p className="text-base text-muted-foreground mb-8 max-w-lg">
@@ -202,17 +201,18 @@ export default function LandingPage() {
                           en={`Go to ${getRoleDashboard(role).label.replace(" Dashboard", "")} Dashboard`} 
                           te="డాష్బోర్డ్ కు వెళ్ళండి"
                           orientation="stacked"
+                          variant="button"
                         />
                       </Button>
                     </Link>
                     <Link href="/browse">
                       <Button size="lg" variant="secondary" className="text-base px-7 w-full sm:w-auto h-auto py-3">
-                        <BilingualLabel en="Browse Produce" te="పంటలు చూడండి" orientation="stacked" />
+                        <BilingualLabel en="Browse Produce" te="పంటలు చూడండి" orientation="stacked" variant="button" />
                       </Button>
                     </Link>
                     <Link href="/profile">
                       <Button size="lg" variant="outline" className="text-base px-7 w-full sm:w-auto h-auto py-3">
-                        <BilingualLabel en="My Profile" te="నా ప్రొఫైల్" orientation="stacked" />
+                        <BilingualLabel en="My Profile" te="నా ప్రొఫైల్" orientation="stacked" variant="onLight" />
                       </Button>
                     </Link>
                   </>
@@ -220,17 +220,17 @@ export default function LandingPage() {
                   <>
                     <Link href="/signup?role=buyer">
                       <Button size="lg" className="text-base px-7 w-full sm:w-auto h-auto py-3">
-                        <BilingualLabel en="Join as Buyer" te="కొనుగోలుదారుగా చేరండి" orientation="stacked" />
+                        <BilingualLabel en="Join as Buyer" te="కొనుగోలుదారుగా చేరండి" orientation="stacked" variant="button" />
                       </Button>
                     </Link>
                     <Link href="/signup?role=farmer">
                       <Button size="lg" variant="secondary" className="text-base px-7 w-full sm:w-auto h-auto py-3">
-                        <BilingualLabel en="Join as Farmer" te="రైతుగా చేరండి" orientation="stacked" />
+                        <BilingualLabel en="Join as Farmer" te="రైతుగా చేరండి" orientation="stacked" variant="button" />
                       </Button>
                     </Link>
                     <Link href="/browse">
                       <Button size="lg" variant="outline" className="text-base px-7 w-full sm:w-auto h-auto py-3">
-                        <BilingualLabel en="Browse Produce" te="పంటలు చూడండి" orientation="stacked" />
+                        <BilingualLabel en="Browse Produce" te="పంటలు చూడండి" orientation="stacked" variant="onLight" />
                       </Button>
                     </Link>
                   </>

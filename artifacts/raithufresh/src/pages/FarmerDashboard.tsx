@@ -29,6 +29,7 @@ import {
   getReservationsForFarmer, updateReservationStatus,
 } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
+import BilingualLabel from "@/components/BilingualLabel";
 
 // ── Schemas ──────────────────────────────────────────────────────────────────
 
@@ -63,12 +64,12 @@ const MOCK_FARMER = mockFarmers[0];
 
 type ResFilter = "all" | ReservationStatus;
 
-const FILTERS: { label: string; value: ResFilter }[] = [
-  { label: "All", value: "all" },
-  { label: "Pending", value: "pending" },
-  { label: "Confirmed", value: "confirmed" },
-  { label: "Completed", value: "completed" },
-  { label: "Cancelled", value: "cancelled" },
+const FILTERS: { label: string; teLabel: string; value: ResFilter }[] = [
+  { label: "All", teLabel: "అన్నీ", value: "all" },
+  { label: "Pending", teLabel: "వేచి ఉన్నాయి", value: "pending" },
+  { label: "Confirmed", teLabel: "నిర్ధారించబడ్డాయి", value: "confirmed" },
+  { label: "Completed", teLabel: "పూర్తయ్యాయి", value: "completed" },
+  { label: "Cancelled", teLabel: "రద్దు చేయబడ్డాయి", value: "cancelled" },
 ];
 
 const RESERVATION_STATUS_STYLES: Record<string, string> = {
@@ -557,7 +558,9 @@ export default function FarmerDashboard() {
     <div className="min-h-screen bg-background">
       <Navbar />
       <div className="max-w-4xl mx-auto px-4 py-8">
-        <h1 className="text-2xl font-bold text-foreground mb-6">Farmer Dashboard</h1>
+        <h1 className="text-2xl font-bold text-foreground mb-6">
+          <BilingualLabel en="Farmer Dashboard" te="రైతు డాష్బోర్డ్" />
+        </h1>
 
         {/* Setup warning */}
         {isSupabaseConfigured() && listingsLoaded && !farmerRow && (
@@ -605,21 +608,27 @@ export default function FarmerDashboard() {
             )}
           </div>
           <Badge variant={isVerified ? "default" : "secondary"}>
-            {isVerified ? "Verified Farmer" : "Farmer"}
+            {isVerified ? (
+              <BilingualLabel en="Verified Farmer" te="ధృవీకరించబడిన రైతు" />
+            ) : (
+              <BilingualLabel en="Farmer" te="రైతు" />
+            )}
           </Badge>
         </motion.div>
 
         {/* ── My Listings ───────────────────────────────────────────────── */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-foreground">My Listings</h2>
+            <h2 className="text-lg font-semibold text-foreground">
+              <BilingualLabel en="My Listings" te="నా పంటలు" />
+            </h2>
             <Button
               onClick={() => setShowForm(!showForm)}
               size="sm"
               disabled={isLoading}
+              className="h-auto py-2"
             >
-              <Plus className="w-4 h-4 mr-1" />
-              Add New Listing
+              <BilingualLabel en="Add New Listing" te="కొత్త పంటను జోడించండి" orientation="stacked" />
             </Button>
           </div>
 
@@ -630,17 +639,23 @@ export default function FarmerDashboard() {
               animate={{ opacity: 1, y: 0 }}
               className="bg-card border border-border rounded-2xl p-5 mb-4 shadow-sm"
             >
-              <h3 className="font-semibold text-foreground mb-4">Add New Produce Listing</h3>
+              <h3 className="font-semibold text-foreground mb-4">
+                <BilingualLabel en="Add New Produce Listing" te="కొత్త పంటను చేర్చండి" />
+              </h3>
               <form onSubmit={handleSubmit(onSubmit)} className="grid sm:grid-cols-2 gap-4">
                 <div>
-                  <Label>Produce Name</Label>
+                  <Label>
+                    <BilingualLabel en="Produce Name" te="పంట పేరు" />
+                  </Label>
                   <Input placeholder="e.g. Tomato, Mango..." {...register("name")} />
                   {errors.name && (
                     <p className="text-destructive text-xs mt-1">{errors.name.message}</p>
                   )}
                 </div>
                 <div>
-                  <Label>Category</Label>
+                  <Label>
+                    <BilingualLabel en="Category" te="రకం" />
+                  </Label>
                   <Select
                     value={categoryValue}
                     onValueChange={(v) => {
@@ -659,35 +674,45 @@ export default function FarmerDashboard() {
                   )}
                 </div>
                 <div>
-                  <Label>Quantity (kg)</Label>
+                  <Label>
+                    <BilingualLabel en="Quantity (kg)" te="పరిమాణం (కేజీలు)" />
+                  </Label>
                   <Input type="number" placeholder="e.g. 100" {...register("quantityKg")} />
                   {errors.quantityKg && (
                     <p className="text-destructive text-xs mt-1">{errors.quantityKg.message}</p>
                   )}
                 </div>
                 <div>
-                  <Label>Price per kg (Rs)</Label>
+                  <Label>
+                    <BilingualLabel en="Price per kg (Rs)" te="ధర కేజీకి (రూ)" />
+                  </Label>
                   <Input type="number" placeholder="e.g. 25" {...register("pricePerKg")} />
                   {errors.pricePerKg && (
                     <p className="text-destructive text-xs mt-1">{errors.pricePerKg.message}</p>
                   )}
                 </div>
                 <div>
-                  <Label>Harvest Date</Label>
+                  <Label>
+                    <BilingualLabel en="Harvest Date" te="కోత తేదీ" />
+                  </Label>
                   <Input type="date" {...register("harvestDate")} />
                   {errors.harvestDate && (
                     <p className="text-destructive text-xs mt-1">{errors.harvestDate.message}</p>
                   )}
                 </div>
                 <div>
-                  <Label>Pickup Village / Location</Label>
+                  <Label>
+                    <BilingualLabel en="Pickup Village / Location" te="పికప్ గ్రామం / ప్రదేశం" />
+                  </Label>
                   <Input placeholder="e.g. Shadnagar Main Market" {...register("pickupLocation")} />
                   {errors.pickupLocation && (
                     <p className="text-destructive text-xs mt-1">{errors.pickupLocation.message}</p>
                   )}
                 </div>
                 <div>
-                  <Label>Contact Phone</Label>
+                  <Label>
+                    <BilingualLabel en="Contact Phone" te="సంప్రదించవలసిన ఫోన్" />
+                  </Label>
                   <Input placeholder="10-digit mobile" maxLength={10} {...register("phone")} />
                   {errors.phone && (
                     <p className="text-destructive text-xs mt-1">{errors.phone.message}</p>
@@ -698,13 +723,15 @@ export default function FarmerDashboard() {
                   <Input placeholder="e.g. Organic, freshly picked..." {...register("qualityNotes")} />
                 </div>
                 <div className="sm:col-span-2 flex gap-3">
-                  <Button type="submit" className="flex-1" disabled={submitting}>
+                  <Button type="submit" className="flex-1 h-auto py-2" disabled={submitting}>
                     {submitting ? (
                       <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Saving...</>
-                    ) : "Add Listing"}
+                    ) : (
+                      <BilingualLabel en="Add Listing" te="పంటను జోడించండి" orientation="stacked" />
+                    )}
                   </Button>
-                  <Button type="button" variant="outline" onClick={() => setShowForm(false)}>
-                    Cancel
+                  <Button type="button" variant="outline" className="h-auto py-2" onClick={() => setShowForm(false)}>
+                    <BilingualLabel en="Cancel" te="రద్దు" orientation="stacked" />
                   </Button>
                 </div>
               </form>
@@ -907,7 +934,7 @@ export default function FarmerDashboard() {
           {/* Reservations heading row */}
           <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
             <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
-              Buyer Reservations
+              <BilingualLabel en="Buyer Reservations" te="కొనుగోలుదారు రిజర్వేషన్లు" />
               {newPendingCount > 0 && (
                 <span className="inline-flex items-center px-2 py-0.5 text-xs font-bold rounded-full bg-amber-100 text-amber-700 border border-amber-200">
                   {newPendingCount} new
@@ -970,7 +997,7 @@ export default function FarmerDashboard() {
                         : "bg-card text-muted-foreground border-border hover:border-primary/50 hover:text-foreground"
                     }`}
                   >
-                    {f.label}
+                     <BilingualLabel en={f.label} te={f.teLabel} />
                     {count > 0 && (
                       <span className={`inline-flex items-center justify-center w-4 h-4 rounded-full text-[10px] font-bold ${
                         active ? "bg-primary-foreground/20 text-primary-foreground" : "bg-muted text-foreground"
@@ -1103,8 +1130,9 @@ export default function FarmerDashboard() {
                             >
                               {isUpdating
                                 ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                                : <CheckCircle className="w-3.5 h-3.5 mr-1" />}
-                              Confirm
+                                : (
+                                  <BilingualLabel en="Confirm" te="నిర్ధారించండి" orientation="stacked" />
+                                )}
                             </Button>
                           )}
                           {isConfirmed && (
@@ -1115,8 +1143,9 @@ export default function FarmerDashboard() {
                             >
                               {isUpdating
                                 ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                                : <CheckCircle className="w-3.5 h-3.5 mr-1" />}
-                              Complete
+                                : (
+                                  <BilingualLabel en="Complete" te="పూర్తి చేయండి" orientation="stacked" />
+                                )}
                             </Button>
                           )}
                           <Button
@@ -1127,8 +1156,9 @@ export default function FarmerDashboard() {
                           >
                             {isUpdating
                               ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                              : <X className="w-3.5 h-3.5 mr-1" />}
-                            Cancel
+                              : (
+                                <BilingualLabel en="Cancel" te="రద్దు" orientation="stacked" />
+                              )}
                           </Button>
                         </div>
                       )}
@@ -1151,12 +1181,16 @@ export default function FarmerDashboard() {
       <Dialog open={!!editingListing} onOpenChange={(open) => { if (!open) setEditingListing(null); }}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Edit Listing</DialogTitle>
+            <DialogTitle>
+              <BilingualLabel en="Edit Listing" te="పంట వివరాలను మార్చండి" />
+            </DialogTitle>
           </DialogHeader>
 
           <form onSubmit={handleEditSubmit(onEditSave)} className="grid sm:grid-cols-2 gap-4 mt-2">
             <div>
-              <Label>Produce Name</Label>
+              <Label>
+                <BilingualLabel en="Produce Name" te="పంట పేరు" />
+              </Label>
               <Input {...regEdit("name")} />
               {editErrors.name && (
                 <p className="text-destructive text-xs mt-1">{editErrors.name.message}</p>
@@ -1164,7 +1198,9 @@ export default function FarmerDashboard() {
             </div>
 
             <div>
-              <Label>Category</Label>
+              <Label>
+                <BilingualLabel en="Category" te="రకం" />
+              </Label>
               <Select
                 value={editCategoryValue}
                 onValueChange={(v) => {
@@ -1184,7 +1220,9 @@ export default function FarmerDashboard() {
             </div>
 
             <div>
-              <Label>Quantity (kg)</Label>
+              <Label>
+                <BilingualLabel en="Quantity (kg)" te="పరిమాణం (కేజీలు)" />
+              </Label>
               <Input type="number" min={0} {...regEdit("quantityKg")} />
               {editErrors.quantityKg && (
                 <p className="text-destructive text-xs mt-1">{editErrors.quantityKg.message}</p>
@@ -1192,7 +1230,9 @@ export default function FarmerDashboard() {
             </div>
 
             <div>
-              <Label>Price per kg (Rs)</Label>
+              <Label>
+                <BilingualLabel en="Price per kg (Rs)" te="ధర కేజీకి (రూ)" />
+              </Label>
               <Input type="number" min={1} {...regEdit("pricePerKg")} />
               {editErrors.pricePerKg && (
                 <p className="text-destructive text-xs mt-1">{editErrors.pricePerKg.message}</p>
@@ -1200,7 +1240,9 @@ export default function FarmerDashboard() {
             </div>
 
             <div>
-              <Label>Harvest Date</Label>
+              <Label>
+                <BilingualLabel en="Harvest Date" te="కోత తేదీ" />
+              </Label>
               <Input type="date" {...regEdit("harvestDate")} />
               {editErrors.harvestDate && (
                 <p className="text-destructive text-xs mt-1">{editErrors.harvestDate.message}</p>
@@ -1208,7 +1250,9 @@ export default function FarmerDashboard() {
             </div>
 
             <div>
-              <Label>Pickup Location</Label>
+              <Label>
+                <BilingualLabel en="Pickup Location" te="పికప్ ప్రదేశం" />
+              </Label>
               <Input {...regEdit("pickupLocation")} />
               {editErrors.pickupLocation && (
                 <p className="text-destructive text-xs mt-1">{editErrors.pickupLocation.message}</p>
@@ -1226,7 +1270,9 @@ export default function FarmerDashboard() {
             </div>
 
             <div className="sm:col-span-2">
-              <Label>Status</Label>
+              <Label>
+                <BilingualLabel en="Status" te="స్థితి" />
+              </Label>
               <Select
                 value={editStatusValue}
                 onValueChange={(v) => {
@@ -1250,15 +1296,18 @@ export default function FarmerDashboard() {
               <Button
                 type="button"
                 variant="outline"
+                className="h-auto py-2"
                 onClick={() => setEditingListing(null)}
                 disabled={editSubmitting}
               >
-                Cancel
+                <BilingualLabel en="Cancel" te="రద్దు" orientation="stacked" />
               </Button>
-              <Button type="submit" disabled={editSubmitting}>
+              <Button type="submit" className="h-auto py-2" disabled={editSubmitting}>
                 {editSubmitting ? (
                   <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Saving...</>
-                ) : "Save Changes"}
+                ) : (
+                  <BilingualLabel en="Save Changes" te="మార్పులను సేవ్ చేయండి" orientation="stacked" />
+                )}
               </Button>
             </DialogFooter>
           </form>

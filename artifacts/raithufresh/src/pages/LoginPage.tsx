@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
 import { isSupabaseConfigured } from "@/lib/supabase";
+import BilingualLabel from "@/components/BilingualLabel";
 
 const loginSchema = z.object({
   email: z.string().email("Enter a valid email"),
@@ -67,9 +68,15 @@ export default function LoginPage() {
       </Link>
 
       <div className="w-full max-w-sm bg-card border border-border rounded-2xl p-7 shadow-sm">
-        <h1 className="text-xl font-bold text-foreground mb-1">Log In</h1>
+        <h1 className="text-xl font-bold text-foreground mb-1">
+          <BilingualLabel en="Log In" te="లాగిన్" />
+        </h1>
         <p className="text-sm text-muted-foreground mb-6">
-          Welcome back. Enter your credentials to continue.
+          <BilingualLabel 
+            en="Welcome back. Enter your credentials to continue." 
+            te="తిరిగి స్వాగతం. కొనసాగించడానికి మీ వివరాలను నమోదు చేయండి."
+            orientation="stacked"
+          />
         </p>
 
         {user && !submitting ? (
@@ -78,13 +85,17 @@ export default function LoginPage() {
               You are already logged in as <strong>{user.email}</strong>.
             </div>
             <Link href={roleDashboard(role)}>
-              <Button className="w-full">Go to Dashboard</Button>
+              <Button className="w-full h-auto py-2">
+                <BilingualLabel en="Go to Dashboard" te="డాష్బోర్డ్ కు వెళ్ళండి" orientation="stacked" />
+              </Button>
             </Link>
             <Link href="/profile">
-              <Button variant="outline" className="w-full">My Profile</Button>
+              <Button variant="outline" className="w-full h-auto py-2">
+                <BilingualLabel en="My Profile" te="నా ప్రొఫైల్" orientation="stacked" />
+              </Button>
             </Link>
-            <Button variant="ghost" className="w-full text-destructive" onClick={() => signOut()}>
-              Log Out
+            <Button variant="ghost" className="w-full text-destructive h-auto py-2" onClick={() => signOut()}>
+              <BilingualLabel en="Log Out" te="లాగ్ అవుట్" orientation="stacked" />
             </Button>
           </div>
         ) : (
@@ -97,7 +108,9 @@ export default function LoginPage() {
 
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               <div>
-                <Label htmlFor="login-email">Email</Label>
+                <Label htmlFor="login-email">
+                  <BilingualLabel en="Email" te="ఈమెయిల్" />
+                </Label>
                 <Input
                   id="login-email"
                   type="email"
@@ -112,12 +125,14 @@ export default function LoginPage() {
 
               <div>
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="login-password">Password</Label>
+                  <Label htmlFor="login-password">
+                    <BilingualLabel en="Password" te="పాస్వర్డ్" />
+                  </Label>
                   <Link
                     href="/forgot-password"
                     className="text-xs text-primary font-medium hover:underline"
                   >
-                    Forgot password?
+                    <BilingualLabel en="Forgot?" te="మర్చిపోయారా?" />
                   </Link>
                 </div>
                 <div className="relative">
@@ -144,22 +159,22 @@ export default function LoginPage() {
                 )}
               </div>
 
-              <Button type="submit" className="w-full" disabled={submitting || justLoggedIn}>
+              <Button type="submit" className="w-full h-auto py-2" disabled={submitting || justLoggedIn}>
                 {submitting || justLoggedIn ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                     {justLoggedIn ? "Redirecting..." : "Logging in..."}
                   </>
                 ) : (
-                  "Log In"
+                  <BilingualLabel en="Log In" te="లాగిన్" orientation="stacked" />
                 )}
               </Button>
             </form>
 
             <p className="text-sm text-muted-foreground text-center mt-5">
-              No account?{" "}
+              <BilingualLabel en="No account?" te="ఖాతా లేదా?" />{" "}
               <Link href="/signup" className="text-primary font-medium hover:underline">
-                Sign up
+                <BilingualLabel en="Sign up" te="సైన్ అప్" />
               </Link>
             </p>
           </>

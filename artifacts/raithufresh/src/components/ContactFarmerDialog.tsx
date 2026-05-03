@@ -7,6 +7,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import BilingualLabel from "@/components/BilingualLabel";
 
 /**
  * Normalize an Indian phone number to the format required by wa.me and tel: links.
@@ -70,7 +71,9 @@ export default function ContactFarmerDialog({
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-sm">
         <DialogHeader>
-          <DialogTitle>Contact Farmer</DialogTitle>
+          <DialogTitle>
+            <BilingualLabel en="Contact Farmer" te="రైతును సంప్రదించండి" />
+          </DialogTitle>
         </DialogHeader>
 
         {normalized ? (
@@ -84,14 +87,12 @@ export default function ContactFarmerDialog({
 
             <div className="flex gap-3">
               <a href={telUrl!} className="flex-1" onClick={onClose}>
-                <Button className="w-full">
-                  <Phone className="w-4 h-4 mr-2" />
-                  Call Now
+                <Button className="w-full h-auto py-2">
+                  <BilingualLabel en="Call Now" te="ఇప్పుడే కాల్ చేయండి" orientation="stacked" />
                 </Button>
               </a>
-              <Button variant="outline" className="flex-1" onClick={handleCopy}>
-                <Copy className="w-4 h-4 mr-2" />
-                Copy
+              <Button variant="outline" className="flex-1 h-auto py-2" onClick={handleCopy}>
+                <BilingualLabel en="Copy" te="కాపీ" orientation="stacked" />
               </Button>
             </div>
 
@@ -104,10 +105,9 @@ export default function ContactFarmerDialog({
               >
                 <Button
                   variant="outline"
-                  className="w-full text-green-700 border-green-300 hover:bg-green-50 hover:border-green-400"
+                  className="w-full text-green-700 border-green-300 hover:bg-green-50 hover:border-green-400 h-auto py-2"
                 >
-                  <MessageCircle className="w-4 h-4 mr-2" />
-                  Message on WhatsApp
+                  <BilingualLabel en="Message on WhatsApp" te="వాట్సాప్ ద్వారా సందేశం" orientation="stacked" />
                 </Button>
               </a>
             )}

@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
+import BilingualLabel from "@/components/BilingualLabel";
 
 const resetSchema = z.object({
   password: z.string().min(8, "Password must be at least 8 characters"),
@@ -81,19 +82,23 @@ export default function ResetPasswordPage() {
                 <ShieldCheck className="w-6 h-6 text-green-600" />
               </div>
             </div>
-            <h1 className="text-xl font-bold text-foreground">Password Reset</h1>
+            <h1 className="text-xl font-bold text-foreground">
+              <BilingualLabel en="Password Reset" te="పాస్‌వర్డ్ రీసెట్" />
+            </h1>
             <p className="text-sm text-muted-foreground">
               Your password has been updated. You can now log in with your new password.
             </p>
             <Link href="/login">
-              <Button className="w-full mt-4">
-                Log In Now
+              <Button className="w-full mt-4 h-auto py-2">
+                <BilingualLabel en="Log In Now" te="ఇప్పుడే లాగిన్ చేయండి" orientation="stacked" />
               </Button>
             </Link>
           </div>
         ) : (
           <>
-            <h1 className="text-xl font-bold text-foreground mb-1">Set New Password</h1>
+            <h1 className="text-xl font-bold text-foreground mb-1">
+              <BilingualLabel en="Set New Password" te="కొత్త పాస్‌వర్డ్‌ను సెట్ చేయండి" />
+            </h1>
             <p className="text-sm text-muted-foreground mb-6">
               Enter a new secure password for your account.
             </p>
@@ -107,7 +112,9 @@ export default function ResetPasswordPage() {
 
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               <div>
-                <Label htmlFor="new-password">New Password</Label>
+                <Label htmlFor="new-password">
+                  <BilingualLabel en="New Password" te="కొత్త పాస్‌వర్డ్" />
+                </Label>
                 <div className="relative">
                   <Input
                     id="new-password"
@@ -132,7 +139,9 @@ export default function ResetPasswordPage() {
               </div>
 
               <div>
-                <Label htmlFor="confirm-password">Confirm New Password</Label>
+                <Label htmlFor="confirm-password">
+                  <BilingualLabel en="Confirm New Password" te="కొత్త పాస్‌వర్డ్‌ను ధృవీకరించండి" />
+                </Label>
                 <Input
                   id="confirm-password"
                   type={showPassword ? "text" : "password"}
@@ -145,14 +154,14 @@ export default function ResetPasswordPage() {
                 )}
               </div>
 
-              <Button type="submit" className="w-full" disabled={submitting}>
+              <Button type="submit" className="w-full h-auto py-2" disabled={submitting}>
                 {submitting ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                     Updating password...
                   </>
                 ) : (
-                  "Reset Password"
+                  <BilingualLabel en="Reset Password" te="పాస్‌వర్డ్‌ను రీసెట్ చేయండి" orientation="stacked" />
                 )}
               </Button>
             </form>

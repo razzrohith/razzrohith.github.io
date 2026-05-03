@@ -13,6 +13,7 @@ import { CheckCircle } from "lucide-react";
 import { isSupabaseConfigured, getSupabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import { Link } from "wouter";
+import BilingualLabel from "@/components/BilingualLabel";
 
 const schema = z.object({
   quantityKg: z.coerce.number().min(1, "Enter at least 1 kg"),
@@ -102,14 +103,18 @@ export default function ReservationModal({ open, onClose, listing }: Props) {
         {!success ? (
           <>
             <DialogHeader>
-              <DialogTitle>Reserve Produce</DialogTitle>
+              <DialogTitle>
+                <BilingualLabel en="Reserve Produce" te="పంటను రిజర్వ్ చేయండి" />
+              </DialogTitle>
               <DialogDescription>
                 {listing ? `Reserve ${listing.name} at Rs ${listing.pricePerKg}/kg` : ""}
               </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 mt-2">
               <div>
-                <Label htmlFor="qty">Quantity needed (kg)</Label>
+                <Label htmlFor="qty">
+                  <BilingualLabel en="Quantity needed (kg)" te="అవసరమైన పరిమాణం (కేజీలు)" />
+                </Label>
                 <Input
                   id="qty"
                   type="number"
@@ -123,14 +128,18 @@ export default function ReservationModal({ open, onClose, listing }: Props) {
                 )}
               </div>
               <div>
-                <Label htmlFor="name">Your name</Label>
+                <Label htmlFor="name">
+                  <BilingualLabel en="Your name" te="మీ పేరు" />
+                </Label>
                 <Input id="name" placeholder="Enter your name" {...register("buyerName")} />
                 {errors.buyerName && (
                   <p className="text-destructive text-xs mt-1">{errors.buyerName.message}</p>
                 )}
               </div>
               <div>
-                <Label htmlFor="phone">Your phone number</Label>
+                <Label htmlFor="phone">
+                  <BilingualLabel en="Your phone number" te="మీ ఫోన్ నంబర్" />
+                </Label>
                 <Input
                   id="phone"
                   placeholder="10-digit mobile number"
@@ -144,15 +153,19 @@ export default function ReservationModal({ open, onClose, listing }: Props) {
               <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 text-sm text-amber-800">
                 Payment: Cash or UPI directly to farmer
               </div>
-              <Button type="submit" className="w-full" disabled={submitting}>
-                {submitting ? "Sending..." : "Send Reservation Request"}
+              <Button type="submit" className="w-full h-auto py-2" disabled={submitting}>
+                {submitting ? "Sending..." : (
+                  <BilingualLabel en="Send Reservation Request" te="రిజర్వేషన్ అభ్యర్థనను పంపండి" orientation="stacked" />
+                )}
               </Button>
             </form>
           </>
         ) : (
           <div className="flex flex-col items-center gap-4 py-6 text-center">
             <CheckCircle className="w-14 h-14 text-primary" />
-            <h3 className="text-lg font-semibold text-foreground">Reservation Request Sent</h3>
+            <h3 className="text-lg font-semibold text-foreground">
+              <BilingualLabel en="Reservation Request Sent" te="రిజర్వేషన్ అభ్యర్థన పంపబడింది" />
+            </h3>
             <p className="text-muted-foreground text-sm leading-relaxed">
               {submittedAsLoggedIn
                 ? "Your reservation request has been sent to the farmer. You can track it from your Buyer Dashboard."

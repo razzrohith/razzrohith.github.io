@@ -19,6 +19,7 @@ import {
   LandingStats,
   SupabaseListing,
 } from "@/lib/supabase";
+import BilingualLabel from "@/components/BilingualLabel";
 
 // ── Static data ───────────────────────────────────────────────────────────────
 
@@ -28,22 +29,30 @@ const steps = [
   {
     step: "1",
     title: "Farmer Lists Produce",
+    teTitle: "రైతు పంటను జాబితా చేస్తారు",
     desc: "Farmer adds fruits or vegetables — quantity, price, and pickup location.",
+    teDesc: "రైతు పండ్లు లేదా కూరగాయలు - పరిమాణం, ధర మరియు తీసుకునే ప్రదేశాన్ని జోడిస్తారు.",
   },
   {
     step: "2",
     title: "Buyer Reserves Nearby",
+    teTitle: "కొనుగోలుదారు రిజర్వ్ చేస్తారు",
     desc: "Buyer browses active listings and reserves the quantity needed.",
+    teDesc: "కొనుగోలుదారు పంటలను చూసి కావలసిన పరిమాణాన్ని రిజర్వ్ చేస్తారు.",
   },
   {
     step: "3",
     title: "Buyer Contacts Farmer",
+    teTitle: "రైతును సంప్రదించండి",
     desc: "Buyer calls or messages the farmer directly to confirm pickup.",
+    teDesc: "కొనుగోలుదారు నేరుగా రైతుకు ఫోన్ చేసి పికప్ గురించి మాట్లాడుతారు.",
   },
   {
     step: "4",
     title: "Cash or UPI at Pickup",
+    teTitle: "పికప్ వద్ద నగదు లేదా UPI",
     desc: "Payment is made directly to the farmer. No online payment needed.",
+    teDesc: "చెల్లింపు నేరుగా రైతుకు చేయబడుతుంది. ఆన్‌లైన్ పేమెంట్ అవసరం లేదు.",
   },
 ];
 
@@ -174,7 +183,12 @@ export default function LandingPage() {
                 Raithu<span className="text-primary">Fresh</span>
               </h1>
               <p className="text-xl md:text-2xl text-muted-foreground mb-3 font-medium leading-snug">
-                Buy fresh fruits and vegetables directly from nearby farmers.
+                <BilingualLabel 
+                  en="Buy fresh fruits and vegetables directly from nearby farmers." 
+                  te="తాజా పండ్లు మరియు కూరగాయలను నేరుగా రైతుల నుండి కొనండి."
+                  orientation="stacked"
+                  teClassName="text-sm mt-1"
+                />
               </p>
               <p className="text-base text-muted-foreground mb-8 max-w-lg">
                 Connecting Telangana farmers with local buyers. No middlemen. Fair prices. Fresh produce.
@@ -183,36 +197,40 @@ export default function LandingPage() {
                 {user ? (
                   <>
                     <Link href={getRoleDashboard(role).href}>
-                      <Button size="lg" className="text-base px-7 w-full sm:w-auto">
-                        Go to {getRoleDashboard(role).label.replace(" Dashboard", "")} Dashboard
+                      <Button size="lg" className="text-base px-7 w-full sm:w-auto h-auto py-3">
+                        <BilingualLabel 
+                          en={`Go to ${getRoleDashboard(role).label.replace(" Dashboard", "")} Dashboard`} 
+                          te="డాష్బోర్డ్ కు వెళ్ళండి"
+                          orientation="stacked"
+                        />
                       </Button>
                     </Link>
                     <Link href="/browse">
-                      <Button size="lg" variant="secondary" className="text-base px-7 w-full sm:w-auto">
-                        Browse Produce
+                      <Button size="lg" variant="secondary" className="text-base px-7 w-full sm:w-auto h-auto py-3">
+                        <BilingualLabel en="Browse Produce" te="పంటలు చూడండి" orientation="stacked" />
                       </Button>
                     </Link>
                     <Link href="/profile">
-                      <Button size="lg" variant="outline" className="text-base px-7 w-full sm:w-auto">
-                        My Profile <ArrowRight className="w-4 h-4 ml-1" />
+                      <Button size="lg" variant="outline" className="text-base px-7 w-full sm:w-auto h-auto py-3">
+                        <BilingualLabel en="My Profile" te="నా ప్రొఫైల్" orientation="stacked" />
                       </Button>
                     </Link>
                   </>
                 ) : (
                   <>
                     <Link href="/signup?role=buyer">
-                      <Button size="lg" className="text-base px-7 w-full sm:w-auto">
-                        Join as Buyer
+                      <Button size="lg" className="text-base px-7 w-full sm:w-auto h-auto py-3">
+                        <BilingualLabel en="Join as Buyer" te="కొనుగోలుదారుగా చేరండి" orientation="stacked" />
                       </Button>
                     </Link>
                     <Link href="/signup?role=farmer">
-                      <Button size="lg" variant="secondary" className="text-base px-7 w-full sm:w-auto">
-                        Join as Farmer
+                      <Button size="lg" variant="secondary" className="text-base px-7 w-full sm:w-auto h-auto py-3">
+                        <BilingualLabel en="Join as Farmer" te="రైతుగా చేరండి" orientation="stacked" />
                       </Button>
                     </Link>
                     <Link href="/browse">
-                      <Button size="lg" variant="outline" className="text-base px-7 w-full sm:w-auto">
-                        Browse Produce <ArrowRight className="w-4 h-4 ml-1" />
+                      <Button size="lg" variant="outline" className="text-base px-7 w-full sm:w-auto h-auto py-3">
+                        <BilingualLabel en="Browse Produce" te="పంటలు చూడండి" orientation="stacked" />
                       </Button>
                     </Link>
                   </>
@@ -259,7 +277,9 @@ export default function LandingPage() {
               <span className="text-2xl font-bold text-primary leading-none">
                 {dataLoading ? "—" : (landingStats?.verifiedFarmers ?? 0)}
               </span>
-              <span className="text-xs text-muted-foreground leading-tight">Verified Farmers</span>
+              <span className="text-xs text-muted-foreground leading-tight">
+                <BilingualLabel en="Verified Farmers" te="ధృవీకరించబడిన రైతులు" orientation="stacked" />
+              </span>
             </motion.div>
 
             <motion.div
@@ -273,7 +293,9 @@ export default function LandingPage() {
               <span className="text-2xl font-bold text-primary leading-none">
                 {dataLoading ? "—" : (landingStats?.activeListings ?? 0)}
               </span>
-              <span className="text-xs text-muted-foreground leading-tight">Active Listings</span>
+              <span className="text-xs text-muted-foreground leading-tight">
+                <BilingualLabel en="Active Listings" te="అందుబాటులో ఉన్న పంటలు" orientation="stacked" />
+              </span>
             </motion.div>
 
             <motion.div
@@ -287,7 +309,9 @@ export default function LandingPage() {
               <span className="text-2xl font-bold text-primary leading-none">
                 {dataLoading ? "—" : (landingStats?.districtsCovered ?? 0)}
               </span>
-              <span className="text-xs text-muted-foreground leading-tight">Districts</span>
+              <span className="text-xs text-muted-foreground leading-tight">
+                <BilingualLabel en="Districts" te="జిల్లాలు" orientation="stacked" />
+              </span>
             </motion.div>
 
             <motion.div
@@ -301,7 +325,9 @@ export default function LandingPage() {
               <span className="text-2xl font-bold text-amber-600 leading-none">
                 {dataLoading ? "—" : (landingStats?.fruitListings ?? 0)}
               </span>
-              <span className="text-xs text-muted-foreground leading-tight">Fruit Listings</span>
+              <span className="text-xs text-muted-foreground leading-tight">
+                <BilingualLabel en="Fruit" te="పండ్లు" orientation="stacked" />
+              </span>
             </motion.div>
 
             <motion.div
@@ -315,7 +341,9 @@ export default function LandingPage() {
               <span className="text-2xl font-bold text-violet-600 leading-none">
                 {dataLoading ? "—" : (landingStats?.vegetableListings ?? 0)}
               </span>
-              <span className="text-xs text-muted-foreground leading-tight">Vegetable Listings</span>
+              <span className="text-xs text-muted-foreground leading-tight">
+                <BilingualLabel en="Vegetables" te="కూరగాయలు" orientation="stacked" />
+              </span>
             </motion.div>
 
           </div>
@@ -332,7 +360,7 @@ export default function LandingPage() {
             transition={{ duration: 0.5 }}
           >
             <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-2 text-center">
-              How It Works
+              <BilingualLabel en="How It Works" te="ఇది ఎలా పనిచేస్తుంది" />
             </h2>
             <p className="text-center text-muted-foreground text-sm mb-8">
               Simple steps to connect farmers with buyers.
@@ -357,8 +385,12 @@ export default function LandingPage() {
                         Step {s.step}
                       </span>
                     </div>
-                    <h3 className="font-semibold text-foreground text-sm">{s.title}</h3>
-                    <p className="text-xs text-muted-foreground leading-relaxed">{s.desc}</p>
+                    <h3 className="font-semibold text-foreground text-sm">
+                      <BilingualLabel en={s.title} te={s.teTitle} orientation="stacked" />
+                    </h3>
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      <BilingualLabel en={s.desc} te={s.teDesc} orientation="stacked" teClassName="text-[10px]" />
+                    </p>
                   </motion.div>
                 );
               })}
@@ -379,7 +411,7 @@ export default function LandingPage() {
             <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
               <div>
                 <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-1">
-                  Farmer of the Week
+                  <BilingualLabel en="Farmer of the Week" te="వారపు ఉత్తమ రైతు" />
                 </h2>
                 <p className="text-muted-foreground text-sm">
                   Our highest rated verified farmer this week.
@@ -387,7 +419,7 @@ export default function LandingPage() {
               </div>
               <Link href="/browse">
                 <Button variant="outline" size="sm">
-                  See All Farmers <ArrowRight className="w-3.5 h-3.5 ml-1" />
+                  <BilingualLabel en="See All Farmers" te="రైతులందరినీ చూడండి" />
                 </Button>
               </Link>
             </div>
@@ -434,7 +466,7 @@ export default function LandingPage() {
 
                   <Link href={`/farmers/${farmerOfWeek.id}`} className="mt-4 inline-block">
                     <Button variant="outline" size="sm">
-                      View Profile <ArrowRight className="w-3.5 h-3.5 ml-1" />
+                      <BilingualLabel en="View Profile" te="ప్రొఫైల్ చూడండి" />
                     </Button>
                   </Link>
                 </div>
@@ -456,7 +488,7 @@ export default function LandingPage() {
             <div className="flex items-center justify-between mb-8 flex-wrap gap-3">
               <div>
                 <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-1">
-                  Active Farmers
+                  <BilingualLabel en="Active Farmers" te="అందుబాటులో ఉన్న రైతులు" />
                 </h2>
                 <p className="text-muted-foreground text-sm">
                   Farmers currently listing produce on RaithuFresh.
@@ -464,7 +496,7 @@ export default function LandingPage() {
               </div>
               <Link href="/browse">
                 <Button variant="outline" size="sm">
-                  Browse All <ArrowRight className="w-3.5 h-3.5 ml-1" />
+                  <BilingualLabel en="Browse All" te="అన్నీ చూడండి" />
                 </Button>
               </Link>
             </div>
@@ -516,8 +548,8 @@ export default function LandingPage() {
                           : "No active listings right now"}
                       </p>
                       <Link href={`/farmers/${farmer.id}`}>
-                        <Button variant="outline" size="sm" className="w-full mt-auto">
-                          View Farmer Profile
+                        <Button variant="outline" size="sm" className="w-full mt-auto h-auto py-2">
+                          <BilingualLabel en="View Farmer Profile" te="రైతు ప్రొఫైల్ చూడండి" orientation="stacked" />
                         </Button>
                       </Link>
                     </motion.div>
@@ -541,7 +573,7 @@ export default function LandingPage() {
             <div className="flex items-center justify-between mb-8 flex-wrap gap-3">
               <div>
                 <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-1">
-                  Fresh Listings
+                  <BilingualLabel en="Fresh Listings" te="తాజా పంటలు" />
                 </h2>
                 <p className="text-muted-foreground text-sm">
                   Active produce available for pickup from Telangana farmers.
@@ -549,7 +581,7 @@ export default function LandingPage() {
               </div>
               <Link href="/browse">
                 <Button variant="outline" size="sm">
-                  Browse All Produce <ArrowRight className="w-3.5 h-3.5 ml-1" />
+                  <BilingualLabel en="Browse All Produce" te="పంటలన్నీ చూడండి" />
                 </Button>
               </Link>
             </div>
@@ -619,15 +651,19 @@ export default function LandingPage() {
                         <div className="grid grid-cols-2 gap-2 text-sm">
                           <div className="bg-primary/5 rounded-lg p-2 text-center">
                             <div className="font-bold text-primary text-lg">
-                              Rs {listing.price_per_kg}
+                              <BilingualLabel en={`Rs ${listing.price_per_kg}`} te={`Rs ${listing.price_per_kg}`} orientation="stacked" />
                             </div>
-                            <div className="text-muted-foreground text-xs">per kg</div>
+                            <div className="text-muted-foreground text-[10px]">
+                              <BilingualLabel en="per kg" te="కేజీకి" />
+                            </div>
                           </div>
                           <div className="bg-muted rounded-lg p-2 text-center">
                             <div className="font-bold text-foreground text-lg">
                               {listing.quantity_kg}
                             </div>
-                            <div className="text-muted-foreground text-xs">kg available</div>
+                            <div className="text-muted-foreground text-[10px]">
+                              <BilingualLabel en="kg available" te="కేజీలు ఉన్నాయి" />
+                            </div>
                           </div>
                         </div>
 
@@ -647,8 +683,8 @@ export default function LandingPage() {
                         </div>
 
                         <Link href={`/produce/${listing.id}`}>
-                          <Button variant="outline" size="sm" className="w-full mt-auto">
-                            View Details
+                          <Button variant="outline" size="sm" className="w-full mt-auto h-auto py-2">
+                            <BilingualLabel en="View Details" te="వివరాలు చూడండి" orientation="stacked" />
                           </Button>
                         </Link>
                       </motion.div>
@@ -681,7 +717,7 @@ export default function LandingPage() {
             transition={{ duration: 0.5 }}
           >
             <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-6 text-center">
-              The Problem
+              <BilingualLabel en="The Problem" te="సమస్య" />
             </h2>
             <div className="grid md:grid-cols-2 gap-6">
               <div className="bg-red-50 border border-red-100 rounded-xl p-6">
@@ -715,7 +751,7 @@ export default function LandingPage() {
             transition={{ duration: 0.5 }}
           >
             <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-8 text-center">
-              Why RaithuFresh?
+              <BilingualLabel en="Why RaithuFresh?" te="రైతుఫ్రెష్ ఎందుకు?" />
             </h2>
             <div className="grid md:grid-cols-2 gap-8">
               <div className="bg-white rounded-xl p-6 border border-border shadow-sm">
@@ -733,8 +769,8 @@ export default function LandingPage() {
                 </ul>
                 {!user && (
                   <Link href="/signup?role=farmer" className="mt-5 block">
-                    <Button className="w-full" variant="outline">
-                      Join as Farmer
+                    <Button className="w-full h-auto py-2" variant="outline">
+                      <BilingualLabel en="Join as Farmer" te="రైతుగా చేరండి" orientation="stacked" />
                     </Button>
                   </Link>
                 )}
@@ -754,8 +790,8 @@ export default function LandingPage() {
                 </ul>
                 {!user && (
                   <Link href="/signup?role=buyer" className="mt-5 block">
-                    <Button className="w-full">
-                      Join as Buyer
+                    <Button className="w-full h-auto py-2">
+                      <BilingualLabel en="Join as Buyer" te="కొనుగోలుదారుగా చేరండి" orientation="stacked" />
                     </Button>
                   </Link>
                 )}
@@ -775,7 +811,7 @@ export default function LandingPage() {
             transition={{ duration: 0.5 }}
           >
             <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-3">
-              Ready to Get Started?
+              <BilingualLabel en="Ready to Get Started?" te="ప్రారంభించడానికి సిద్ధంగా ఉన్నారా?" />
             </h2>
             <p className="text-muted-foreground mb-7">
               Sign up in under a minute. Browse active listings or list your produce today.
@@ -784,13 +820,13 @@ export default function LandingPage() {
               {user ? (
                 <>
                   <Link href={getRoleDashboard(role).href}>
-                    <Button size="lg" className="text-base px-8 w-full sm:w-auto">
-                      Go to Dashboard
+                    <Button size="lg" className="text-base px-8 w-full sm:w-auto h-auto py-3">
+                      <BilingualLabel en="Go to Dashboard" te="డాష్బోర్డ్ కు వెళ్ళండి" orientation="stacked" />
                     </Button>
                   </Link>
                   <Link href="/browse">
-                    <Button size="lg" variant="outline" className="text-base px-8 w-full sm:w-auto">
-                      Browse Produce <ArrowRight className="w-4 h-4 ml-1" />
+                    <Button size="lg" variant="outline" className="text-base px-8 w-full sm:w-auto h-auto py-3">
+                      <BilingualLabel en="Browse Produce" te="పంటలు చూడండి" orientation="stacked" />
                     </Button>
                   </Link>
                 </>

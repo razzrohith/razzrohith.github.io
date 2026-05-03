@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Download, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import BilingualLabel from "@/components/BilingualLabel";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -45,16 +46,20 @@ export default function InstallBanner() {
           <Download className="w-4 h-4" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="font-semibold text-sm leading-tight">Install RaithuFresh</p>
-          <p className="text-xs opacity-80 leading-tight mt-0.5">Add to home screen for quick access</p>
+          <p className="font-semibold text-sm leading-tight">
+            <BilingualLabel en="Install RaithuFresh" te="రైతుఫ్రెష్‌ను ఇన్‌స్టాల్ చేయండి" />
+          </p>
+          <p className="text-xs opacity-80 leading-tight mt-0.5">
+            <BilingualLabel en="Add to home screen for quick access" te="త్వరిత యాక్సెస్ కోసం హోమ్ స్క్రీన్‌కి జోడించండి" />
+          </p>
         </div>
         <Button
           size="sm"
           variant="secondary"
-          className="shrink-0 text-xs font-semibold"
+          className="shrink-0 text-xs font-semibold h-auto py-1"
           onClick={handleInstall}
         >
-          Install
+          <BilingualLabel en="Install" te="ఇన్‌స్టాల్" orientation="stacked" />
         </Button>
         <button
           onClick={handleDismiss}

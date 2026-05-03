@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/select";
 import { useAuth } from "@/contexts/AuthContext";
 import { isSupabaseConfigured, normalizePhone, isValidPhone, isPhoneAvailable } from "@/lib/supabase";
+import BilingualLabel from "@/components/BilingualLabel";
 
 const signupSchema = z.object({
   fullName: z.string().min(2, "Full name is required"),
@@ -192,9 +193,15 @@ export default function SignupPage() {
       </Link>
 
       <div className="w-full max-w-sm bg-card border border-border rounded-2xl p-7 shadow-sm">
-        <h1 className="text-xl font-bold text-foreground mb-1">Create Account</h1>
+        <h1 className="text-xl font-bold text-foreground mb-1">
+          <BilingualLabel en="Create Account" te="ఖాతాను సృష్టించండి" />
+        </h1>
         <p className="text-sm text-muted-foreground mb-6">
-          Join RaithuFresh as a buyer, farmer, or agent.
+          <BilingualLabel 
+            en="Join RaithuFresh as a buyer, farmer, or agent." 
+            te="కొనుగోలుదారు, రైతు లేదా ఏజెంట్‌గా రైతుఫ్రెష్‌లో చేరండి."
+            orientation="stacked"
+          />
         </p>
 
         {verificationNeeded ? (
@@ -245,13 +252,17 @@ export default function SignupPage() {
               You are already signed in as <strong>{user.email}</strong>.
             </div>
             <Link href={roleDashboard(role)}>
-              <Button className="w-full">Go to Dashboard</Button>
+              <Button className="w-full h-auto py-2">
+                <BilingualLabel en="Go to Dashboard" te="డాష్బోర్డ్ కు వెళ్ళండి" orientation="stacked" />
+              </Button>
             </Link>
             <Link href="/profile">
-              <Button variant="outline" className="w-full">My Profile</Button>
+              <Button variant="outline" className="w-full h-auto py-2">
+                <BilingualLabel en="My Profile" te="నా ప్రొఫైల్" orientation="stacked" />
+              </Button>
             </Link>
-            <Button variant="ghost" className="w-full text-destructive" onClick={() => signOut()}>
-              Log Out
+            <Button variant="ghost" className="w-full text-destructive h-auto py-2" onClick={() => signOut()}>
+              <BilingualLabel en="Log Out" te="లాగ్ అవుట్" orientation="stacked" />
             </Button>
           </div>
         ) : (
@@ -265,7 +276,7 @@ export default function SignupPage() {
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               <div>
                 <Label>
-                  Full Name <span className="text-destructive">*</span>
+                  <BilingualLabel en="Full Name" te="పూర్తి పేరు" /> <span className="text-destructive">*</span>
                 </Label>
                 <Input placeholder="e.g. Ramaiah Reddy" {...register("fullName")} />
                 {errors.fullName && (
@@ -275,10 +286,10 @@ export default function SignupPage() {
 
               <div>
                 <Label>
-                  Phone <span className="text-destructive">*</span>
+                  <BilingualLabel en="Phone" te="ఫోన్ నంబర్" /> <span className="text-destructive">*</span>
                 </Label>
                 <Input
-                  placeholder="e.g. +91 98765 43210"
+                  placeholder="e.g. 9876543210"
                   inputMode="numeric"
                   {...register("phone")}
                 />
@@ -289,7 +300,7 @@ export default function SignupPage() {
 
               <div>
                 <Label>
-                  Email <span className="text-destructive">*</span>
+                  <BilingualLabel en="Email" te="ఈమెయిల్" /> <span className="text-destructive">*</span>
                 </Label>
                 <Input
                   type="email"
@@ -304,7 +315,7 @@ export default function SignupPage() {
 
               <div>
                 <Label>
-                  Password <span className="text-destructive">*</span>
+                  <BilingualLabel en="Password" te="పాస్వర్డ్" /> <span className="text-destructive">*</span>
                 </Label>
                 <div className="relative">
                   <Input
@@ -354,7 +365,7 @@ export default function SignupPage() {
 
               <div>
                 <Label>
-                  I am a <span className="text-destructive">*</span>
+                  <BilingualLabel en="I am a" te="నేను ఒక" /> <span className="text-destructive">*</span>
                 </Label>
                 <Select
                   value={roleValue}
@@ -367,9 +378,15 @@ export default function SignupPage() {
                     <SelectValue placeholder="Select your role" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="buyer">Buyer — I want to buy produce</SelectItem>
-                    <SelectItem value="farmer">Farmer — I sell my produce</SelectItem>
-                    <SelectItem value="agent">Agent — I assist farmers</SelectItem>
+                    <SelectItem value="buyer">
+                      <BilingualLabel en="Buyer" te="కొనుగోలుదారు" />
+                    </SelectItem>
+                    <SelectItem value="farmer">
+                      <BilingualLabel en="Farmer" te="రైతు" />
+                    </SelectItem>
+                    <SelectItem value="agent">
+                      <BilingualLabel en="Agent" te="ఏజెంట్" />
+                    </SelectItem>
                   </SelectContent>
                 </Select>
                 {errors.role && (
@@ -378,13 +395,15 @@ export default function SignupPage() {
               </div>
 
               <div>
-                <Label>Village / Town (optional)</Label>
+                <Label>
+                  <BilingualLabel en="Village / Town" te="గ్రామం / పట్టణం" /> (optional)
+                </Label>
                 <Input placeholder="e.g. Shadnagar" {...register("village")} />
               </div>
 
               <Button 
                 type="submit" 
-                className={`w-full transition-all duration-200 ${submitting || justSignedUp ? "opacity-70 cursor-not-allowed" : ""}`}
+                className={`w-full h-auto py-3 transition-all duration-200 ${submitting || justSignedUp ? "opacity-70 cursor-not-allowed" : ""}`}
                 disabled={submitting || justSignedUp}
               >
                 {submitting || justSignedUp ? (
@@ -393,7 +412,7 @@ export default function SignupPage() {
                     {justSignedUp ? "Redirecting..." : "Creating account..."}
                   </>
                 ) : (
-                  "Create Account"
+                  <BilingualLabel en="Create Account" te="ఖాతాను సృష్టించండి" orientation="stacked" />
                 )}
               </Button>
             </form>
@@ -403,9 +422,9 @@ export default function SignupPage() {
             </p>
 
             <p className="text-sm text-muted-foreground text-center mt-3">
-              Already have an account?{" "}
+              <BilingualLabel en="Already have an account?" te="ఇప్పటికే ఖాతా ఉందా?" />{" "}
               <Link href="/login" className="text-primary font-medium hover:underline">
-                Log in
+                <BilingualLabel en="Log in" te="లాగిన్" />
               </Link>
             </p>
           </>

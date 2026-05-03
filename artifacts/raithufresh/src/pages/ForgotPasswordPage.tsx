@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
 import { isSupabaseConfigured } from "@/lib/supabase";
+import BilingualLabel from "@/components/BilingualLabel";
 
 const forgotSchema = z.object({
   email: z.string().email("Enter a valid email"),
@@ -61,26 +62,32 @@ export default function ForgotPasswordPage() {
                 <MailCheck className="w-6 h-6 text-primary" />
               </div>
             </div>
-            <h1 className="text-xl font-bold text-foreground">Check your email</h1>
+            <h1 className="text-xl font-bold text-foreground">
+              <BilingualLabel en="Check your email" te="మీ ఈమెయిల్ తనిఖీ చేయండి" />
+            </h1>
             <p className="text-sm text-muted-foreground">
               If an account exists for that email, we've sent a password reset link.
             </p>
             <Link href="/login">
-              <Button variant="outline" className="w-full mt-4">
-                Return to Login
+              <Button variant="outline" className="w-full mt-4 h-auto py-2">
+                <BilingualLabel en="Return to Login" te="లాగిన్‌కి తిరిగి వెళ్లండి" orientation="stacked" />
               </Button>
             </Link>
           </div>
         ) : (
           <>
-            <h1 className="text-xl font-bold text-foreground mb-1">Forgot Password?</h1>
+            <h1 className="text-xl font-bold text-foreground mb-1">
+              <BilingualLabel en="Forgot Password?" te="పాస్‌వర్డ్ మర్చిపోయారా?" />
+            </h1>
             <p className="text-sm text-muted-foreground mb-6">
               Enter your email address and we'll send you a link to reset your password.
             </p>
 
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               <div>
-                <Label htmlFor="forgot-email">Email Address</Label>
+                <Label htmlFor="forgot-email">
+                  <BilingualLabel en="Email Address" te="ఈమెయిల్ చిరునామా" />
+                </Label>
                 <Input
                   id="forgot-email"
                   type="email"
@@ -93,14 +100,14 @@ export default function ForgotPasswordPage() {
                 )}
               </div>
 
-              <Button type="submit" className="w-full" disabled={submitting}>
+              <Button type="submit" className="w-full h-auto py-2" disabled={submitting}>
                 {submitting ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                     Sending link...
                   </>
                 ) : (
-                  "Send Reset Link"
+                  <BilingualLabel en="Send Reset Link" te="రీసెట్ లింక్ పంపండి" orientation="stacked" />
                 )}
               </Button>
             </form>

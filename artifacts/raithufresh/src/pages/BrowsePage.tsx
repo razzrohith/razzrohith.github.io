@@ -15,6 +15,7 @@ import { mockListings, mockFarmers } from "@/data/mockData";
 import { ProduceListing } from "@/lib/types";
 import { isSupabaseConfigured, getSupabase, SupabaseListing } from "@/lib/supabase";
 import { shareListing } from "@/lib/share";
+import BilingualLabel from "@/components/BilingualLabel";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -264,8 +265,12 @@ export default function BrowsePage() {
       <div className="max-w-6xl mx-auto px-4 py-8">
 
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-foreground mb-1">Browse Fresh Produce</h1>
-          <p className="text-muted-foreground text-sm">Directly from Telangana farmers near you</p>
+          <h1 className="text-2xl font-bold text-foreground mb-1">
+            <BilingualLabel en="Browse Fresh Produce" te="తాజా పంటలను చూడండి" />
+          </h1>
+          <p className="text-muted-foreground text-sm">
+            <BilingualLabel en="Directly from Telangana farmers near you" te="మీకు దగ్గరలో ఉన్న తెలంగాణ రైతుల నుండి నేరుగా" />
+          </p>
         </div>
 
         {/* ── Search + filters ── */}
@@ -298,9 +303,15 @@ export default function BrowsePage() {
                 <SelectValue placeholder="Category" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="All">All Types</SelectItem>
-                <SelectItem value="Fruit">Fruit</SelectItem>
-                <SelectItem value="Vegetable">Vegetable</SelectItem>
+                <SelectItem value="All">
+                  <BilingualLabel en="All Types" te="అన్నీ" />
+                </SelectItem>
+                <SelectItem value="Fruit">
+                  <BilingualLabel en="Fruit" te="పండ్లు" />
+                </SelectItem>
+                <SelectItem value="Vegetable">
+                  <BilingualLabel en="Vegetable" te="కూరగాయలు" />
+                </SelectItem>
               </SelectContent>
             </Select>
 
@@ -447,12 +458,18 @@ export default function BrowsePage() {
 
                       <div className="grid grid-cols-2 gap-2 text-sm">
                         <div className="bg-primary/5 rounded-lg p-2 text-center">
-                          <div className="font-bold text-primary text-lg">Rs {listing.pricePerKg}</div>
-                          <div className="text-muted-foreground text-xs">per kg</div>
+                          <div className="font-bold text-primary text-lg">
+                            <BilingualLabel en={`Rs ${listing.pricePerKg}`} te={`Rs ${listing.pricePerKg}`} orientation="stacked" />
+                          </div>
+                          <div className="text-muted-foreground text-[10px]">
+                            <BilingualLabel en="per kg" te="కేజీకి" />
+                          </div>
                         </div>
                         <div className="bg-muted rounded-lg p-2 text-center">
                           <div className="font-bold text-foreground text-lg">{listing.quantityKg}</div>
-                          <div className="text-muted-foreground text-xs">kg available</div>
+                          <div className="text-muted-foreground text-[10px]">
+                            <BilingualLabel en="kg available" te="కేజీలు ఉన్నాయి" />
+                          </div>
                         </div>
                       </div>
 
@@ -479,17 +496,16 @@ export default function BrowsePage() {
                       )}
 
                       <div className="flex gap-2 mt-auto pt-1">
-                        <Button size="sm" className="flex-1" onClick={() => handleReserve(listing)}>
-                          Reserve
+                        <Button size="sm" className="flex-1 h-auto py-2" onClick={() => handleReserve(listing)}>
+                          <BilingualLabel en="Reserve" te="రిజర్వ్" orientation="stacked" />
                         </Button>
                         <Button
                           size="sm"
                           variant="outline"
-                          className="flex-1"
+                          className="flex-1 h-auto py-2"
                           onClick={() => handleContact(listing)}
                         >
-                          <Phone className="w-3.5 h-3.5 mr-1" />
-                          Contact
+                          <BilingualLabel en="Contact" te="సంప్రదించండి" orientation="stacked" />
                         </Button>
                         <Button
                           size="sm"
@@ -506,7 +522,7 @@ export default function BrowsePage() {
                         href={`/produce/${listing.id}`}
                         className="text-xs text-center text-primary underline underline-offset-2"
                       >
-                        View full details
+                        <BilingualLabel en="View full details" te="పూర్తి వివరాలు చూడండి" />
                       </Link>
                     </motion.div>
                   );

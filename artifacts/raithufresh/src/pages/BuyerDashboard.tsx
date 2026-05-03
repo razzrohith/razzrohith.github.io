@@ -28,6 +28,7 @@ import {
   ReservationStatus,
   isSupabaseConfigured,
 } from "@/lib/supabase";
+import BilingualLabel from "@/components/BilingualLabel";
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
@@ -62,11 +63,11 @@ const STATUS_ICON: Record<ReservationStatus, React.ElementType> = {
   cancelled: XCircle,
 };
 
-const STATUS_LABEL: Record<ReservationStatus, string> = {
-  pending: "Pending",
-  confirmed: "Confirmed",
-  completed: "Completed",
-  cancelled: "Cancelled",
+const STATUS_LABEL: Record<ReservationStatus, { en: string; te: string }> = {
+  pending: { en: "Pending", te: "వేచి ఉంది" },
+  confirmed: { en: "Confirmed", te: "నిర్ధారించబడింది" },
+  completed: { en: "Completed", te: "పూర్తయింది" },
+  cancelled: { en: "Cancelled", te: "రద్దు చేయబడింది" },
 };
 
 const SORT_LABELS: Record<SortOrder, string> = {
@@ -191,8 +192,12 @@ export default function BuyerDashboard() {
 
         {/* Header */}
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-foreground">Buyer Dashboard</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">Welcome back, {displayName}</p>
+          <h1 className="text-2xl font-bold text-foreground">
+            <BilingualLabel en="Buyer Dashboard" te="కొనుగోలుదారు డాష్బోర్డ్" />
+          </h1>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            <BilingualLabel en={`Welcome back, ${displayName}`} te={`స్వాగతం, ${displayName}`} />
+          </p>
           {user?.email && <p className="text-xs text-muted-foreground">{user.email}</p>}
         </div>
 
@@ -210,7 +215,9 @@ export default function BuyerDashboard() {
               >
                 <Icon className="w-4 h-4 mx-auto mb-1.5 opacity-80" />
                 <div className="text-2xl font-bold leading-none">{counts[status]}</div>
-                <div className="text-xs mt-1 capitalize opacity-80">{STATUS_LABEL[status]}</div>
+                <div className="text-[10px] mt-1 capitalize opacity-80">
+                  <BilingualLabel en={STATUS_LABEL[status].en} te={STATUS_LABEL[status].te} orientation="stacked" />
+                </div>
               </button>
             );
           })}
@@ -234,8 +241,14 @@ export default function BuyerDashboard() {
                         : "bg-white text-foreground border-border hover:bg-muted"
                     }`}
                   >
-                    <span className="capitalize">{tab === "all" ? "All" : STATUS_LABEL[tab as ReservationStatus]}</span>
-                    <span className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${isActive ? "bg-white/20 text-primary-foreground" : "bg-muted text-muted-foreground"}`}>
+                    <span className="capitalize text-xs">
+                      {tab === "all" ? (
+                        <BilingualLabel en="All" te="అన్నీ" />
+                      ) : (
+                        <BilingualLabel en={STATUS_LABEL[tab as ReservationStatus].en} te={STATUS_LABEL[tab as ReservationStatus].te} />
+                      )}
+                    </span>
+                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${isActive ? "bg-white/20 text-primary-foreground" : "bg-muted text-muted-foreground"}`}>
                       {count}
                     </span>
                   </button>
@@ -293,10 +306,10 @@ export default function BuyerDashboard() {
         {/* Section heading */}
         <h2 className="text-base font-semibold text-foreground mb-3 flex items-center gap-2">
           <ClipboardList className="w-4 h-4 text-primary" />
-          Reservation History
+          <BilingualLabel en="Reservation History" te="రిజర్వేషన్ చరిత్ర" />
           {!loading && (
             <span className="text-xs font-normal text-muted-foreground ml-1">
-              ({processed.length} {processed.length === 1 ? "result" : "results"})
+              ({processed.length})
             </span>
           )}
         </h2>
@@ -399,9 +412,9 @@ export default function BuyerDashboard() {
                           </p>
                         )}
                       </div>
-                      <span className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full border font-medium shrink-0 ${STATUS_BADGE[r.status]}`}>
+                      <span className={`inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full border font-medium shrink-0 ${STATUS_BADGE[r.status]}`}>
                         <Icon className="w-3 h-3" />
-                        {STATUS_LABEL[r.status]}
+                        <BilingualLabel en={STATUS_LABEL[r.status].en} te={STATUS_LABEL[r.status].te} />
                       </span>
                     </div>
 
@@ -434,19 +447,20 @@ export default function BuyerDashboard() {
                     {/* Actions */}
                     <div className="flex gap-2 flex-wrap">
                       <Link href={`/buyer/reservations/${r.id}`}>
-                        <Button size="sm" variant="default">
-                          View Details
+                        <Button size="sm" variant="default" className="h-auto py-2">
+                          <BilingualLabel en="View Details" te="వివరాలు చూడండి" orientation="stacked" />
                         </Button>
                       </Link>
                       <Link href={`/produce/${r.listing_id}`}>
-                        <Button size="sm" variant="outline">
-                          View Listing
+                        <Button size="sm" variant="outline" className="h-auto py-2">
+                          <BilingualLabel en="View Listing" te="పంటను చూడండి" orientation="stacked" />
                         </Button>
                       </Link>
                       {farmer?.phone && (
                         <Button
                           size="sm"
                           variant="outline"
+                          className="h-auto py-2"
                           onClick={() => {
                             setContactTarget({
                               name: farmer.name ?? "Farmer",
@@ -456,8 +470,7 @@ export default function BuyerDashboard() {
                             setContactOpen(true);
                           }}
                         >
-                          <Phone className="w-3.5 h-3.5 mr-1.5" />
-                          Contact Farmer
+                          <BilingualLabel en="Contact Farmer" te="రైతును సంప్రదించండి" orientation="stacked" />
                         </Button>
                       )}
                       {isPending && (

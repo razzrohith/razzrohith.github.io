@@ -19,3 +19,5 @@ GoogleService-Info.plist
 
 .DS_Store
 Thumbs.db
+
+.env.db.local

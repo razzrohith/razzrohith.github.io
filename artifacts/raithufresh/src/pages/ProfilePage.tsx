@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import Navbar from "@/components/Navbar";
 import { useAuth } from "@/contexts/AuthContext";
 import { updateUserProfile, isSupabaseConfigured, normalizePhone, isValidPhone } from "@/lib/supabase";
+import BilingualLabel from "@/components/BilingualLabel";
 
 const ROLE_COLORS: Record<string, string> = {
   farmer: "bg-green-100 text-green-700 border-green-200",
@@ -108,7 +109,9 @@ export default function ProfilePage() {
             <User className="w-6 h-6 text-primary" />
           </div>
           <div className="min-w-0">
-            <h1 className="text-xl font-bold text-foreground">Your Profile</h1>
+            <h1 className="text-xl font-bold text-foreground">
+              <BilingualLabel en="Your Profile" te="మీ ప్రొఫైల్" />
+            </h1>
             <p className="text-sm text-muted-foreground truncate">{user.email}</p>
           </div>
         </div>
@@ -117,7 +120,9 @@ export default function ProfilePage() {
           {/* Role — read-only */}
           <div className="flex items-center gap-2 mb-5 pb-4 border-b border-border">
             <Shield className="w-4 h-4 text-muted-foreground shrink-0" />
-            <span className="text-sm text-muted-foreground">Account role</span>
+            <span className="text-sm text-muted-foreground">
+              <BilingualLabel en="Account role" te="ఖాతా రకం" />
+            </span>
             {profile?.role ? (
               <Badge
                 className={`text-[10px] px-2 py-0.5 border ml-auto ${ROLE_COLORS[profile.role] ?? "bg-muted text-muted-foreground"}`}
@@ -133,7 +138,7 @@ export default function ProfilePage() {
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div>
               <Label>
-                Full Name <span className="text-destructive">*</span>
+                <BilingualLabel en="Full Name" te="పూర్తి పేరు" /> <span className="text-destructive">*</span>
               </Label>
               <Input placeholder="Your name" {...register("full_name")} />
               {errors.full_name && (
@@ -143,7 +148,7 @@ export default function ProfilePage() {
 
             <div>
               <Label>
-                Phone <span className="text-destructive">*</span>
+                <BilingualLabel en="Phone" te="ఫోన్" /> <span className="text-destructive">*</span>
               </Label>
               <Input
                 placeholder="10-digit mobile number"
@@ -157,11 +162,15 @@ export default function ProfilePage() {
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label>Village / Town</Label>
+                <Label>
+                  <BilingualLabel en="Village / Town" te="గ్రామం / పట్టణం" />
+                </Label>
                 <Input placeholder="e.g. Shadnagar" {...register("village")} />
               </div>
               <div>
-                <Label>District</Label>
+                <Label>
+                  <BilingualLabel en="District" te="జిల్లా" />
+                </Label>
                 <Input placeholder="e.g. Rangareddy" {...register("district")} />
               </div>
             </div>
@@ -174,7 +183,7 @@ export default function ProfilePage() {
 
             <Button
               type="submit"
-              className="w-full"
+              className="w-full h-auto py-2"
               disabled={saving || !isDirty || !isSupabaseConfigured()}
             >
               {saving ? (
@@ -183,7 +192,7 @@ export default function ProfilePage() {
                   Saving...
                 </>
               ) : (
-                "Save Changes"
+                <BilingualLabel en="Save Changes" te="మార్పులను సేవ్ చేయండి" orientation="stacked" />
               )}
             </Button>
           </form>

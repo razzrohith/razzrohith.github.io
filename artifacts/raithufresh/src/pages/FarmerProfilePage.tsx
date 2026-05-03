@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import Navbar from "@/components/Navbar";
 import ReservationModal from "@/components/ReservationModal";
 import ContactFarmerDialog from "@/components/ContactFarmerDialog";
+import BilingualLabel from "@/components/BilingualLabel";
 import { ProduceListing } from "@/lib/types";
 import {
   SupabaseFarmer, SupabaseListing,
@@ -213,7 +214,7 @@ export default function FarmerProfilePage() {
             href="/browse"
             className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
-            <ArrowLeft className="w-4 h-4" /> Back to Browse
+            <ArrowLeft className="w-4 h-4" /> <BilingualLabel en="Back to Browse" te="తిరిగి బ్రౌజ్ చేయండి" />
           </Link>
           <Button variant="outline" size="sm" className="gap-1.5" onClick={handleShareProfile}>
             <Share2 className="w-4 h-4" />
@@ -242,13 +243,13 @@ export default function FarmerProfilePage() {
                 {farmer.verified && (
                   <span className="inline-flex items-center gap-1 text-xs font-medium text-primary">
                     <BadgeCheck className="w-3.5 h-3.5" />
-                    Verified Farmer
+                    <BilingualLabel en="Verified Farmer" te="ధృవీకరించబడిన రైతు" />
                   </span>
                 )}
                 {farmer.assisted_mode && (
                   <span className="inline-flex items-center gap-1 text-xs font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5">
                     <Users className="w-3 h-3" />
-                    Agent Assisted
+                    <BilingualLabel en="Agent Assisted" te="ఏజెంట్ సహాయం" />
                   </span>
                 )}
               </div>
@@ -275,8 +276,10 @@ export default function FarmerProfilePage() {
             <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
               <Package className="w-4 h-4 text-primary" />
               <span>
-                <span className="font-semibold text-foreground">{listings.length}</span>
-                {" "}active {listings.length === 1 ? "listing" : "listings"}
+                <BilingualLabel
+                  en={`${listings.length} active ${listings.length === 1 ? "listing" : "listings"}`}
+                  te={`${listings.length} క్రియాశీల ${listings.length === 1 ? "లిస్టింగ్" : "లిస్టింగ్స్"}`}
+                />
               </span>
             </div>
 
@@ -292,9 +295,7 @@ export default function FarmerProfilePage() {
 
           {/* Listings */}
           <h2 className="text-base font-semibold text-foreground mb-3">
-            {listings.length > 0
-              ? `Active Listings (${listings.length})`
-              : "Active Listings"}
+            <BilingualLabel en="Active Listings" te="క్రియాశీల లిస్టింగ్స్" />
           </h2>
 
           {listings.length === 0 ? (
@@ -375,17 +376,16 @@ export default function FarmerProfilePage() {
 
                   {/* Actions */}
                   <div className="flex gap-2">
-                    <Button size="sm" className="flex-1" onClick={() => handleReserve(listing)}>
-                      Reserve
+                    <Button size="sm" className="flex-1 h-auto py-2" onClick={() => handleReserve(listing)}>
+                      <BilingualLabel en="Reserve" te="రిజర్వ్" orientation="stacked" />
                     </Button>
                     <Button
                       size="sm"
                       variant="outline"
-                      className="flex-1"
+                      className="flex-1 h-auto py-2"
                       onClick={() => handleContact(listing.name)}
                     >
-                      <Phone className="w-3.5 h-3.5 mr-1" />
-                      Contact
+                      <BilingualLabel en="Contact" te="సంప్రదించండి" orientation="stacked" />
                     </Button>
                     <Button
                       size="sm"

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import BilingualLabel from "./BilingualLabel";
 
 const ROLE_COLORS: Record<string, string> = {
   farmer: "bg-green-100 text-green-700 border-green-200",
@@ -13,21 +14,21 @@ const ROLE_COLORS: Record<string, string> = {
   buyer: "bg-amber-100 text-amber-700 border-amber-200",
 };
 
-type NavLink = { href: string; label: string; roles?: string[] };
+type NavLink = { href: string; label: string; te: string; roles?: string[] };
 
 const links: NavLink[] = [
-  { href: "/", label: "Home" },
-  { href: "/browse", label: "Browse Produce" },
-  { href: "/farmer", label: "Farmer Dashboard", roles: ["farmer", "admin"] },
-  { href: "/agent", label: "Agent Dashboard", roles: ["agent", "admin"] },
-  { href: "/admin", label: "Admin", roles: ["admin"] },
+  { href: "/", label: "Home", te: "హోమ్" },
+  { href: "/browse", label: "Browse Produce", te: "పంటలు చూడండి" },
+  { href: "/farmer", label: "Farmer Dashboard", te: "రైతు డాష్బోర్డ్", roles: ["farmer", "admin"] },
+  { href: "/agent", label: "Agent Dashboard", te: "ఏజెంట్ డాష్బోర్డ్", roles: ["agent", "admin"] },
+  { href: "/admin", label: "Admin", te: "అడ్మిన్", roles: ["admin"] },
 ];
 
-function getRoleDashboard(role: string | null): { href: string; label: string } {
-  if (role === "farmer") return { href: "/farmer", label: "Farmer Dashboard" };
-  if (role === "agent") return { href: "/agent", label: "Agent Dashboard" };
-  if (role === "admin") return { href: "/admin", label: "Admin Dashboard" };
-  return { href: "/buyer", label: "Buyer Dashboard" };
+function getRoleDashboard(role: string | null): { href: string; label: string; te: string } {
+  if (role === "farmer") return { href: "/farmer", label: "Farmer Dashboard", te: "రైతు డాష్బోర్డ్" };
+  if (role === "agent") return { href: "/agent", label: "Agent Dashboard", te: "ఏజెంట్ డాష్బోర్డ్" };
+  if (role === "admin") return { href: "/admin", label: "Admin Dashboard", te: "అడ్మిన్ డాష్బోర్డ్" };
+  return { href: "/buyer", label: "Buyer Dashboard", te: "కొనుగోలుదారు డాష్బోర్డ్" };
 }
 
 
@@ -82,7 +83,11 @@ export default function Navbar() {
                   : "text-foreground hover:bg-muted"
               }`}
             >
-              {l.label}
+              <BilingualLabel 
+                en={l.label} 
+                te={l.te} 
+                teClassName={location === l.href ? "text-primary-foreground/70" : ""}
+              />
               {l.href === "/farmer" && farmerNewPending > 0 && (
                 <span className="inline-flex items-center justify-center min-w-[16px] h-4 px-1 text-[10px] font-bold rounded-full bg-amber-500 text-white leading-none">
                   {farmerNewPending > 9 ? "9+" : farmerNewPending}
@@ -119,7 +124,7 @@ export default function Navbar() {
                     className="w-full text-left px-3 py-2 text-sm text-foreground hover:bg-muted flex items-center gap-2"
                   >
                     <UserCircle className="w-4 h-4 text-primary" />
-                    My Profile
+                    <BilingualLabel en="My Profile" te="నా ప్రొఫైల్" />
                   </Link>
                   <Link
                     href={getRoleDashboard(role).href}
@@ -127,14 +132,17 @@ export default function Navbar() {
                     className="w-full text-left px-3 py-2 text-sm text-foreground hover:bg-muted flex items-center gap-2"
                   >
                     <ClipboardList className="w-4 h-4 text-primary" />
-                    {getRoleDashboard(role).label}
+                    <BilingualLabel 
+                      en={getRoleDashboard(role).label} 
+                      te={getRoleDashboard(role).te} 
+                    />
                   </Link>
                   <button
                     onClick={handleSignOut}
                     className="w-full text-left px-3 py-2 text-sm text-destructive hover:bg-muted flex items-center gap-2"
                   >
                     <LogOut className="w-4 h-4" />
-                    Log Out
+                    <BilingualLabel en="Log Out" te="లాగ్ అవుట్" />
                   </button>
                 </div>
               )}
@@ -142,10 +150,14 @@ export default function Navbar() {
           ) : (
             <div className="flex items-center gap-2 ml-2">
               <Link href="/login">
-                <Button variant="outline" size="sm">Log In</Button>
+                <Button variant="outline" size="sm" className="h-8 py-0">
+                  <BilingualLabel en="Log In" te="లాగిన్" />
+                </Button>
               </Link>
               <Link href="/signup">
-                <Button size="sm">Sign Up</Button>
+                <Button size="sm" className="h-8 py-0">
+                  <BilingualLabel en="Sign Up" te="సైన్ అప్" />
+                </Button>
               </Link>
             </div>
           )}
@@ -175,7 +187,11 @@ export default function Navbar() {
                   : "text-foreground hover:bg-muted"
               }`}
             >
-              {l.label}
+              <BilingualLabel 
+                en={l.label} 
+                te={l.te} 
+                teClassName={location === l.href ? "text-primary-foreground/70" : ""}
+              />
               {l.href === "/farmer" && farmerNewPending > 0 && (
                 <span className="inline-flex items-center justify-center min-w-[16px] h-4 px-1 text-[10px] font-bold rounded-full bg-amber-500 text-white leading-none">
                   {farmerNewPending > 9 ? "9+" : farmerNewPending}
@@ -206,7 +222,11 @@ export default function Navbar() {
                 }`}
               >
                 <UserCircle className="w-4 h-4" />
-                My Profile
+                <BilingualLabel 
+                  en="My Profile" 
+                  te="నా ప్రొఫైల్" 
+                  teClassName={location === "/profile" ? "text-primary-foreground/70" : ""}
+                />
               </Link>
               <Link
                 href={getRoleDashboard(role).href}
@@ -218,23 +238,31 @@ export default function Navbar() {
                 }`}
               >
                 <ClipboardList className="w-4 h-4" />
-                {getRoleDashboard(role).label}
+                <BilingualLabel 
+                  en={getRoleDashboard(role).label} 
+                  te={getRoleDashboard(role).te} 
+                  teClassName={location === getRoleDashboard(role).href ? "text-primary-foreground/70" : ""}
+                />
               </Link>
               <button
                 onClick={handleSignOut}
                 className="flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-destructive hover:bg-muted text-left"
               >
                 <LogOut className="w-4 h-4" />
-                Log Out
+                <BilingualLabel en="Log Out" te="లాగ్ అవుట్" />
               </button>
             </>
           ) : (
             <>
               <Link href="/login" onClick={() => setOpen(false)}>
-                <Button variant="outline" size="sm" className="w-full mt-1">Log In</Button>
+                <Button variant="outline" size="sm" className="w-full mt-1">
+                  <BilingualLabel en="Log In" te="లాగిన్" />
+                </Button>
               </Link>
               <Link href="/signup" onClick={() => setOpen(false)}>
-                <Button size="sm" className="w-full mt-1">Sign Up</Button>
+                <Button size="sm" className="w-full mt-1">
+                  <BilingualLabel en="Sign Up" te="సైన్ అప్" />
+                </Button>
               </Link>
             </>
           )}

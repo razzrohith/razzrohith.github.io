@@ -23,6 +23,7 @@ import {
   SupabaseListing,
 } from "@/lib/supabase";
 import { shareListing } from "@/lib/share";
+import BilingualLabel from "@/components/BilingualLabel";
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -334,12 +335,18 @@ export default function ProduceDetailPage() {
             {/* Price / Quantity */}
             <div className="grid grid-cols-2 gap-3 mb-4">
               <div className="bg-primary/5 rounded-xl p-4 text-center">
-                <div className="text-3xl font-bold text-primary">Rs {listing.pricePerKg}</div>
-                <div className="text-muted-foreground text-xs mt-0.5">per kg</div>
+                <div className="text-3xl font-bold text-primary">
+                  <BilingualLabel en={`Rs ${listing.pricePerKg}`} te={`Rs ${listing.pricePerKg}`} orientation="stacked" />
+                </div>
+                <div className="text-muted-foreground text-xs mt-0.5">
+                  <BilingualLabel en="per kg" te="కేజీకి" />
+                </div>
               </div>
               <div className="bg-muted rounded-xl p-4 text-center">
                 <div className="text-3xl font-bold text-foreground">{listing.quantityKg}</div>
-                <div className="text-muted-foreground text-xs mt-0.5">kg available</div>
+                <div className="text-muted-foreground text-xs mt-0.5">
+                  <BilingualLabel en="kg available" te="కేజీలు ఉన్నాయి" />
+                </div>
               </div>
             </div>
 
@@ -434,14 +441,13 @@ export default function ProduceDetailPage() {
               <div className="flex gap-2">
                 {listing.farmerId && (
                   <Link href={`/farmers/${listing.farmerId}`} className="flex-1">
-                    <Button size="sm" variant="outline" className="w-full">
-                      View Farmer Profile
+                    <Button size="sm" variant="outline" className="w-full h-auto py-2">
+                      <BilingualLabel en="View Farmer Profile" te="రైతు ప్రొఫైల్ చూడండి" orientation="stacked" />
                     </Button>
                   </Link>
                 )}
-                <Button size="sm" variant="outline" className="flex-1" onClick={handleContact}>
-                  <Phone className="w-3.5 h-3.5 mr-1.5" />
-                  Contact Farmer
+                <Button size="sm" variant="outline" className="flex-1 h-auto py-2" onClick={handleContact}>
+                  <BilingualLabel en="Contact Farmer" te="రైతును సంప్రదించండి" orientation="stacked" />
                 </Button>
               </div>
             </div>
@@ -451,7 +457,9 @@ export default function ProduceDetailPage() {
           <div className="bg-card border border-border rounded-2xl p-5 mb-4 shadow-sm">
             <div className="flex items-center gap-2 mb-2">
               <Navigation className="w-4 h-4 text-primary" />
-              <h3 className="font-semibold text-foreground">Pickup Directions</h3>
+              <h3 className="font-semibold text-foreground">
+                <BilingualLabel en="Pickup Directions" te="పికప్ మార్గం" />
+              </h3>
             </div>
             <p className="text-sm text-muted-foreground">
               {listing.pickupLocation
@@ -467,7 +475,9 @@ export default function ProduceDetailPage() {
           <div className="bg-card border border-border rounded-2xl p-5 mb-4 shadow-sm">
             <div className="flex items-center gap-2 mb-3">
               <Info className="w-4 h-4 text-primary" />
-              <h3 className="font-semibold text-foreground">Before You Come for Pickup</h3>
+              <h3 className="font-semibold text-foreground">
+                <BilingualLabel en="Before You Come for Pickup" te="మీరు పికప్ కోసం వచ్చే ముందు" />
+              </h3>
             </div>
             <ul className="space-y-2">
               {[
@@ -487,7 +497,9 @@ export default function ProduceDetailPage() {
           {/* ── Reserve section ── */}
           {isAvailable ? (
             <div className="bg-card border border-border rounded-2xl p-5 mb-4 shadow-sm">
-              <h3 className="font-semibold text-foreground mb-3">Reserve This Produce</h3>
+              <h3 className="font-semibold text-foreground mb-3">
+                <BilingualLabel en="Reserve This Produce" te="ఈ పంటను రిజర్వ్ చేయండి" />
+              </h3>
               <div className="mb-4">
                 <Label htmlFor="qty">How many kg do you need?</Label>
                 <Input
@@ -511,12 +523,11 @@ export default function ProduceDetailPage() {
                 Payment: Cash or UPI directly to farmer at pickup
               </div>
               <div className="flex gap-3">
-                <Button className="flex-1" onClick={() => openModal(listing)}>
-                  Reserve Now
+                <Button className="flex-1 h-auto py-2" onClick={() => openModal(listing)}>
+                  <BilingualLabel en="Reserve Now" te="ఇప్పుడే రిజర్వ్ చేయండి" orientation="stacked" />
                 </Button>
-                <Button variant="outline" className="flex-1" onClick={handleContact}>
-                  <Phone className="w-4 h-4 mr-1.5" />
-                  Contact Farmer
+                <Button variant="outline" className="flex-1 h-auto py-2" onClick={handleContact}>
+                  <BilingualLabel en="Contact Farmer" te="రైతును సంప్రదించండి" orientation="stacked" />
                 </Button>
               </div>
             </div>

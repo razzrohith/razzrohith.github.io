@@ -24,6 +24,7 @@ import {
   getSupabase, isSupabaseConfigured,
   AgentCallRequest, AgentCallRequestInsert, AgentCallRequestStatus,
 } from "@/lib/supabase";
+import BilingualLabel from "@/components/BilingualLabel";
 
 // ── Schemas ────────────────────────────────────────────────────────────────
 
@@ -299,9 +300,11 @@ export default function AgentDashboard() {
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Agent Dashboard</h1>
+            <h1 className="text-2xl font-bold text-foreground">
+              <BilingualLabel en="Agent Dashboard" te="ఏజెంట్ డాష్బోర్డ్" />
+            </h1>
             <p className="text-muted-foreground text-sm">
-              Managing on behalf of farmers — {demoAgent.name}
+              <BilingualLabel en={`Managing on behalf of farmers — ${demoAgent.name}`} te={`రైతుల తరపున నిర్వహిస్తున్నారు — ${demoAgent.name}`} />
             </p>
           </div>
           <Badge className="bg-primary/10 text-primary border-primary/20">
@@ -330,7 +333,9 @@ export default function AgentDashboard() {
         >
           <div className="flex items-center gap-2 mb-3">
             <TrendingUp className="w-5 h-5 text-primary" />
-            <h2 className="font-semibold text-foreground">Commission Tracking</h2>
+            <h2 className="font-semibold text-foreground">
+              <BilingualLabel en="Commission Tracking" te="కమిషన్ ట్రాకింగ్" />
+            </h2>
           </div>
           <div className="grid grid-cols-3 gap-3">
             <div className="bg-primary/5 rounded-xl p-3 text-center">
@@ -360,7 +365,7 @@ export default function AgentDashboard() {
         <div className="mb-6">
           <h2 className="text-lg font-semibold text-foreground mb-3 flex items-center gap-2">
             <Users className="w-5 h-5 text-primary" />
-            Assigned Farmers
+            <BilingualLabel en="Assigned Farmers" te="కేటాయించిన రైతులు" />
           </h2>
           <div className="grid sm:grid-cols-2 gap-3 mb-4">
             {assignedFarmers.map((f) => (
@@ -429,8 +434,8 @@ export default function AgentDashboard() {
                     <p className="text-destructive text-xs mt-1">{errStock.newQuantity.message}</p>
                   )}
                 </div>
-                <Button type="submit" size="sm">
-                  Update Stock
+                <Button type="submit" size="sm" className="h-auto py-2">
+                  <BilingualLabel en="Update Stock" te="స్టాక్ అప్‌డేట్ చేయండి" orientation="stacked" />
                 </Button>
               </form>
             </div>
@@ -462,7 +467,7 @@ export default function AgentDashboard() {
         <div className="bg-card border border-border rounded-2xl p-5 mb-6 shadow-sm">
           <h2 className="font-semibold text-foreground mb-1 flex items-center gap-2">
             <Plus className="w-5 h-5 text-primary" />
-            Log Farmer Assistance Request
+            <BilingualLabel en="Log Farmer Assistance Request" te="రైతు సహాయ అభ్యర్థనను నమోదు చేయండి" />
           </h2>
           <p className="text-xs text-muted-foreground mb-4">
             Record a callback or assistance request. Saved to Supabase when configured.
@@ -471,7 +476,7 @@ export default function AgentDashboard() {
             <div className="grid sm:grid-cols-2 gap-3">
               <div>
                 <Label>
-                  Farmer Name <span className="text-destructive">*</span>
+                  <BilingualLabel en="Farmer Name" te="రైతు పేరు" /> <span className="text-destructive">*</span>
                 </Label>
                 <Input placeholder="e.g. Ramaiah" {...regAssist("farmerName")} />
                 {errAssist.farmerName && (
@@ -480,7 +485,7 @@ export default function AgentDashboard() {
               </div>
               <div>
                 <Label>
-                  Farmer Phone <span className="text-destructive">*</span>
+                  <BilingualLabel en="Farmer Phone" te="రైతు ఫోన్" /> <span className="text-destructive">*</span>
                 </Label>
                 <Input
                   placeholder="10-digit mobile number"
@@ -493,28 +498,29 @@ export default function AgentDashboard() {
               </div>
             </div>
             <div>
-              <Label>Village / Town</Label>
+              <Label>
+                <BilingualLabel en="Village / Town" te="గ్రామం / పట్టణం" />
+              </Label>
               <Input placeholder="e.g. Shadnagar" {...regAssist("village")} />
             </div>
             <div>
-              <Label>Request Note</Label>
+              <Label>
+                <BilingualLabel en="Request Note" te="అభ్యర్థన గమనిక" />
+              </Label>
               <Textarea
                 placeholder="What help does this farmer need?"
                 {...regAssist("requestNote")}
                 rows={2}
               />
             </div>
-            <Button type="submit" size="sm" disabled={assistanceSubmitting}>
+            <Button type="submit" size="sm" className="h-auto py-2" disabled={assistanceSubmitting}>
               {assistanceSubmitting ? (
                 <>
                   <RefreshCw className="w-4 h-4 mr-1.5 animate-spin" />
                   Saving...
                 </>
               ) : (
-                <>
-                  <Phone className="w-4 h-4 mr-1.5" />
-                  Save Callback Request
-                </>
+                <BilingualLabel en="Save Callback Request" te="కాల్‌బ్యాక్ అభ్యర్థనను సేవ్ చేయండి" orientation="stacked" />
               )}
             </Button>
           </form>
@@ -525,7 +531,7 @@ export default function AgentDashboard() {
           <div className="flex items-center justify-between mb-3">
             <h2 className="font-semibold text-foreground flex items-center gap-2">
               <ClipboardList className="w-5 h-5 text-primary" />
-              Callback Requests
+              <BilingualLabel en="Callback Requests" te="కాల్‌బ్యాక్ అభ్యర్థనలు" />
               {requests.length > 0 && (
                 <span className="text-xs font-normal text-muted-foreground">
                   ({requests.length})

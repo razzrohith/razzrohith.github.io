@@ -26,6 +26,7 @@ import {
   ReservationStatus,
   isSupabaseConfigured,
 } from "@/lib/supabase";
+import BilingualLabel from "@/components/BilingualLabel";
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
@@ -43,11 +44,11 @@ const STATUS_ICON: Record<ReservationStatus, React.ElementType> = {
   cancelled: XCircle,
 };
 
-const STATUS_LABEL: Record<ReservationStatus, string> = {
-  pending: "Pending",
-  confirmed: "Confirmed",
-  completed: "Completed",
-  cancelled: "Cancelled",
+const STATUS_LABEL: Record<ReservationStatus, { en: string; te: string }> = {
+  pending: { en: "Pending", te: "వేచి ఉంది" },
+  confirmed: { en: "Confirmed", te: "నిర్ధారించబడింది" },
+  completed: { en: "Completed", te: "పూర్తయింది" },
+  cancelled: { en: "Cancelled", te: "రద్దు చేయబడింది" },
 };
 
 // ── Props ────────────────────────────────────────────────────────────────────
@@ -186,7 +187,7 @@ export default function BuyerReservationDetailPage({ id }: Props) {
         <Link href="/buyer">
           <button className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-6 transition-colors">
             <ArrowLeft className="w-4 h-4" />
-            Back to Buyer Dashboard
+            <BilingualLabel en="Back to Buyer Dashboard" te="తిరిగి డాష్బోర్డ్‌కు వెళ్లండి" />
           </button>
         </Link>
 
@@ -215,7 +216,7 @@ export default function BuyerReservationDetailPage({ id }: Props) {
                 className={`inline-flex items-center gap-1.5 text-sm px-3 py-1 rounded-full border font-medium shrink-0 ${STATUS_BADGE[reservation.status]}`}
               >
                 <StatusIcon className="w-3.5 h-3.5" />
-                {STATUS_LABEL[reservation.status]}
+                <BilingualLabel en={STATUS_LABEL[reservation.status].en} te={STATUS_LABEL[reservation.status].te} />
               </span>
             </div>
             {listing?.category && (
@@ -226,12 +227,12 @@ export default function BuyerReservationDetailPage({ id }: Props) {
           {/* Reservation details */}
           <div className="bg-card border border-border rounded-2xl p-6 shadow-sm">
             <h2 className="text-sm font-semibold text-foreground mb-4 uppercase tracking-wide text-muted-foreground">
-              Reservation Details
+              <BilingualLabel en="Reservation Details" te="రిజర్వేషన్ వివరాలు" />
             </h2>
             <div className="space-y-3">
               <DetailRow
                 icon={<Package className="w-4 h-4 text-primary" />}
-                label="Quantity"
+                label={<BilingualLabel en="Quantity" te="పరిమాణం" />}
                 value={`${reservation.quantity_kg} kg`}
               />
               {estimatedTotal && (
@@ -256,7 +257,7 @@ export default function BuyerReservationDetailPage({ id }: Props) {
               )}
               <DetailRow
                 icon={<Package className="w-4 h-4 text-primary" />}
-                label="Payment method"
+                label={<BilingualLabel en="Payment method" te="చెల్లింపు విధానం" />}
                 value={reservation.payment_method ?? "Cash or UPI directly to farmer"}
               />
             </div>
@@ -334,14 +335,14 @@ export default function BuyerReservationDetailPage({ id }: Props) {
             </h2>
             <div className="flex flex-wrap gap-2">
               <Link href={`/produce/${reservation.listing_id}`}>
-                <Button size="sm" variant="outline">
-                  View Listing
+                <Button size="sm" variant="outline" className="h-auto py-2">
+                  <BilingualLabel en="View Listing" te="పంటను చూడండి" orientation="stacked" />
                 </Button>
               </Link>
               {farmer?.id && (
                 <Link href={`/farmers/${farmer.id}`}>
-                  <Button size="sm" variant="outline">
-                    View Farmer Profile
+                  <Button size="sm" variant="outline" className="h-auto py-2">
+                    <BilingualLabel en="View Farmer Profile" te="రైతు ప్రొఫైల్ చూడండి" orientation="stacked" />
                   </Button>
                 </Link>
               )}
@@ -349,10 +350,10 @@ export default function BuyerReservationDetailPage({ id }: Props) {
                 <Button
                   size="sm"
                   variant="outline"
+                  className="h-auto py-2"
                   onClick={() => setContactOpen(true)}
                 >
-                  <Phone className="w-3.5 h-3.5 mr-1.5" />
-                  Contact Farmer
+                  <BilingualLabel en="Contact Farmer" te="రైతును సంప్రదించండి" orientation="stacked" />
                 </Button>
               )}
               {isPending && (
@@ -427,7 +428,7 @@ function DetailRow({
   valueClass = "text-foreground",
 }: {
   icon: React.ReactNode;
-  label: string;
+  label: string | React.ReactNode;
   value: string;
   valueClass?: string;
 }) {
@@ -435,7 +436,9 @@ function DetailRow({
     <div className="flex items-start gap-2">
       <span className="mt-0.5 shrink-0">{icon}</span>
       <div className="min-w-0 flex-1">
-        <span className="text-xs text-muted-foreground block mb-0.5">{label}</span>
+        <span className="text-xs text-muted-foreground block mb-0.5">
+          {label}
+        </span>
         <span className={`text-sm ${valueClass}`}>{value}</span>
       </div>
     </div>

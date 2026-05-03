@@ -1,0 +1,117 @@
+Context:
+This is RaithuFresh.
+
+Important:
+We are preparing GitHub and live deployment safely.
+
+Current situation:
+- razzrohith.com currently points to the GitHub Pages repo razzrohith/razzrohith.github.io.
+- That repo currently contains the DealNest website.
+- DealNest must NOT be deleted.
+- DealNest must be preserved in a separate GitHub repo.
+- RaithuFresh should eventually become the live site on razzrohith.com.
+- Final long-term goal: RaithuFresh web/PWA first, then real Flutter mobile app later.
+
+Rules:
+- Do not delete DealNest.
+- Do not overwrite razzrohith.github.io until DealNest is safely backed up.
+- Do not expose secrets.
+- Do not commit .env files.
+- Do not commit SUPABASE_DB_URL.
+- Do not commit service_role keys.
+- Only VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY may be used as frontend-safe values, and preferably through deployment secrets.
+- Do not use paid services.
+- Do not add new features.
+- This is Git/deployment preparation only.
+
+Task:
+Prepare RaithuFresh for GitHub and live deployment, but do it safely.
+
+Step 1 — Inspect current Replit project Git status
+
+Check:
+- Is this Replit project already a Git repo?
+- Current branch
+- Current remotes
+- Current status
+- Whether it points to any GitHub repo
+- Whether it contains RaithuFresh files only
+- Whether any DealNest files are accidentally present
+
+Report before changing anything.
+
+Step 2 — Secret safety audit
+
+Check for:
+- .env files
+- SUPABASE_DB_URL in frontend files
+- service_role key
+- hardcoded secrets
+- Supabase anon key hardcoded in code
+- runtime config files that may expose secrets
+
+If any secret risk exists, stop and report it before pushing.
+
+Step 3 — Prepare RaithuFresh repo
+
+Target GitHub repo:
+razzrohith/raithufresh-web
+
+If remote is missing, add it.
+If the repo is empty, prepare first push.
+If remote already exists, report current state before pushing.
+
+Do not push until confirming:
+- working tree is clean or changes are committed
+- no secrets are included
+- build passes
+- TypeScript passes
+- README is updated
+
+Step 4 — Preserve DealNest
+
+DealNest currently lives in razzrohith/razzrohith.github.io and powers razzrohith.com.
+
+Do not touch razzrohith.github.io yet.
+
+Tell me exactly how to backup DealNest into:
+razzrohith/dealnest-web-archive
+
+If you can push it safely from the current environment, do it only if this project actually contains DealNest files.
+If this project is RaithuFresh-only, do not attempt DealNest backup from here. Just report that DealNest backup must be done from the DealNest project or from the existing GitHub repo.
+
+Step 5 — Prepare live replacement plan
+
+Do not replace live site yet.
+
+Create a clear deployment plan:
+
+Option A:
+Use razzrohith.github.io as the live RaithuFresh GitHub Pages repo.
+
+Option B:
+Use GitHub Actions from raithufresh-web to deploy build output into razzrohith.github.io.
+
+Recommend the safer option.
+
+Step 6 — Build verification
+
+Run:
+- TypeScript check
+- production build
+- PWA/icon check
+- no secrets check
+
+Step 7 — Final report
+
+Report:
+- Current Git status
+- Current remote
+- Whether connected to GitHub
+- Whether RaithuFresh repo is ready
+- Whether DealNest is safe
+- What manual GitHub repos must be created
+- What files should not be committed
+- Whether build passed
+- Whether secrets check passed
+- Recommended exact next step before switching razzrohith.com

@@ -4,14 +4,24 @@ Connecting Telangana farmers directly with local buyers. MVP React web app with 
 
 ---
 
-## Phase 14: Post-Audit Security Hardening + PNG PWA Icons + Bundle Cleanup (Latest)
+## Phase 14 (Corrected): Post-Audit Security Hardening + PNG PWA Icons + Bundle Cleanup (Latest)
+
+### RLS Patch Correction Notice
+
+The original Phase 14 RLS patch used `CREATE POLICY ... USING (false)`. **That approach is wrong and has been corrected.**
+
+PostgreSQL combines permissive policies with OR logic. A permissive `USING(false)` policy is simply OR'd with any existing permissive ALLOW policy: `true OR false = true`. It has no blocking effect if another permissive policy already allows access.
+
+The correct fix is `REVOKE UPDATE` at the PostgreSQL privilege level. A `REVOKE` cuts access before RLS is even evaluated — it is unconditional. This matches how `user_profiles` is correctly secured today (confirmed by probing: `user_profiles` anon PATCH returns HTTP 401 "permission denied", while `farmers` returns 204, because `user_profiles` has no UPDATE grant for `anon`).
 
 ### Final Report Table
 
 | Area | Issue Found | Fix Made | Files Changed | Test Result |
 |---|---|---|---|---|
-| RLS Patch — `farmers` anon UPDATE | HTTP 204 (not denied) | SQL ready in `rls-patches-phase11.sql` (apply via Supabase SQL Editor) | `supabase/rls-patches-phase11.sql` | PENDING — run SQL in Supabase Dashboard |
-| RLS Patch — `waitlist_leads` anon UPDATE | HTTP 204 (not denied) | SQL ready in `rls-patches-phase11.sql` | `supabase/rls-patches-phase11.sql` | PENDING — run SQL in Supabase Dashboard |
+| RLS — `farmers` anon UPDATE | HTTP 204 (UPDATE grant exists for anon at privilege level) | REVOKE UPDATE SQL in `rls-patches-phase11.sql` (apply via Supabase SQL Editor) | `supabase/rls-patches-phase11.sql` | PENDING — run SQL in Supabase Dashboard |
+| RLS — `waitlist_leads` anon UPDATE | HTTP 204 (UPDATE grant exists for anon at privilege level) | REVOKE UPDATE SQL in `rls-patches-phase11.sql` | `supabase/rls-patches-phase11.sql` | PENDING — run SQL in Supabase Dashboard |
+| BONUS — `farmers` anon DELETE | HTTP 204 (DELETE grant also exists for anon — same exposure) | REVOKE DELETE SQL in `rls-patches-phase11.sql` | `supabase/rls-patches-phase11.sql` | PENDING — run SQL in Supabase Dashboard |
+| BONUS — `waitlist_leads` anon DELETE | HTTP 204 (DELETE grant also exists for anon) | REVOKE DELETE SQL in `rls-patches-phase11.sql` | `supabase/rls-patches-phase11.sql` | PENDING — run SQL in Supabase Dashboard |
 | PNG PWA icons — `icon-192.png` | Missing (SVG only) | Generated from SVG via ImageMagick, 192×192, transparent bg | `public/icon-192.png` | PASS — file present, 32 KB |
 | PNG PWA icons — `icon-512.png` | Missing (SVG only) | Generated from SVG via ImageMagick, 512×512, transparent bg | `public/icon-512.png` | PASS — file present, 99 KB |
 | PNG PWA icons — `icon-maskable-192.png` | Missing (SVG only) | Generated from maskable SVG, 192×192, solid green bg | `public/icon-maskable-192.png` | PASS — file present, 20 KB |
@@ -25,39 +35,68 @@ Connecting Telangana farmers directly with local buyers. MVP React web app with 
 | `src/components/ui/chart.tsx` | Shadcn template, imported only `recharts`, not used in any page | Deleted | `src/components/ui/chart.tsx` | PASS — deleted, no dangling imports |
 | Vite dep re-optimisation after cleanup | Lock file changed | Vite re-optimised automatically on restart | — | PASS — no console errors |
 
+### Why the Previous Patch Was Wrong
+
+| Approach | Why it fails |
+|---|---|
+| `CREATE POLICY ... USING (false)` (permissive) | PostgreSQL OR-combines all permissive policies. `true OR false = true`. A false permissive policy is entirely overridden by any existing permissive ALLOW policy. |
+| `CREATE POLICY ... AS RESTRICTIVE USING (false)` | Better, but still operates only at the RLS layer. Does not fire if the role has no privilege at all. |
+| **`REVOKE UPDATE FROM anon`** | **Correct. Cuts access at the PostgreSQL privilege layer, before RLS is evaluated. Unconditional. Matches how `user_profiles` is secured today.** |
+
+### Grant-Level Findings (Confirmed by HTTP Probe)
+
+| Table | Operation | HTTP Response | Interpretation |
+|---|---|---|---|
+| `farmers` | anon UPDATE (PATCH) | **204** | UPDATE grant exists for anon; no rows matched (but real rows could be updated) |
+| `farmers` | anon DELETE | **204** | DELETE grant exists for anon — same exposure |
+| `farmers` | anon INSERT | 401 | INSERT grant exists but RLS WITH CHECK blocks it |
+| `farmers` | anon SELECT | 200 | SELECT grant + RLS SELECT policy — correct and intentional |
+| `waitlist_leads` | anon UPDATE (PATCH) | **204** | UPDATE grant exists for anon |
+| `waitlist_leads` | anon DELETE | **204** | DELETE grant exists for anon |
+| `waitlist_leads` | anon INSERT | 201 | Correct and intentional (public waitlist form) |
+| `user_profiles` | anon UPDATE (PATCH) | 401 | No UPDATE grant — this is the correct target state |
+
 ### RLS Patch Application — Manual Step Required
 
-The two RLS patches cannot be applied from this sandbox because DDL requires elevated database privileges (psql or Supabase service role). The `anon` key cannot run `CREATE POLICY` statements.
+`REVOKE` and `DROP POLICY` are DDL operations. They require elevated database privileges. The `anon` key cannot run them. Apply in Supabase SQL Editor (free, no extra tools).
 
-**How to apply (Supabase SQL Editor — free, no extra tools):**
+**How to apply:**
 
-1. Open your Supabase project dashboard
-2. Go to **SQL Editor** → **New Query**
-3. Paste and run the following:
+1. Open Supabase dashboard → **SQL Editor** → **New Query**
+2. Run the **inspection queries** in Section 1 of `supabase/rls-patches-phase11.sql` first and review output
+3. If the grants are directly to the `anon` role (most common), run:
 
 ```sql
-CREATE POLICY "deny_anon_update_farmers"
-  ON public.farmers
-  FOR UPDATE
-  TO anon
-  USING (false)
-  WITH CHECK (false);
+-- Revoke UPDATE and DELETE from anon on farmers
+REVOKE UPDATE ON public.farmers FROM anon;
+REVOKE DELETE ON public.farmers FROM anon;
 
-CREATE POLICY "deny_anon_update_waitlist_leads"
-  ON public.waitlist_leads
-  FOR UPDATE
-  TO anon
-  USING (false)
-  WITH CHECK (false);
+-- Revoke UPDATE and DELETE from anon on waitlist_leads
+REVOKE UPDATE ON public.waitlist_leads FROM anon;
+REVOKE DELETE ON public.waitlist_leads FROM anon;
 ```
 
-4. Verify with REST API using anon key:
-   - `PATCH /farmers?id=eq.<any-uuid>` → should return **HTTP 403** (was 204)
-   - `PATCH /waitlist_leads?id=eq.<any-uuid>` → should return **HTTP 403** (was 204)
+4. If Section 1 shows the grant is to `PUBLIC` (not `anon` directly), instead:
 
-The full apply-ready SQL (with inspection queries and verification steps) is in `supabase/rls-patches-phase11.sql`.
+```sql
+REVOKE UPDATE, DELETE ON public.farmers FROM PUBLIC;
+REVOKE UPDATE, DELETE ON public.waitlist_leads FROM PUBLIC;
+GRANT SELECT ON public.farmers TO anon;
+GRANT SELECT, INSERT ON public.waitlist_leads TO anon;
+```
 
-> These are additive DENY policies. They do not affect `SELECT`, `INSERT`, or authenticated farmer `UPDATE`.
+**Verification after applying** (use anon key via REST API):
+
+| Check | Expected after patch | Was before patch |
+|---|---|---|
+| `PATCH /farmers?id=eq.<any-uuid>` | HTTP **401** "permission denied" | HTTP 204 |
+| `DELETE /farmers?id=eq.<any-uuid>` | HTTP **401** "permission denied" | HTTP 204 |
+| `PATCH /waitlist_leads?id=eq.<any-uuid>` | HTTP **401** "permission denied" | HTTP 204 |
+| `DELETE /waitlist_leads?id=eq.<any-uuid>` | HTTP **401** "permission denied" | HTTP 204 |
+| `GET /farmers?verified=eq.true&limit=3` | HTTP **200** rows returned | HTTP 200 — unchanged |
+| `POST /waitlist_leads` (name/phone/role/town) | HTTP **201** | HTTP 201 — unchanged |
+
+> The full apply-ready SQL (inspection + REVOKE + DROP POLICY + verification) is in `supabase/rls-patches-phase11.sql`. The DROP POLICY block removes any anon UPDATE/DELETE policies that may exist, preventing future confusion with the old incorrect approach.
 
 ### RLS Regression Results (Post-Cleanup)
 
@@ -68,8 +107,10 @@ The full apply-ready SQL (with inspection queries and verification steps) is in 
 | `reservations` anon SELECT | 200 | PASS — 0 rows |
 | `waitlist_leads` anon SELECT | 200 | PASS — 0 rows |
 | `waitlist_leads` anon INSERT (name, phone, role, town) | 201 | PASS |
-| `farmers` anon UPDATE | 204 | PENDING patch (SQL ready) |
-| `waitlist_leads` anon UPDATE | 204 | PENDING patch (SQL ready) |
+| `farmers` anon UPDATE | 204 | PENDING — `REVOKE UPDATE ON farmers FROM anon` |
+| `farmers` anon DELETE | 204 | PENDING — `REVOKE DELETE ON farmers FROM anon` |
+| `waitlist_leads` anon UPDATE | 204 | PENDING — `REVOKE UPDATE ON waitlist_leads FROM anon` |
+| `waitlist_leads` anon DELETE | 204 | PENDING — `REVOKE DELETE ON waitlist_leads FROM anon` |
 
 ### PWA Icon Inventory (After Phase 14)
 

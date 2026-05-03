@@ -88,9 +88,25 @@ export default function SignupPage() {
     setSubmitting(false);
 
     if (error) {
-      if (error.toLowerCase().includes("email rate limit exceeded")) {
+      const errLower = error.toLowerCase();
+      if (errLower.includes("email rate limit exceeded")) {
         toast.error(
           "Supabase email limit reached. For testing, disable email confirmations or wait before trying again."
+        );
+      } else if (
+        errLower.includes("already exists") ||
+        errLower.includes("already registered") ||
+        errLower.includes("please log in")
+      ) {
+        toast.error(error, { duration: 6000 });
+      } else if (
+        errLower.includes("duplicate key") ||
+        errLower.includes("unique constraint") ||
+        errLower.includes("user_profiles_pkey")
+      ) {
+        toast.error(
+          "This account profile already exists. Please log in instead.",
+          { duration: 6000 }
         );
       } else {
         toast.error(error);

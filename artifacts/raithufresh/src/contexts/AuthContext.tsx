@@ -55,35 +55,58 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         village?: string;
       };
       const sb = getSupabase();
-      const { error } = await sb.from("user_profiles").insert({
-        id: u.id,
-        full_name: meta.full_name ?? null,
-        phone: meta.phone ?? null,
-        role: meta.role ?? null,
-        village: meta.village ?? null,
-      });
-      if (!error) {
+
+      // Double-check profile doesn't exist to avoid duplicate key errors.
+      // getCurrentUserProfile may return null due to RLS timing, but the
+      // profile may still exist. Use maybeSingle for a safer check.
+      const { data: existingCheck } = await sb
+        .from("user_profiles")
+        .select("id")
+        .eq("id", u.id)
+        .maybeSingle();
+
+      if (existingCheck) {
+        // Profile already exists — just reload it, don't INSERT.
         p = await getCurrentUserProfile(u.id);
-        // If role is farmer and no farmers row exists, create it now
-        if (meta.role === "farmer" && p) {
-          const { data: existing } = await sb
-            .from("farmers")
-            .select("id")
-            .eq("user_id", u.id)
-            .maybeSingle();
-          if (!existing) {
-            await sb.from("farmers").insert({
-              user_id: u.id,
-              name: meta.full_name ?? "Farmer",
-              phone: meta.phone ?? null,
-              village: meta.village ?? null,
-              assisted_mode: false,
-              verified: false,
-            });
+      } else {
+        const { error } = await sb.from("user_profiles").insert({
+          id: u.id,
+          full_name: meta.full_name ?? null,
+          phone: meta.phone ?? null,
+          role: meta.role ?? null,
+          village: meta.village ?? null,
+        });
+        if (!error) {
+          p = await getCurrentUserProfile(u.id);
+        } else {
+          // Safety net: if INSERT failed due to duplicate key (race condition),
+          // just load the existing profile instead of showing an error.
+          const errMsg = error.message.toLowerCase();
+          if (errMsg.includes("duplicate key") || errMsg.includes("unique constraint") || errMsg.includes("user_profiles_pkey")) {
+            p = await getCurrentUserProfile(u.id);
+          } else {
+            console.warn("AuthContext: profile auto-create failed:", error.message);
           }
         }
-      } else {
-        console.warn("AuthContext: profile auto-create failed:", error.message);
+      }
+
+      // If role is farmer and no farmers row exists, create it now
+      if (meta.role === "farmer" && p) {
+        const { data: existingFarmer } = await sb
+          .from("farmers")
+          .select("id")
+          .eq("user_id", u.id)
+          .maybeSingle();
+        if (!existingFarmer) {
+          await sb.from("farmers").insert({
+            user_id: u.id,
+            name: meta.full_name ?? "Farmer",
+            phone: meta.phone ?? null,
+            village: meta.village ?? null,
+            assisted_mode: false,
+            verified: false,
+          });
+        }
       }
     }
 

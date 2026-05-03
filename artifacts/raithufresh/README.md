@@ -78,6 +78,14 @@ DealNest must be preserved separately in `razzrohith/dealnest-web-archive`.
 - Supabase email confirmation may require manual login flow depending on project settings
 - GitHub deployment is not configured yet
 
+## Testing notes
+
+- Use unique fake emails for signup tests (e.g. `test-1234@example.com`).
+- If a fake email was already used, log in instead — duplicate signups will show a friendly "already exists" message.
+- Use fake 10-digit phone numbers only (e.g. `9000000001`).
+- Do not use real personal data for testing.
+- Supabase email rate limits may block rapid signups — disable email confirmations in Supabase dashboard for local testing, or wait between attempts.
+
 ## Next phase
 
 Flutter native mobile app planning.

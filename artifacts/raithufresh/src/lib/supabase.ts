@@ -108,10 +108,52 @@ export async function signUp(
     },
   });
 
-  if (signUpError) return { error: signUpError.message, needsEmailConfirmation: false };
+  if (signUpError) {
+    // Map known Supabase Auth errors to friendly messages
+    const msg = signUpError.message.toLowerCase();
+    if (msg.includes("user already registered") || msg.includes("already been registered")) {
+      return {
+        error: "An account with this email already exists. Please log in.",
+        needsEmailConfirmation: false,
+      };
+    }
+    return { error: signUpError.message, needsEmailConfirmation: false };
+  }
   if (!authData.user) return { error: "Signup failed — no user returned.", needsEmailConfirmation: false };
 
+  // Supabase may return an existing user without an error when email
+  // confirmations are enabled. Detect this by checking for identities.
+  // If the user has no new identities, the email is already taken.
+  if (
+    authData.user.identities &&
+    authData.user.identities.length === 0
+  ) {
+    return {
+      error: "An account with this email already exists. Please log in.",
+      needsEmailConfirmation: false,
+    };
+  }
+
   const needsEmailConfirmation = !authData.session;
+
+  // Check if profile already exists before inserting.
+  // This prevents the duplicate key error when the auth user was
+  // already created (e.g. retry, or profile created on a prior attempt).
+  // NEVER upsert — that would risk overwriting the role field.
+  const { data: existingProfile } = await sb
+    .from("user_profiles")
+    .select("id")
+    .eq("id", authData.user.id)
+    .maybeSingle();
+
+  if (existingProfile) {
+    // Profile already exists — the user should log in instead.
+    // Do NOT update role or any fields here.
+    return {
+      error: "This account profile already exists. Please log in instead.",
+      needsEmailConfirmation: false,
+    };
+  }
 
   // Attempt to insert the profile. This will succeed when email confirmation
   // is disabled (session exists immediately). When confirmation is required
@@ -126,8 +168,18 @@ export async function signUp(
   });
 
   if (profileError && !needsEmailConfirmation) {
+    // Safety net: catch duplicate key even if the SELECT above missed it
+    // (race condition). Show friendly message, never raw DB error.
+    const errMsg = profileError.message.toLowerCase();
+    if (errMsg.includes("duplicate key") || errMsg.includes("unique constraint") || errMsg.includes("user_profiles_pkey")) {
+      return {
+        error: "This account profile already exists. Please log in instead.",
+        needsEmailConfirmation: false,
+      };
+    }
+    console.warn("Profile creation failed:", profileError.message);
     return {
-      error: `Account created but profile save failed: ${profileError.message}`,
+      error: "Account created but we couldn't save your profile. Please try logging in — your profile will be set up automatically.",
       needsEmailConfirmation: false,
     };
   }
@@ -135,16 +187,25 @@ export async function signUp(
   // If farmer role and session exists, create the farmers row immediately.
   // Without a session the FarmerDashboard will create it on first login.
   if (data.role === "farmer" && authData.session) {
-    const { error: farmerError } = await sb.from("farmers").insert({
-      user_id: authData.user.id,
-      name: data.fullName.trim(),
-      phone: data.phone.trim(),
-      village: data.village?.trim() || null,
-      assisted_mode: false,
-      verified: false,
-    });
-    if (farmerError) {
-      console.warn("Farmer row creation at signup failed:", farmerError.message);
+    // Check if farmer row already exists to avoid duplicate key
+    const { data: existingFarmer } = await sb
+      .from("farmers")
+      .select("id")
+      .eq("user_id", authData.user.id)
+      .maybeSingle();
+
+    if (!existingFarmer) {
+      const { error: farmerError } = await sb.from("farmers").insert({
+        user_id: authData.user.id,
+        name: data.fullName.trim(),
+        phone: data.phone.trim(),
+        village: data.village?.trim() || null,
+        assisted_mode: false,
+        verified: false,
+      });
+      if (farmerError) {
+        console.warn("Farmer row creation at signup failed:", farmerError.message);
+      }
     }
   }
 

@@ -7,6 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { useAppPreferences } from "@/contexts/AppPreferencesContext";
 import BilingualLabel from "./BilingualLabel";
+import PreferenceControls from "./PreferenceControls";
 
 const ROLE_COLORS: Record<string, string> = {
   farmer: "bg-green-100 text-green-700 border-green-200",
@@ -38,7 +39,6 @@ export default function Navbar() {
   const [open, setOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const { user, profile, role, signOut } = useAuth();
-  const { languageMode, toggleLanguageMode, themeMode, toggleThemeMode } = useAppPreferences();
 
   const handleSignOut = async () => {
     await signOut();
@@ -99,32 +99,7 @@ export default function Navbar() {
           ))}
 
           {/* Preferences toggles - Desktop */}
-          <div className="flex items-center gap-1 ml-2 border-l border-border pl-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={toggleLanguageMode}
-              className="h-8 px-2 flex items-center gap-1.5 text-xs font-semibold hover:bg-muted"
-              title={languageMode === "en" ? "Switch to English + Telugu" : "Switch to English only"}
-            >
-              <Languages className="w-3.5 h-3.5 text-primary" />
-              <span>{languageMode === "en" ? "EN" : "EN+తెలుగు"}</span>
-            </Button>
-            
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={toggleThemeMode}
-              className="h-8 w-8 p-0 flex items-center justify-center hover:bg-muted"
-              title={themeMode === "light" ? "Switch to Dark Mode" : "Switch to Light Mode"}
-            >
-              {themeMode === "light" ? (
-                <Moon className="w-3.5 h-3.5 text-foreground" />
-              ) : (
-                <Sun className="w-3.5 h-3.5 text-amber-400" />
-              )}
-            </Button>
-          </div>
+          <PreferenceControls className="ml-2 border-l border-border pl-2" />
 
           {user ? (
             <div className="relative ml-2">
@@ -208,29 +183,7 @@ export default function Navbar() {
         <div className="md:hidden border-t border-border bg-background px-4 py-3 flex flex-col gap-1">
           {/* Preferences toggles - Mobile */}
           <div className="flex items-center justify-between gap-2 mb-2 p-1 bg-muted/50 rounded-lg">
-            <button
-              onClick={toggleLanguageMode}
-              className="flex-1 flex items-center justify-center gap-2 py-2 text-xs font-semibold bg-background border border-border rounded-md shadow-sm"
-            >
-              <Languages className="w-3.5 h-3.5 text-primary" />
-              <span>{languageMode === "en" ? "English Only" : "EN + తెలుగు Help"}</span>
-            </button>
-            <button
-              onClick={toggleThemeMode}
-              className="px-4 flex items-center justify-center gap-2 py-2 text-xs font-semibold bg-background border border-border rounded-md shadow-sm"
-            >
-              {themeMode === "light" ? (
-                <>
-                  <Moon className="w-3.5 h-3.5" />
-                  <span>Dark</span>
-                </>
-              ) : (
-                <>
-                  <Sun className="w-3.5 h-3.5 text-amber-400" />
-                  <span>Light</span>
-                </>
-              )}
-            </button>
+            <PreferenceControls className="w-full justify-around bg-background border border-border rounded-md shadow-sm py-1" />
           </div>
 
           {links.filter((l) => !l.roles || (role && l.roles.includes(role))).map((l) => (

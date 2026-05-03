@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
 import BilingualLabel from "@/components/BilingualLabel";
+import PreferenceControls from "@/components/PreferenceControls";
 
 const resetSchema = z.object({
   password: z.string().min(8, "Password must be at least 8 characters"),
@@ -68,7 +69,11 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center px-4 py-12">
+    <div className="min-h-screen bg-background flex flex-col items-center justify-center px-4 py-12 relative">
+      <div className="absolute top-4 right-4 sm:top-6 sm:right-6">
+        <PreferenceControls className="bg-card border border-border rounded-lg shadow-sm" />
+      </div>
+
       <Link href="/" className="flex items-center gap-2 text-primary font-bold text-xl mb-8">
         <Leaf className="w-6 h-6" />
         RaithuFresh

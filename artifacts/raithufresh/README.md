@@ -51,6 +51,11 @@ pnpm --filter @workspace/raithufresh run dev
 
 ## Build
 
+Production builds require `PORT`, `BASE_PATH`, and Supabase frontend variables to be set in the environment or a `.env.local` file:
+
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_ANON_KEY`
+
 ```bash
 PORT=3000 BASE_PATH=/ pnpm run build
 ```

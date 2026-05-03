@@ -1,0 +1,169 @@
+Context:
+This is RaithuFresh, a Telangana-first fruits and vegetables marketplace for farmers, buyers, agents, and admins.
+
+Final product goal:
+The final goal is to publish RaithuFresh as a real Android app on Google Play Store and a real iOS app on Apple App Store.
+For now, continue building the web/PWA MVP, but keep everything mobile-app-ready for a future free/open-source Capacitor-style wrapper.
+
+Rules:
+- Focus only on fruits and vegetables.
+- Use only free tools, free tiers, open-source libraries, and mock/local alternatives.
+- Do not use paid services or paid APIs.
+- Do not use paid stock images.
+- Do not use copyrighted brand images.
+- Do not hotlink images from random websites.
+- Do not touch DealNest/deals/coupons/stores/threads code or data.
+- Do not add delivery, online payments, admin promotion tools, Edge Functions, Web Push, VAPID keys, background notifications, analytics, or paid services.
+- Do not use service_role key.
+- Do not expose secrets.
+- Do not weaken RLS.
+- Use only fake/mock names, phone numbers, emails, villages, and test details during testing.
+- Do not use real personal data.
+- Keep UI mobile-first and touch-friendly for future Android/iOS packaging.
+
+Task:
+Run the Post-Audit Security + PWA Icon Compatibility + Bundle Cleanup phase.
+
+Current audit findings:
+1. farmers anon UPDATE returned HTTP 204 warning.
+2. waitlist_leads anon UPDATE returned HTTP 204 warning.
+3. SVG-only PWA icons are not enough for Android Chrome/iOS/Capacitor readiness.
+4. react-icons and recharts/chart.tsx may be unused bundle weight.
+
+Part 1 — Apply approved RLS patches
+
+Use the existing review file:
+
+supabase/rls-patches-phase11.sql
+
+Before applying:
+- Inspect the file.
+- Confirm it only fixes the two warnings:
+  - block anon UPDATE on farmers
+  - block anon UPDATE on waitlist_leads
+- Confirm it does not weaken RLS.
+- Confirm it does not add broad read/write access.
+- Confirm it does not touch unrelated tables.
+
+Then apply the patch.
+
+After applying, verify:
+- anon UPDATE farmers is blocked.
+- anon UPDATE waitlist_leads is blocked.
+- anon SELECT active produce_listings still works.
+- anon INSERT waitlist_leads still works.
+- anon INSERT guest reservation still works.
+- authenticated farmer listing flow still works.
+- buyer/farmer/admin reservation flows still work.
+- TypeScript still passes.
+- No console errors.
+- No secrets printed.
+
+Part 2 — Generate PNG PWA icons
+
+Current issue:
+The project has SVG icons, but Android Chrome/iOS/Capacitor packaging expects PNG icons.
+
+Create local PNG icons from the existing RaithuFresh icon/logo style.
+
+Required files:
+- public/icon-192.png
+- public/icon-512.png
+- public/icon-maskable-192.png
+- public/icon-maskable-512.png
+- public/apple-touch-icon.png
+
+Requirements:
+- Generate locally.
+- No paid tools.
+- No external image hotlinks.
+- No copyrighted assets.
+- Keep green/fresh agriculture branding.
+- Keep files optimized for web.
+- Do not remove existing SVG icons unless they are still referenced safely.
+- Update manifest.json to include PNG icons.
+- Keep maskable icon purpose where appropriate.
+- Update index.html apple-touch-icon link if needed.
+- Keep favicon working.
+
+Verify:
+- manifest.json has PNG icons.
+- maskable icon entry exists.
+- apple-touch-icon works.
+- existing SVG icons can remain as fallback.
+- PWA files still present.
+- App still loads.
+
+Part 3 — Unused dependency / bundle cleanup
+
+Audit first. Do not remove blindly.
+
+Check:
+- react-icons
+- recharts
+- src/components/ui/chart.tsx or equivalent chart file
+
+If confirmed unused:
+- Remove unused imports/files safely.
+- Remove unused dependencies from package.json if safe.
+- Do not remove if any page or component still imports them.
+- Do not break build.
+
+If not safe to remove:
+- Leave them and report why.
+
+Part 4 — Regression testing
+
+Use fake/mock data only.
+
+Test:
+- Landing page works.
+- Browse Produce works.
+- Produce Detail works.
+- Farmer Profile works.
+- Buyer Dashboard works.
+- Buyer Reservation Detail works.
+- Farmer Dashboard works.
+- Agent Dashboard works.
+- Admin Dashboard works.
+- Profile page works.
+- Login/Signup work.
+- Waitlist form works.
+- Contact Farmer dialog works.
+- WhatsApp/tel/copy still work.
+- Share Listing works.
+- Reservation modal works.
+- PWA files still exist.
+- TypeScript has zero errors.
+- No console errors.
+- No secrets printed.
+- No paid services used.
+
+Part 5 — Documentation
+
+Update README with:
+- RLS patch applied summary
+- farmers/waitlist_leads anon UPDATE warning fixed
+- PNG PWA icons added
+- manifest/apple-touch-icon updates
+- unused dependency cleanup result
+- mobile-app-readiness note for Android/iOS/Capacitor
+- fake/mock testing rule
+- no paid services used
+
+Final report format:
+Return a table with:
+- Area
+- Issue found
+- Fix made
+- Files changed
+- Test result
+
+Also include:
+- RLS patch result
+- PWA icon result
+- Dependency cleanup result
+- TypeScript result
+- Console error result
+- Remaining PWA/mobile limitations
+- Recommended next phase

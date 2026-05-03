@@ -4,7 +4,157 @@ Connecting Telangana farmers directly with local buyers. MVP React web app with 
 
 ---
 
-## Phase 11–13: Final Security/RLS Audit + PWA Check + Free-Tier Cost Audit (Latest)
+## Phase 14: Post-Audit Security Hardening + PNG PWA Icons + Bundle Cleanup (Latest)
+
+### Final Report Table
+
+| Area | Issue Found | Fix Made | Files Changed | Test Result |
+|---|---|---|---|---|
+| RLS Patch — `farmers` anon UPDATE | HTTP 204 (not denied) | SQL ready in `rls-patches-phase11.sql` (apply via Supabase SQL Editor) | `supabase/rls-patches-phase11.sql` | PENDING — run SQL in Supabase Dashboard |
+| RLS Patch — `waitlist_leads` anon UPDATE | HTTP 204 (not denied) | SQL ready in `rls-patches-phase11.sql` | `supabase/rls-patches-phase11.sql` | PENDING — run SQL in Supabase Dashboard |
+| PNG PWA icons — `icon-192.png` | Missing (SVG only) | Generated from SVG via ImageMagick, 192×192, transparent bg | `public/icon-192.png` | PASS — file present, 32 KB |
+| PNG PWA icons — `icon-512.png` | Missing (SVG only) | Generated from SVG via ImageMagick, 512×512, transparent bg | `public/icon-512.png` | PASS — file present, 99 KB |
+| PNG PWA icons — `icon-maskable-192.png` | Missing (SVG only) | Generated from maskable SVG, 192×192, solid green bg | `public/icon-maskable-192.png` | PASS — file present, 20 KB |
+| PNG PWA icons — `icon-maskable-512.png` | Missing (SVG only) | Generated from maskable SVG, 512×512, solid green bg | `public/icon-maskable-512.png` | PASS — file present, 63 KB |
+| `apple-touch-icon.png` | SVG used (iOS ignores SVG) | Generated 180×180 PNG with solid green bg from icon SVG | `public/apple-touch-icon.png` | PASS — file present, 27 KB |
+| `manifest.json` icons array | SVG only — not usable on Android/iOS | Added 4 PNG entries (any×2, maskable×2); kept SVG entries as fallback | `public/manifest.json` | PASS — 7 icons total, PNG listed first |
+| `index.html` apple-touch-icon | Pointed to SVG | Updated to `/apple-touch-icon.png` | `index.html` | PASS |
+| `index.html` favicon | SVG only | Added PNG favicon first, SVG as fallback (`image/png` + `image/svg+xml`) | `index.html` | PASS |
+| `react-icons` dep | In `package.json`, not imported anywhere in src/ | Removed from `package.json`; pnpm uninstalled | `package.json` | PASS — TS exit 0, build clean |
+| `recharts` dep | In `package.json`, only imported by unused `chart.tsx` | Removed from `package.json`; pnpm uninstalled | `package.json` | PASS — TS exit 0, build clean |
+| `src/components/ui/chart.tsx` | Shadcn template, imported only `recharts`, not used in any page | Deleted | `src/components/ui/chart.tsx` | PASS — deleted, no dangling imports |
+| Vite dep re-optimisation after cleanup | Lock file changed | Vite re-optimised automatically on restart | — | PASS — no console errors |
+
+### RLS Patch Application — Manual Step Required
+
+The two RLS patches cannot be applied from this sandbox because DDL requires elevated database privileges (psql or Supabase service role). The `anon` key cannot run `CREATE POLICY` statements.
+
+**How to apply (Supabase SQL Editor — free, no extra tools):**
+
+1. Open your Supabase project dashboard
+2. Go to **SQL Editor** → **New Query**
+3. Paste and run the following:
+
+```sql
+CREATE POLICY "deny_anon_update_farmers"
+  ON public.farmers
+  FOR UPDATE
+  TO anon
+  USING (false)
+  WITH CHECK (false);
+
+CREATE POLICY "deny_anon_update_waitlist_leads"
+  ON public.waitlist_leads
+  FOR UPDATE
+  TO anon
+  USING (false)
+  WITH CHECK (false);
+```
+
+4. Verify with REST API using anon key:
+   - `PATCH /farmers?id=eq.<any-uuid>` → should return **HTTP 403** (was 204)
+   - `PATCH /waitlist_leads?id=eq.<any-uuid>` → should return **HTTP 403** (was 204)
+
+The full apply-ready SQL (with inspection queries and verification steps) is in `supabase/rls-patches-phase11.sql`.
+
+> These are additive DENY policies. They do not affect `SELECT`, `INSERT`, or authenticated farmer `UPDATE`.
+
+### RLS Regression Results (Post-Cleanup)
+
+| Check | HTTP | Result |
+|---|---|---|
+| `produce_listings` anon SELECT | 200 | PASS — 5 rows |
+| `farmers` anon SELECT | 200 | PASS — 3 verified rows |
+| `reservations` anon SELECT | 200 | PASS — 0 rows |
+| `waitlist_leads` anon SELECT | 200 | PASS — 0 rows |
+| `waitlist_leads` anon INSERT (name, phone, role, town) | 201 | PASS |
+| `farmers` anon UPDATE | 204 | PENDING patch (SQL ready) |
+| `waitlist_leads` anon UPDATE | 204 | PENDING patch (SQL ready) |
+
+### PWA Icon Inventory (After Phase 14)
+
+| File | Format | Size | Purpose | Platform |
+|---|---|---|---|---|
+| `public/icon-192.png` | PNG 192×192 | 32 KB | any | Android Chrome PWA install |
+| `public/icon-512.png` | PNG 512×512 | 99 KB | any | Android Chrome splash |
+| `public/icon-maskable-192.png` | PNG 192×192 | 20 KB | maskable | Adaptive icons (Android) |
+| `public/icon-maskable-512.png` | PNG 512×512 | 63 KB | maskable | Adaptive icons (Android) |
+| `public/apple-touch-icon.png` | PNG 180×180 | 27 KB | apple-touch-icon | iOS Safari home screen |
+| `public/icon-192.svg` | SVG | — | any (fallback) | Modern desktop Chrome |
+| `public/icon-512.svg` | SVG | — | any (fallback) | Modern desktop Chrome |
+| `public/icon-maskable.svg` | SVG | — | maskable (fallback) | Modern desktop Chrome |
+| `public/favicon.svg` | SVG | — | favicon | All browsers (SVG favicon) |
+
+### Dependency Cleanup Result
+
+| Package | Was Used | Action | Build After |
+|---|---|---|---|
+| `react-icons` | Not imported in any src/ file | Removed from `package.json` | TS exit 0, no errors |
+| `recharts` | Only by `chart.tsx` (shadcn template, not used in pages) | Removed from `package.json` | TS exit 0, no errors |
+| `chart.tsx` | Not imported by any page or component | Deleted | TS exit 0, no errors |
+
+### Mobile-App Readiness (Capacitor/Android/iOS)
+
+| Item | Status |
+|---|---|
+| No SSR / no Node.js-specific APIs in frontend | Ready |
+| Wouter router — compatible with Capacitor `file://` origins | Ready |
+| All contacts via `tel:` and `wa.me` (native deep links) | Ready |
+| All assets local SVG/PNG (no CDN dependency) | Ready |
+| PWA manifest present with PNG icons | Ready |
+| Service worker present (PROD-only) | Ready |
+| `apple-touch-icon.png` present (iOS home screen) | Ready |
+| Maskable PNG icons present (Android adaptive icons) | Ready |
+| RLS patches applied in Supabase | Pending (manual step — SQL ready) |
+| Remove remaining unused shadcn template deps | Optional before packaging |
+
+### Fake/Mock Testing Rule
+All tests used fake UUIDs (`00000000-0000-0000-0000-000000000000`) and fake data (`QA Test User`, `9000000099`, `TestVillage`). No real personal data used.
+
+### No Paid Services Used
+All tooling: ImageMagick (free/open-source, pre-installed in NixOS), pnpm (free), Vite (free). Zero cost for this phase.
+
+### Regression Test Results (All Routes, 390px Mobile)
+
+| Route | Result | Notes |
+|---|---|---|
+| `/` (Landing) | PASS | No console errors |
+| `/browse` | PASS | 15 listings, filters working |
+| `/produce/p1` | PASS | Mock fallback renders; expected 400s for non-UUID demo IDs |
+| `/farmers/f1` | PASS | Mock fallback renders |
+| `/buyer` | PASS | Auth guard correct |
+| `/farmer` | PASS | Auth guard correct |
+| `/agent` | PASS | Auth guard correct |
+| `/admin` | PASS | Auth guard correct |
+| `/login` | PASS | Form renders, no errors |
+| `/signup` | PASS | Form renders, no errors |
+
+### TypeScript Result
+Exit 0 — zero errors after chart.tsx deletion and dep removal.
+
+### Console Error Result
+Zero application errors. Vite re-optimised dependencies after lock file change — normal behaviour.
+
+### Remaining Limitations
+
+| Limitation | Notes |
+|---|---|
+| RLS patches pending | Requires manual SQL Editor step in Supabase dashboard (SQL is ready) |
+| Direct psql unavailable from sandbox | Supabase pooler DNS unreachable from Replit — all RLS tests via REST API |
+| Mock IDs not UUIDs | Demo IDs (p1, f1) cause expected 400s; mock fallback handles them |
+| Authenticated-user RLS not tested | Requires real Supabase session — cannot simulate in sandbox |
+
+### Recommended Next Phase
+
+| Priority | Phase | Description |
+|---|---|---|
+| 1 | Apply RLS patches | Paste the two `CREATE POLICY` statements from `supabase/rls-patches-phase11.sql` into Supabase SQL Editor |
+| 2 | Phase 15 | Farmer analytics panel (weekly earnings, reservation trends, top produce) |
+| 3 | Phase 16 | Capacitor Android wrapper — local-only, free, open-source |
+
+---
+
+## Phase 11–13: Final Security/RLS Audit + PWA Check + Free-Tier Cost Audit
 
 ### Final Report Table
 

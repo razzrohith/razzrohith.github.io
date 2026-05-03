@@ -384,7 +384,21 @@ export default function BrowsePage() {
               )}
             </div>
 
-            {sorted.length === 0 ? (
+            {listings.length === 0 ? (
+              <div className="text-center py-16">
+                <img
+                  src="/assets/empty-produce.svg"
+                  alt="No produce available"
+                  width={120}
+                  height={96}
+                  className="mx-auto mb-4 opacity-70"
+                />
+                <p className="font-medium text-foreground mb-1">No produce listed yet</p>
+                <p className="text-sm text-muted-foreground">
+                  Check back soon — farmers are being added.
+                </p>
+              </div>
+            ) : sorted.length === 0 ? (
               <div className="text-center py-16 text-muted-foreground">
                 <Search className="w-10 h-10 mx-auto mb-3 opacity-30" />
                 <p className="font-medium text-foreground mb-1">No matching produce found</p>

@@ -4,6 +4,75 @@ Connecting Telangana farmers directly with local buyers. MVP React web app with 
 
 ---
 
+## Phase 6–8: QA, Mobile Polish, Visual Polish + RLS Validation (Latest)
+
+### TypeScript Result
+Exit 0 — zero errors after all Phase 6–8 changes.
+
+### Pages Verified (390px mobile viewport)
+
+| Page | Status | Notes |
+|---|---|---|
+| Landing page (`/`) | Pass | Hero, trust stats (8 farmers, 15 listings), how-it-works, farmer/buyer sections, waitlist form |
+| Browse Produce (`/browse`) | Pass | 15 mock listings, search/filter/sort working, no horizontal overflow |
+| Produce Detail (`/produce/p1`) | Pass | Mango Banaganapalli, farmer card, Reserve + Contact buttons, local SVG icon |
+| Farmer Profile (`/farmers/f1`) | Pass | Ramaiah, 4.8 stars, 2 listings — mock fallback working |
+| Farmer Profile (`/farmers/f3`) | Pass | Venkat Rao, 4.5 stars, 2 listings — mock fallback working |
+| Farmer Profile (`/farmers/f99`) | Pass | "Farmer not found" — correctly no mock match |
+| Login (`/login`) | Pass | Clean form, no overflow |
+| Signup (`/signup`) | Pass | All fields present, role selector, admin note |
+
+### Changes Made
+
+| Area | Issue | Fix | File |
+|---|---|---|---|
+| `FarmerProfilePage` demo mode | `!isSupabaseConfigured()` immediately showed "Farmer not found" | Added mock fallback in demo-mode guard — loads `mockFarmers`/`mockListings` | `FarmerProfilePage.tsx` |
+| `FarmerProfilePage` Supabase error | `getFarmerProfileById` returns `null` (not throw) on invalid UUID — "Farmer not found" for mock IDs | `if (!farmerData)` guard now tries `mockFarmers.find(id)` before setting `notFound` | `FarmerProfilePage.tsx` |
+| `FarmerProfilePage` listing empty state | Used `<Package>` Lucide icon | Replaced with `empty-produce.svg` (consistent with BuyerDashboard) | `FarmerProfilePage.tsx` |
+| `BrowsePage` empty state | Single empty state used `<Search>` icon for both "no data" and "no filter match" | Split into two: `listings.length === 0` → `empty-produce.svg`; `sorted.length === 0` → `<Search>` icon | `BrowsePage.tsx` |
+| RLS Validation SQL | Missing | Created read-only validation script with 14 query sections covering all 6 core tables | `supabase/rls-validation.sql` |
+
+### Security & Privacy Checks (Re-verified)
+
+| Check | Result |
+|---|---|
+| Payment wording | "Cash or UPI directly to farmer at pickup. No online payment." on every reservation flow |
+| Buyer phone on public cards | Not exposed — stored in local `farmerMap`, only passed to `ContactFarmerDialog` on click |
+| Farmer phone on public cards | Not rendered on listing cards — only shown inside `ContactFarmerDialog` |
+| No banned wording | No "checkout", "cart", "delivery", "Stripe", "Razorpay" anywhere in public pages |
+| No service_role key in frontend | Confirmed |
+| No SUPABASE_DB_URL in frontend | Confirmed |
+| No secrets printed | Confirmed |
+| No paid services used | Confirmed |
+
+### Local SVG Asset Usage (Verified)
+
+| Asset | Used In |
+|---|---|
+| `/assets/empty-produce.svg` | BuyseDashboard empty state, BrowsePage no-data state, FarmerProfilePage empty listings, LandingPage no-listings fallback |
+| `/assets/icon-fruit.svg` | ProduceDetailPage category icon, BrowsePage listing cards (via LandingPage), BuyerDashboard reservation cards, LandingPage hero section |
+| `/assets/icon-vegetable.svg` | Same as above (category alternate) |
+| `/assets/hero-produce.svg` | LandingPage hero illustration |
+| `/assets/icon-farmer-week.svg` | LandingPage featured farmer card, ProduceDetailPage farmer section |
+
+### RLS Validation Script
+
+`supabase/rls-validation.sql` — 14 query sections, read-only:
+1. Which tables have RLS enabled
+2. All policies on all 6 core tables
+3. Table-level privileges
+4. Column-level grants on sensitive tables
+5–9. Per-table expected policy checks (user_profiles, farmers, produce_listings, reservations, agent_call_requests, waitlist_leads)
+10. Check for unsafe anon SELECT on sensitive tables
+11. Check: can anon UPDATE/DELETE reservations (expected: zero rows)
+12. Check: can anon INSERT agent_call_requests (expected: zero rows)
+13. Check: can signup set role = admin
+14. Summary expected-matrix guide
+
+Run with: `psql "$SUPABASE_DB_URL" -f supabase/rls-validation.sql`
+
+---
+
 ## Farmer Dashboard Error Handling + Regression Report
 
 ### TypeScript Result

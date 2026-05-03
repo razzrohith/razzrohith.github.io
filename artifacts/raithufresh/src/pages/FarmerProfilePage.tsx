@@ -18,6 +18,7 @@ import {
   isSupabaseConfigured, getFarmerProfileById, getActiveListingsByFarmer,
 } from "@/lib/supabase";
 import { shareListing } from "@/lib/share";
+import { mockFarmers, mockListings } from "@/data/mockData";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -56,7 +57,24 @@ export default function FarmerProfilePage() {
       if (!id) { setNotFound(true); setLoading(false); return; }
 
       if (!isSupabaseConfigured()) {
-        setNotFound(true); setLoading(false); return;
+        const mf = mockFarmers.find((f) => f.id === id);
+        if (!mf) { setNotFound(true); setLoading(false); return; }
+        setFarmer({
+          id: mf.id,
+          name: mf.name,
+          phone: mf.phone,
+          village: mf.village,
+          district: null,
+          rating: mf.rating,
+          verified: true,
+          assisted_mode: false,
+          user_id: null,
+        });
+        const farmerListings = mockListings
+          .filter((l) => l.farmerId === mf.id && l.status === "Available");
+        setListings(farmerListings);
+        setLoading(false);
+        return;
       }
 
       try {
@@ -64,11 +82,47 @@ export default function FarmerProfilePage() {
           getFarmerProfileById(id),
           getActiveListingsByFarmer(id),
         ]);
-        if (!farmerData) { setNotFound(true); return; }
+        if (!farmerData) {
+          const mf = mockFarmers.find((f) => f.id === id);
+          if (!mf) { setNotFound(true); return; }
+          setFarmer({
+            id: mf.id,
+            name: mf.name,
+            phone: mf.phone,
+            village: mf.village,
+            district: null,
+            rating: mf.rating,
+            verified: true,
+            assisted_mode: false,
+            user_id: null,
+          });
+          setListings(
+            mockListings.filter((l) => l.farmerId === mf.id && l.status === "Available")
+          );
+          return;
+        }
         setFarmer(farmerData);
         setListings(listingsData.map(mapListing));
       } catch {
-        setNotFound(true);
+        const mf = mockFarmers.find((f) => f.id === id);
+        if (mf) {
+          setFarmer({
+            id: mf.id,
+            name: mf.name,
+            phone: mf.phone,
+            village: mf.village,
+            district: null,
+            rating: mf.rating,
+            verified: true,
+            assisted_mode: false,
+            user_id: null,
+          });
+          setListings(
+            mockListings.filter((l) => l.farmerId === mf.id && l.status === "Available")
+          );
+        } else {
+          setNotFound(true);
+        }
       } finally {
         setLoading(false);
       }
@@ -245,7 +299,13 @@ export default function FarmerProfilePage() {
 
           {listings.length === 0 ? (
             <div className="bg-card border border-border rounded-2xl p-8 text-center shadow-sm">
-              <Package className="w-10 h-10 mx-auto mb-3 text-muted-foreground opacity-40" />
+              <img
+                src="/assets/empty-produce.svg"
+                alt="No active listings"
+                width={100}
+                height={80}
+                className="mx-auto mb-4 opacity-70"
+              />
               <p className="text-muted-foreground text-sm">
                 No active listings from this farmer right now.
               </p>

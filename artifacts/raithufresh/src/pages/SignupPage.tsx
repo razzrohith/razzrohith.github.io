@@ -88,7 +88,13 @@ export default function SignupPage() {
     setSubmitting(false);
 
     if (error) {
-      toast.error(error);
+      if (error.toLowerCase().includes("email rate limit exceeded")) {
+        toast.error(
+          "Supabase email limit reached. For testing, disable email confirmations or wait before trying again."
+        );
+      } else {
+        toast.error(error);
+      }
       return;
     }
 

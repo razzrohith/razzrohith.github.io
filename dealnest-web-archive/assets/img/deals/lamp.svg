@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="520" viewBox="0 0 720 520" role="img" aria-label="Task lamp illustration">
+  <path d="M300 386h120l28 48H272z" fill="#14202f"/>
+  <rect x="340" y="240" width="40" height="158" rx="20" fill="#405168"/>
+  <path d="M260 232c28-88 92-134 188-138" fill="none" stroke="#14202f" stroke-width="28" stroke-linecap="round"/>
+  <path d="M456 76l76 104-152 34-36-88z" fill="#ffcf5a"/>
+  <circle cx="276" cy="234" r="48" fill="#a8f4de"/>
+  <circle cx="470" cy="142" r="22" fill="#fff" opacity=".8"/>
+</svg>

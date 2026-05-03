@@ -42,6 +42,11 @@ Server-side scripts only:
 
 Never use `SUPABASE_DB_URL` in frontend code.
 
+## Testing note
+
+For MVP testing, disable Supabase email confirmations in Authentication settings to avoid email rate limits.
+Use fake/mock emails and fake phone numbers only.
+
 ## Local setup
 
 ```bash

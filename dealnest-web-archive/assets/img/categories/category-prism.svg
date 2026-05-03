@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="240" viewBox="0 0 320 240" role="img" aria-label="Category prism illustration">
+  <rect width="320" height="240" rx="40" fill="#f8fbfd"/>
+  <path d="M70 170L160 44l90 126z" fill="#a8f4de"/>
+  <path d="M160 44v126h90z" fill="#93c5fd" opacity=".78"/>
+  <path d="M70 170h180l-42 30H112z" fill="#ffcf5a" opacity=".9"/>
+</svg>

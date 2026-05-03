@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="DealNest">
+  <rect width="64" height="64" rx="18" fill="#14202f"/>
+  <path d="M17 18h19.5c7.2 0 12.5 5.4 12.5 12.8S43.7 45 36.5 45H17V18Zm12 9v9h6.1c2.8 0 4.9-1.9 4.9-4.6S37.9 27 35.1 27H29Z" fill="#a8f4de"/>
+  <circle cx="45" cy="18" r="7" fill="#ffcf5a"/>
+</svg>

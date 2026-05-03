@@ -1,0 +1,16 @@
+.chrome-dealnest-qa/
+.chrome-ludo-qa/
+.chrome-*-qa/
+.idea/
+sequence_backup/
+node_modules/
+www/
+.env
+.env.*
+!.env.example
+assets/js/supabase-config.local.js
+project-backup-before-backend-migration.zip
+dealnest-desktop-check.png
+dealnest-mobile-check.png
+ludo-ui-check.png
+test.txt

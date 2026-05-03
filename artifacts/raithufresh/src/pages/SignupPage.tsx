@@ -77,53 +77,52 @@ export default function SignupPage() {
       return;
     }
     setSubmitting(true);
-    const { error, needsEmailConfirmation } = await signUp({
-      email: data.email,
-      password: data.password,
-      fullName: data.fullName,
-      phone: data.phone,
-      role: data.role,
-      village: data.village,
-    });
-    setSubmitting(false);
+    try {
+      const { error, needsEmailConfirmation } = await signUp({
+        email: data.email,
+        password: data.password,
+        fullName: data.fullName,
+        phone: data.phone,
+        role: data.role,
+        village: data.village,
+      });
 
-    if (error) {
-      const errLower = error.toLowerCase();
-      if (errLower.includes("email rate limit exceeded")) {
-        toast.error(
-          "Supabase email limit reached. For testing, disable email confirmations or wait before trying again."
-        );
-      } else if (
-        errLower.includes("already exists") ||
-        errLower.includes("already registered") ||
-        errLower.includes("please log in")
-      ) {
-        toast.error(error, { duration: 6000 });
-      } else if (
-        errLower.includes("duplicate key") ||
-        errLower.includes("unique constraint") ||
-        errLower.includes("user_profiles_pkey")
-      ) {
-        toast.error(
-          "This account profile already exists. Please log in instead.",
-          { duration: 6000 }
-        );
-      } else {
-        toast.error(error);
+      if (error) {
+        const errLower = error.toLowerCase();
+        if (errLower.includes("email rate limit exceeded")) {
+          toast.error(
+            "Supabase email limit reached. For testing, disable email confirmations or wait before trying again."
+          );
+        } else if (
+          errLower.includes("already exists") ||
+          errLower.includes("already registered") ||
+          errLower.includes("please log in") ||
+          errLower.includes("duplicate key") ||
+          errLower.includes("unique constraint") ||
+          errLower.includes("user_profiles_pkey")
+        ) {
+          toast.error(error, { duration: 6000 });
+        } else {
+          toast.error(error);
+        }
+        return;
       }
-      return;
-    }
 
-    if (needsEmailConfirmation) {
-      toast.success(
-        "Account created! Check your email and click the confirmation link, then log in.",
-        { duration: 8000 }
-      );
-      navigate("/login");
-    } else {
-      toast.success("Account created! Welcome to RaithuFresh.");
-      setJustSignedUp(true);
-      // useEffect handles redirect once role loads from AuthContext
+      if (needsEmailConfirmation) {
+        toast.success(
+          "Account created! Check your email and click the confirmation link, then log in.",
+          { duration: 8000 }
+        );
+        navigate("/login");
+      } else {
+        toast.success("Account created! Welcome to RaithuFresh.");
+        setJustSignedUp(true);
+      }
+    } catch (err: any) {
+      console.error("Signup exception:", err);
+      toast.error(err.message || "An unexpected error occurred during signup.");
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -140,7 +139,7 @@ export default function SignupPage() {
           Join RaithuFresh as a buyer, farmer, or agent.
         </p>
 
-        {user ? (
+        {user && !submitting ? (
           <div className="space-y-4">
             <div className="bg-primary/10 border border-primary/20 text-primary rounded-xl p-4 text-sm text-center">
               You are already signed in as <strong>{user.email}</strong>.

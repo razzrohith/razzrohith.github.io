@@ -122,22 +122,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const sb = getSupabase();
 
     sb.auth.getSession().then(async ({ data: { session } }) => {
-      const u = session?.user ?? null;
-      setUser(u);
-      if (u) await loadProfile(u);
-      setLoading(false);
+      try {
+        const u = session?.user ?? null;
+        setUser(u);
+        if (u) await loadProfile(u);
+      } catch (err) {
+        console.error("Auth session load error:", err);
+      } finally {
+        setLoading(false);
+      }
     });
 
     const { data: { subscription } } = sb.auth.onAuthStateChange(
       async (_event, session) => {
-        const u = session?.user ?? null;
-        setUser(u);
-        if (u) {
-          await loadProfile(u);
-        } else {
-          setProfile(null);
+        try {
+          const u = session?.user ?? null;
+          setUser(u);
+          if (u) {
+            await loadProfile(u);
+          } else {
+            setProfile(null);
+          }
+        } catch (err) {
+          console.error("Auth state change error:", err);
+        } finally {
+          setLoading(false);
         }
-        setLoading(false);
       }
     );
 

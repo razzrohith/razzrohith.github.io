@@ -112,8 +112,10 @@ export async function signUp(
     // Map known Supabase Auth errors to friendly messages
     const msg = signUpError.message.toLowerCase();
     if (msg.includes("user already registered") || msg.includes("already been registered")) {
+      // Safety: clear session if one was returned despite the error
+      if (authData?.session) await sb.auth.signOut();
       return {
-        error: "An account with this email already exists. Please log in.",
+        error: "An account with this email already exists. Please log in instead.",
         needsEmailConfirmation: false,
       };
     }
@@ -128,8 +130,10 @@ export async function signUp(
     authData.user.identities &&
     authData.user.identities.length === 0
   ) {
+    // Existing account found. Clear session and return error.
+    if (authData.session) await sb.auth.signOut();
     return {
-      error: "An account with this email already exists. Please log in.",
+      error: "An account with this email already exists. Please log in instead.",
       needsEmailConfirmation: false,
     };
   }
@@ -148,7 +152,8 @@ export async function signUp(
 
   if (existingProfile) {
     // Profile already exists — the user should log in instead.
-    // Do NOT update role or any fields here.
+    // Do NOT update role or any fields here. Clear session if present.
+    if (authData.session) await sb.auth.signOut();
     return {
       error: "This account profile already exists. Please log in instead.",
       needsEmailConfirmation: false,
@@ -172,12 +177,16 @@ export async function signUp(
     // (race condition). Show friendly message, never raw DB error.
     const errMsg = profileError.message.toLowerCase();
     if (errMsg.includes("duplicate key") || errMsg.includes("unique constraint") || errMsg.includes("user_profiles_pkey")) {
+      // Clear session to prevent auto-login on duplicate profile detection
+      if (authData.session) await sb.auth.signOut();
       return {
         error: "This account profile already exists. Please log in instead.",
         needsEmailConfirmation: false,
       };
     }
     console.warn("Profile creation failed:", profileError.message);
+    // Safety: clear session if profile creation failed to avoid half-logged-in state
+    if (authData.session) await sb.auth.signOut();
     return {
       error: "Account created but we couldn't save your profile. Please try logging in — your profile will be set up automatically.",
       needsEmailConfirmation: false,

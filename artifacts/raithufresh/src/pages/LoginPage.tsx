@@ -72,7 +72,7 @@ export default function LoginPage() {
           Welcome back. Enter your credentials to continue.
         </p>
 
-        {user ? (
+        {user && !submitting ? (
           <div className="space-y-4">
             <div className="bg-primary/10 border border-primary/20 text-primary rounded-xl p-4 text-sm text-center">
               You are already logged in as <strong>{user.email}</strong>.

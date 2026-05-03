@@ -85,11 +85,13 @@ DealNest must be preserved separately in `razzrohith/dealnest-web-archive`.
 
 ## Testing notes
 
-- Use unique fake emails for signup tests (e.g. `test-1234@example.com`).
-- If a fake email was already used, log in instead — duplicate signups will show a friendly "already exists" message.
-- Use fake 10-digit phone numbers only (e.g. `9000000001`).
-- Do not use real personal data for testing.
-- Supabase email rate limits may block rapid signups — disable email confirmations in Supabase dashboard for local testing, or wait between attempts.
+- **Unique Emails:** Use unique fake emails for signup tests (e.g. `test-1234@example.com`).
+- **Duplicate Signups:** If a fake email was already used, log in instead. Duplicate signups will correctly return an error message: "An account with this email already exists. Please log in instead." 
+- **Session Safety:** The app is configured to clear any accidental auth sessions created during a duplicate signup attempt. This ensures that users are not silently logged in if they try to re-register an existing account.
+- **Role Editing:** User roles are read-only once an account is created. To test a different role, use a new unique email.
+- **Phone Numbers:** Use fake 10-digit phone numbers only (e.g. `9000000001`).
+- **Rate Limits:** Supabase email rate limits may block rapid signups. If you see an email limit error, wait or disable email confirmations in your Supabase dashboard.
+- **No Real Data:** Never use real personal data for testing purposes.
 
 ## Next phase
 

@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
-import { Leaf, Loader2, Eye, EyeOff, Mail, RefreshCw } from "lucide-react";
+import { Leaf, Loader2, Eye, EyeOff, Mail, RefreshCw, Check, X, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,13 +12,20 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { useAuth } from "@/contexts/AuthContext";
-import { isSupabaseConfigured } from "@/lib/supabase";
+import { isSupabaseConfigured, normalizePhone, isValidPhone, isPhoneAvailable } from "@/lib/supabase";
 
 const signupSchema = z.object({
   fullName: z.string().min(2, "Full name is required"),
-  phone: z.string().regex(/^\d{10}$/, "Enter a valid 10-digit phone number"),
+  phone: z.string().refine((val) => isValidPhone(val), "Enter a valid 10-digit mobile number starting with 6-9"),
   email: z.string().email("Enter a valid email"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
+  password: z
+    .string()
+    .min(8, "Password must be at least 8 characters")
+    .regex(/[A-Z]/, "Include at least one uppercase letter")
+    .regex(/[a-z]/, "Include at least one lowercase letter")
+    .regex(/[0-9]/, "Include at least one number")
+    .regex(/[^A-Za-z0-9]/, "Include at least one special character")
+    .refine((val) => !val.includes(" "), "Password cannot contain spaces"),
   role: z.enum(["buyer", "farmer", "agent"], {
     required_error: "Select your role",
   }),
@@ -45,6 +52,7 @@ export default function SignupPage() {
   const [verificationNeeded, setVerificationNeeded] = useState(false);
   const [signedUpEmail, setSignedUpEmail] = useState("");
   const [resending, setResending] = useState(false);
+  const [passwordFocused, setPasswordFocused] = useState(false);
   const { resendVerification } = useAuth();
 
   // Read ?role= from URL (e.g. /signup?role=buyer)
@@ -56,8 +64,19 @@ export default function SignupPage() {
   const [roleValue, setRoleValue] = useState<string>(preRole);
 
   const {
-    register, handleSubmit, setValue, formState: { errors },
+    register, handleSubmit, setValue, watch, formState: { errors },
   } = useForm<SignupForm>({ resolver: zodResolver(signupSchema) });
+
+  const passwordValue = watch("password", "");
+
+  const passwordRules = [
+    { label: "8+ characters", met: passwordValue.length >= 8 },
+    { label: "Uppercase letter", met: /[A-Z]/.test(passwordValue) },
+    { label: "Lowercase letter", met: /[a-z]/.test(passwordValue) },
+    { label: "Number", met: /[0-9]/.test(passwordValue) },
+    { label: "Special character", met: /[^A-Za-z0-9]/.test(passwordValue) },
+    { label: "No spaces", met: passwordValue.length > 0 && !passwordValue.includes(" ") },
+  ];
 
   // Pre-select role from URL on mount
   useEffect(() => {
@@ -82,11 +101,21 @@ export default function SignupPage() {
     }
     setSubmitting(true);
     try {
+      const normalizedPhone = normalizePhone(data.phone);
+
+      // Check phone availability before auth signup
+      const isAvailable = await isPhoneAvailable(normalizedPhone);
+      if (!isAvailable) {
+        toast.error("This phone number is already registered. Please use another number or log in.");
+        setSubmitting(false);
+        return;
+      }
+
       const { error, needsEmailConfirmation } = await signUp({
         email: data.email,
         password: data.password,
         fullName: data.fullName,
-        phone: data.phone,
+        phone: normalizedPhone,
         role: data.role,
         village: data.village,
       });
@@ -281,10 +310,11 @@ export default function SignupPage() {
                 <div className="relative">
                   <Input
                     type={showPassword ? "text" : "password"}
-                    placeholder="At least 6 characters"
+                    placeholder="Create a strong password"
                     {...register("password")}
                     autoComplete="new-password"
                     className="pr-10"
+                    onFocus={() => setPasswordFocused(true)}
                   />
                   <button
                     type="button"
@@ -296,8 +326,30 @@ export default function SignupPage() {
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
-                {errors.password && (
+                {errors.password && !passwordFocused && (
                   <p className="text-destructive text-xs mt-1">{errors.password.message}</p>
+                )}
+
+                {passwordFocused && (
+                  <div className="mt-3 p-3 bg-muted/50 rounded-xl border border-border space-y-2">
+                    <p className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground mb-1 flex items-center gap-1.5">
+                      <ShieldCheck className="w-3 h-3" /> Password Requirements
+                    </p>
+                    <div className="grid grid-cols-2 gap-y-1.5 gap-x-2">
+                      {passwordRules.map((rule, i) => (
+                        <div key={i} className="flex items-center gap-1.5">
+                          {rule.met ? (
+                            <Check className="w-3 h-3 text-green-500 shrink-0" />
+                          ) : (
+                            <X className="w-3 h-3 text-muted-foreground/30 shrink-0" />
+                          )}
+                          <span className={`text-[11px] leading-tight ${rule.met ? "text-foreground" : "text-muted-foreground"}`}>
+                            {rule.label}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 )}
               </div>
 

@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import Navbar from "@/components/Navbar";
 import { useAuth } from "@/contexts/AuthContext";
-import { updateUserProfile, isSupabaseConfigured } from "@/lib/supabase";
+import { updateUserProfile, isSupabaseConfigured, normalizePhone, isValidPhone } from "@/lib/supabase";
 
 const ROLE_COLORS: Record<string, string> = {
   farmer: "bg-green-100 text-green-700 border-green-200",
@@ -21,7 +21,7 @@ const ROLE_COLORS: Record<string, string> = {
 
 const profileSchema = z.object({
   full_name: z.string().min(2, "Name must be at least 2 characters"),
-  phone: z.string().regex(/^\d{10}$/, "Enter a valid 10-digit phone number"),
+  phone: z.string().refine((val) => isValidPhone(val), "Enter a valid 10-digit mobile number starting with 6-9"),
   village: z.string().optional(),
   district: z.string().optional(),
 });
@@ -63,15 +63,20 @@ export default function ProfilePage() {
       return;
     }
     setSaving(true);
+    const normalizedPhone = normalizePhone(data.phone);
     const { error } = await updateUserProfile({
       full_name: data.full_name.trim(),
-      phone: data.phone.trim(),
+      phone: normalizedPhone,
       village: data.village?.trim() || null,
       district: data.district?.trim() || null,
     });
     setSaving(false);
     if (error) {
-      toast.error(`Could not save profile: ${error}`);
+      if (error.toLowerCase().includes("unique constraint") || error.toLowerCase().includes("user_profiles_phone_unique_idx")) {
+        toast.error("This phone number is already registered by another user.");
+      } else {
+        toast.error(`Could not save profile: ${error}`);
+      }
     } else {
       await refreshProfile();
       toast.success("Profile updated successfully.");

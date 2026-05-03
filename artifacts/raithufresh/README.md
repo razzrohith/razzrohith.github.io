@@ -65,6 +65,22 @@ PORT=3000 BASE_PATH=/ pnpm run build
 - Buyer phone privacy preserved
 - No paid services
 
+## User Account Rules
+
+### Phone Number Uniqueness
+- All user accounts must have a unique mobile number.
+- Numbers are normalized to 10 digits (e.g., `+91 98765 43210` -> `9876543210`).
+- Validation ensures numbers start with 6, 7, 8, or 9 (standard Indian mobile prefixes).
+
+### Password Requirements
+- Minimum 8 characters.
+- Must include at least:
+  - 1 Uppercase letter
+  - 1 Lowercase letter
+  - 1 Number
+  - 1 Special character
+- No spaces allowed.
+
 ## Supabase Auth Configuration
 
 To support email verification and password reset, configure your Supabase project as follows:
@@ -86,6 +102,10 @@ Supabase's free tier has strict email rate limits (usually 3 emails per hour per
 1. Use unique fake emails.
 2. Disable "Confirm email" in Auth Settings temporarily if needed.
 3. Use a custom SMTP provider for production.
+
+### Database Setup
+Apply the following patches in the Supabase SQL Editor:
+1. `artifacts/raithufresh/supabase/patch-unique-profile-phone.sql` — Enforces unique phone numbers and adds the availability check RPC.
 
 ## Deployment plan
 

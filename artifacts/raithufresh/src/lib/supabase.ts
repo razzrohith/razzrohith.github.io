@@ -53,6 +53,44 @@ export type SignUpData = {
 
 // ── Auth helpers ────────────────────────────────────────────────────────────
 
+/** Standardizes phone numbers to 10-digit format for Indian mobile numbers. */
+export function normalizePhone(phone: string): string {
+  // Remove all non-numeric characters
+  let clean = phone.replace(/\D/g, "");
+  
+  // Handle +91 or 91 prefix
+  if (clean.length === 12 && clean.startsWith("91")) {
+    clean = clean.substring(2);
+  } else if (clean.length === 11 && clean.startsWith("0")) {
+    clean = clean.substring(1);
+  }
+  
+  return clean;
+}
+
+/** Checks if a phone number is valid (10 digits, starts with 6-9). */
+export function isValidPhone(phone: string): boolean {
+  const normalized = normalizePhone(phone);
+  return /^[6789]\d{9}$/.test(normalized);
+}
+
+/** Checks if a phone number is available in user_profiles via RPC. */
+export async function isPhoneAvailable(phone: string): Promise<boolean> {
+  if (!isSupabaseConfigured()) return true;
+  const normalized = normalizePhone(phone);
+  
+  const { data, error } = await getSupabase().rpc("is_phone_available", {
+    phone_input: normalized,
+  });
+  
+  if (error) {
+    console.warn("isPhoneAvailable error:", error.message);
+    // Fallback to true to avoid blocking users if RPC fails
+    return true; 
+  }
+  return Boolean(data);
+}
+
 export async function getCurrentUser(): Promise<User | null> {
   if (!isSupabaseConfigured()) return null;
   const { data } = await getSupabase().auth.getUser();

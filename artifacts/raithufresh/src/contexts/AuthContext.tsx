@@ -167,9 +167,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [user, loadProfile]);
 
   const handleSignOut = async () => {
-    await sbSignOut();
-    setUser(null);
-    setProfile(null);
+    try {
+      await sbSignOut();
+    } catch (err) {
+      console.warn("AuthContext: sbSignOut error:", err);
+    } finally {
+      // Always clear local state even if Supabase call fails
+      setUser(null);
+      setProfile(null);
+      // Clear app-specific local storage keys to ensure fresh state on next login
+      try {
+        localStorage.removeItem("raithu_farmer_new_pending");
+        localStorage.removeItem("raithu_farmer_last_visit_ts");
+      } catch { /* ignore storage errors */ }
+    }
   };
 
   return (

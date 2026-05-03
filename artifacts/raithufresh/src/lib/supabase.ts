@@ -140,30 +140,12 @@ export async function signUp(
 
   const needsEmailConfirmation = !authData.session;
 
-  // Check if profile already exists before inserting.
-  // This prevents the duplicate key error when the auth user was
-  // already created (e.g. retry, or profile created on a prior attempt).
-  // NEVER upsert — that would risk overwriting the role field.
-  const { data: existingProfile } = await sb
-    .from("user_profiles")
-    .select("id")
-    .eq("id", authData.user.id)
-    .maybeSingle();
-
-  if (existingProfile) {
-    // Profile already exists — the user should log in instead.
-    // Do NOT update role or any fields here. Clear session if present.
-    if (authData.session) await sb.auth.signOut();
-    return {
-      error: "This account profile already exists. Please log in instead.",
-      needsEmailConfirmation: false,
-    };
-  }
-
   // Attempt to insert the profile. This will succeed when email confirmation
   // is disabled (session exists immediately). When confirmation is required
   // there is no session so RLS will block the INSERT; the profile will be
   // created by AuthContext.loadProfile on the first login instead.
+  // We ignore "duplicate key" errors here if they match our new user ID
+  // because AuthContext.loadProfile might have already inserted it in parallel.
   const { error: profileError } = await sb.from("user_profiles").insert({
     id: authData.user.id,
     full_name: data.fullName.trim(),
@@ -173,24 +155,22 @@ export async function signUp(
   });
 
   if (profileError && !needsEmailConfirmation) {
-    // Safety net: catch duplicate key even if the SELECT above missed it
-    // (race condition). Show friendly message, never raw DB error.
     const errMsg = profileError.message.toLowerCase();
+    // If it's a duplicate key for user_profiles_pkey, it's either a race condition
+    // with AuthContext or a stale row. In either case, if we have a valid session,
+    // we can proceed because we are the owner of this ID.
     if (errMsg.includes("duplicate key") || errMsg.includes("unique constraint") || errMsg.includes("user_profiles_pkey")) {
-      // Clear session to prevent auto-login on duplicate profile detection
+      // It exists. We can proceed as long as we are authenticated as this user.
+      console.info("Profile already exists for new user (likely created by AuthContext). Proceeding.");
+    } else {
+      console.warn("Profile creation failed:", profileError.message);
+      // Safety: clear session if profile creation failed to avoid half-logged-in state
       if (authData.session) await sb.auth.signOut();
       return {
-        error: "This account profile already exists. Please log in instead.",
+        error: "Account created but we couldn't save your profile. Please try logging in.",
         needsEmailConfirmation: false,
       };
     }
-    console.warn("Profile creation failed:", profileError.message);
-    // Safety: clear session if profile creation failed to avoid half-logged-in state
-    if (authData.session) await sb.auth.signOut();
-    return {
-      error: "Account created but we couldn't save your profile. Please try logging in — your profile will be set up automatically.",
-      needsEmailConfirmation: false,
-    };
   }
 
   // If farmer role and session exists, create the farmers row immediately.

@@ -102,6 +102,14 @@ export default function SignupPage() {
           errLower.includes("user_profiles_pkey")
         ) {
           toast.error(error, { duration: 6000 });
+        } else if (
+          errLower.includes("relation") ||
+          errLower.includes("pg_") ||
+          errLower.includes("syntax") ||
+          errLower.includes("violates") ||
+          errLower.includes("database")
+        ) {
+          toast.error("An unexpected server error occurred. Please try again later.");
         } else {
           toast.error(error);
         }

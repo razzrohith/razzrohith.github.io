@@ -83,14 +83,16 @@ DealNest must be preserved separately in `razzrohith/dealnest-web-archive`.
 - Supabase email confirmation may require manual login flow depending on project settings
 - GitHub deployment is not configured yet
 
-## Testing notes
+## Testing & QA Notes
 
 - **Unique Emails:** Use unique fake emails for signup tests (e.g. `test-1234@example.com`).
-- **Duplicate Signups:** If a fake email was already used, log in instead. Duplicate signups will correctly return an error message: "An account with this email already exists. Please log in instead." 
-- **Session Safety:** The app is configured to clear any accidental auth sessions created during a duplicate signup attempt. This ensures that users are not silently logged in if they try to re-register an existing account.
-- **Role Editing:** User roles are read-only once an account is created. To test a different role, use a new unique email.
+- **Duplicate Signups:** Duplicate signups correctly return an error message: "An account with this email already exists. Please log in instead." 
+- **Session Safety:** `AuthContext` strictly guards routes and acts as a single source of truth. Logouts fully clear application state and `localStorage` keys immediately.
+- **Role Editing:** User roles are read-only once an account is created. To test a different role, use a new unique email. If a profile creation fails initially, it can be recovered gracefully on the next login or via the `/profile` route.
 - **Phone Numbers:** Use fake 10-digit phone numbers only (e.g. `9000000001`).
 - **Rate Limits:** Supabase email rate limits may block rapid signups. If you see an email limit error, wait or disable email confirmations in your Supabase dashboard.
+- **Route Protection:** Only logged-in users with correct roles can access their dashboards. Buyers cannot access Farmer dashboards, etc. Unauthenticated users are safely redirected to the login gate.
+- **Direct URLs (SPA Fallback):** The app uses a `404.html` redirect script to ensure direct URL navigation (e.g., `razzrohith.com/login`) works flawlessly on GitHub Pages.
 - **No Real Data:** Never use real personal data for testing purposes.
 
 ## Next phase

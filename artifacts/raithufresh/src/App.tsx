@@ -73,13 +73,7 @@ function Router() {
         )}
       </Route>
 
-      <Route path="/profile">
-        {() => (
-          <ProtectedRoute allowedRoles={["buyer", "farmer", "agent", "admin"]}>
-            <ProfilePage />
-          </ProtectedRoute>
-        )}
-      </Route>
+      <Route path="/profile" component={ProfilePage} />
 
       <Route component={NotFound} />
     </Switch>

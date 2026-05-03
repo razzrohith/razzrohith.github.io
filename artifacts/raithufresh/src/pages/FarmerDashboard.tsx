@@ -130,6 +130,7 @@ export default function FarmerDashboard() {
   const [listings, setListings] = useState<ProduceListing[]>([]);
   const [rawListings, setRawListings] = useState<SupabaseListing[]>([]);
   const [listingsLoaded, setListingsLoaded] = useState(false);
+  const [listingsError, setListingsError] = useState<string | null>(null);
 
   // ── Create listing form ───────────────────────────────────────────────────
 
@@ -207,6 +208,8 @@ export default function FarmerDashboard() {
 
     setFarmerLoading(true);
     setReservationsLoading(true);
+    setListingsError(null);
+    setReservationsError(null);
     try {
       const farmer = await getOrCreateFarmerForCurrentUser(profile);
       setFarmerRow(farmer);
@@ -230,8 +233,9 @@ export default function FarmerDashboard() {
         setRawListings([]);
         setReservations([]);
       }
-    } catch (e) {
-      console.warn("Error loading farmer data:", e);
+    } catch {
+      setListingsError("Could not load your listings. Please try again.");
+      setReservationsError("Could not load reservations. Please try again.");
       setListings([]);
       setRawListings([]);
       setReservations([]);
@@ -261,7 +265,7 @@ export default function FarmerDashboard() {
       localStorage.setItem("raithu_farmer_new_pending", String(newCount));
       window.dispatchEvent(new CustomEvent("raithu_farmer_badge_update"));
     } catch {
-      setReservationsError("Could not load reservations. Use Refresh to try again.");
+      setReservationsError("Could not load reservations. Please try again.");
     } finally {
       setRefreshingReservations(false);
     }
@@ -715,15 +719,27 @@ export default function FarmerDashboard() {
             </div>
           )}
 
+          {/* Error */}
+          {!isLoading && listingsError && (
+            <div className="bg-card border border-destructive/20 rounded-2xl p-6 text-center">
+              <div className="w-10 h-10 rounded-full bg-destructive/10 flex items-center justify-center mx-auto mb-3">
+                <X className="w-5 h-5 text-destructive" />
+              </div>
+              <p className="text-sm font-semibold text-foreground mb-1">Could not load listings</p>
+              <p className="text-xs text-muted-foreground mb-4 max-w-xs mx-auto">{listingsError}</p>
+              <Button size="sm" onClick={loadFarmerData}>Try Again</Button>
+            </div>
+          )}
+
           {/* Empty */}
-          {!isLoading && listings.length === 0 && (
+          {!isLoading && !listingsError && listings.length === 0 && (
             <div className="text-center py-10 text-muted-foreground bg-card border border-border rounded-2xl">
               No listings yet. Add your first produce listing above.
             </div>
           )}
 
           {/* Listing cards */}
-          {!isLoading && listings.length > 0 && (
+          {!isLoading && !listingsError && listings.length > 0 && (
             <div className="space-y-3">
               {listings.map((listing) => (
                 <motion.div
@@ -978,12 +994,20 @@ export default function FarmerDashboard() {
 
           {/* Error */}
           {!reservationsLoading && reservationsError && (
-            <div className="flex flex-col items-center gap-3 py-8 text-destructive bg-card border border-destructive/20 rounded-2xl text-sm text-center">
-              <p>{reservationsError}</p>
-              {isSupabaseConfigured() && farmerRow && (
-                <Button size="sm" variant="outline" onClick={refreshReservations} disabled={refreshingReservations}>
+            <div className="bg-card border border-destructive/20 rounded-2xl p-6 text-center">
+              <div className="w-10 h-10 rounded-full bg-destructive/10 flex items-center justify-center mx-auto mb-3">
+                <X className="w-5 h-5 text-destructive" />
+              </div>
+              <p className="text-sm font-semibold text-foreground mb-1">Could not load reservations</p>
+              <p className="text-xs text-muted-foreground mb-4 max-w-xs mx-auto">{reservationsError}</p>
+              {isSupabaseConfigured() && (
+                <Button
+                  size="sm"
+                  onClick={farmerRow ? refreshReservations : loadFarmerData}
+                  disabled={refreshingReservations}
+                >
                   <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${refreshingReservations ? "animate-spin" : ""}`} />
-                  Try again
+                  Try Again
                 </Button>
               )}
             </div>

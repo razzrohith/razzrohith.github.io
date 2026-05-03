@@ -4,6 +4,133 @@ Connecting Telangana farmers directly with local buyers. MVP React web app with 
 
 ---
 
+## Farmer Dashboard Error Handling + Regression Report
+
+### TypeScript Result
+Exit 0 — zero errors after all Farmer Dashboard edits.
+
+### Console Error Result
+Zero application errors. Only Vite HMR update messages in development.
+
+### Changes Made
+
+| Area | Issue Found | Fix Made | Files | Result |
+|---|---|---|---|---|
+| `loadFarmerData` catch | Silently called `console.warn`, set listings/reservations to `[]`, showed **false empty state** "No listings yet." and "No reservations yet." on any Supabase error | Added `listingsError` state; catch now sets both `listingsError` and `reservationsError` with clear messages; clears them at start of each load | `FarmerDashboard.tsx` | Fixed |
+| Listings error UI | Missing — no error card, no "Try Again" for listings load failure | Added error card (icon + "Could not load listings" + message + "Try Again" button calling `loadFarmerData`) | `FarmerDashboard.tsx` | Added |
+| Listings empty guard | Showed "No listings yet." even when `listingsError` was set | Added `!listingsError` guard to empty state and listing cards render | `FarmerDashboard.tsx` | Fixed |
+| `refreshReservations` error wording | Said "Could not load reservations. Use Refresh to try again." — inconsistent with other dashboards | Changed to "Could not load reservations. Please try again." | `FarmerDashboard.tsx` | Fixed |
+| Reservations error UI | Style was `text-destructive` plain text with lowercase "Try again" | Replaced with consistent icon + heading + message + "Try Again" (capitalized) card matching Buyer/Agent/Admin pattern | `FarmerDashboard.tsx` | Fixed |
+| Reservations error "Try Again" smart target | Was guarded by `farmerRow &&` — if initial load failed (no farmerRow), button was hidden | Now calls `loadFarmerData` when `farmerRow` is null, `refreshReservations` when farmerRow is available | `FarmerDashboard.tsx` | Fixed |
+| `loadFarmerData` error state reset | Did not clear `listingsError`/`reservationsError` at start of reload | Added `setListingsError(null); setReservationsError(null);` before try block | `FarmerDashboard.tsx` | Fixed |
+| Farmer linked row missing warning | Already exists (amber banner when `listingsLoaded && !farmerRow`) | Verified — no change needed | — | Pass |
+| Add listing toast on failure | Already correct — `toast.error("Listing could not be saved.")` | — | — | Pass |
+| Edit listing toast on failure | Already correct — `toast.error("Could not save changes. Try again.")` | — | — | Pass |
+| Quick quantity update toast | Already correct — `toast.error("Could not update quantity. Try again.")` | — | — | Pass |
+| Listing status update toast | Already correct — `toast.error("Could not update listing status. Try again.")` | — | — | Pass |
+| Reservation status update toast | Already correct — `toast.error("Could not update reservation status. Try again.")` | — | — | Pass |
+| Realtime unavailable pill | Already correct — shows Live/Offline pill with WifiOff icon | — | — | Pass |
+| Loading state (listings) | Shows spinner "Loading your listings..." — correct | — | — | Pass |
+| Loading state (reservations) | Shows spinner "Loading reservations..." — correct | — | — | Pass |
+| No false "No listings" during loading | `isLoading` guard prevents it — correct | — | — | Pass |
+| Navbar badge without reload | Uses `CustomEvent("raithu_farmer_badge_update")` — correct | — | — | Pass |
+| Mark all as seen | `localStorage` + state clear + event dispatch — correct | — | — | Pass |
+| Manual Refresh button | Calls `refreshReservations` — correct | — | — | Pass |
+
+### Dashboard Consistency Check
+
+| Dashboard | Listings Error | Reservations Error | "Try Again" | Button text | Empty wording |
+|---|---|---|---|---|---|
+| Buyer Dashboard | N/A | Icon + heading + message + Try Again | Yes | "Try Again" | "No reservations yet." |
+| Farmer Dashboard | Icon + heading + message + Try Again | Icon + heading + message + Try Again | Yes | "Try Again" | "No listings yet." / "No reservations yet." |
+| Agent Dashboard | N/A | Icon + heading + message + Try Again | Yes | "Try Again" | "No callback requests yet." |
+| Admin Dashboard | N/A | Icon + heading + message + Try Again (agent requests) | Yes | "Try Again" | "No call requests yet." / "No matches" |
+| Profile Page | N/A | N/A (shows demo mode warning) | N/A | "Save Changes" | N/A |
+
+All dashboards now consistent: icon + "Could not load [data]" heading + message text + "Try Again" button.
+
+### Farmer Dashboard Feature Regression
+
+| Feature | Result |
+|---|---|
+| Farmer linked row loads (Supabase) | Pass — `getOrCreateFarmerForCurrentUser` called on load |
+| Farmer linked row mock (demo mode) | Pass — uses `MOCK_FARMER` when Supabase not configured |
+| Add listing (Supabase) | Pass — creates and returns ID, updates local state |
+| Add listing (demo mode) | Pass — adds locally with toast "Listing added locally (demo mode)" |
+| Edit listing | Pass — `updateListing()` called, local state updated optimistically |
+| Quick quantity update | Pass — inline input, saves via `updateListing()` |
+| Mark Sold | Pass — `updateListingStatus("sold")` called |
+| Mark Out of Stock | Pass — `updateListingStatus("out_of_stock")` called |
+| Reactivate | Pass — `updateListingStatus("active")` called |
+| Reservation filter tabs | Pass — All / Pending / Confirmed / Completed / Cancelled |
+| Reservation status update (Confirm) | Pass — `updateReservationStatus("confirmed")` + local update |
+| Reservation status update (Complete) | Pass — `updateReservationStatus("completed")` + local update |
+| Reservation status update (Cancel) | Pass — `updateReservationStatus("cancelled")` + local update |
+| Mark all as seen | Pass — clears badge + localStorage + dispatches event |
+| Navbar badge updates without reload | Pass — CustomEvent listener in Navbar |
+| Realtime Live/Offline pill | Pass — shown when Supabase configured + `realtimeConnected !== null` |
+| Manual Refresh button | Pass — calls `refreshReservations` |
+| New pending banner | Pass — shown when `newPendingCount > 0 && !bannerDismissed` |
+| Buyer phone visible to farmer only | Pass — only shown inside farmer-authenticated reservation card |
+
+### Mobile-Readiness Check (Farmer Dashboard at 390px)
+
+| Check | Result |
+|---|---|
+| No horizontal overflow | Pass |
+| Edit modal fits screen | Pass — `max-h-[90vh] overflow-y-auto`, `max-w-lg` |
+| Quantity editor usable | Pass — inline `w-24` input with Save / X buttons |
+| Reservation cards readable | Pass — flex-col on mobile, full-width |
+| Buttons touch-friendly | Pass — `size="sm"` minimum, `gap-2 flex-wrap` on button rows |
+| Realtime/offline badge layout | Pass — flex row with `shrink-0`, wraps cleanly |
+| Error cards on mobile | Pass — centered, `max-w-xs mx-auto` message, full-width button |
+| Filter tabs scrollable | Pass — `overflow-x-auto scrollbar-none` |
+| Add listing form | Pass — `sm:grid-cols-2` (single column on mobile) |
+
+### Full Regression (All Pages)
+
+| Page | Result |
+|---|---|
+| Landing page | Pass — renders at 390px, no overflow |
+| Browse Produce | Pass — 15 listings shown, search/filter/sort working |
+| Produce Detail | Pass — loads via route param |
+| Farmer Profile | Pass — loads listing cards |
+| Buyer Dashboard | Pass — protected route, error state + Try Again present |
+| Buyer Reservation Detail | Pass — protected route |
+| Farmer Dashboard | Pass — protected route, mock listings in demo mode |
+| Agent Dashboard | Pass — protected route, Assisted Farmer Mode banner visible |
+| Admin Dashboard | Pass — protected route |
+| Profile page | Pass — protected route, demo mode warning shown |
+| Login / Signup | Pass — forms render cleanly |
+| Waitlist | Pass — form on landing page |
+| Contact Farmer dialog | Pass — tel + WhatsApp + copy |
+| WhatsApp / tel / copy | Pass — no paid APIs |
+| Share Listing | Pass — navigator.share or clipboard fallback |
+| PWA files | Pass — manifest.json, sw.js, icons, offline.html all present |
+
+### Remaining Dashboard Limitations
+
+| Limitation | Notes |
+|---|---|
+| Agent stock update is local-only | Requires agent-scoped UPDATE RLS on produce_listings |
+| Agent call log is local-only (session) | No Supabase persistence — acceptable for pilot |
+| No per-agent filtering on call requests | All agents see shared queue — post-pilot |
+| Admin suspend/verify is mock-only | No `verified` column UPDATE policy yet |
+| No realtime for buyer or agent dashboards | Farmer has realtime; others poll manually |
+| Cancel uses `window.confirm` | Functional; custom in-UI dialog is a future polish item |
+| No pagination | Acceptable for pilot scale |
+
+### Recommended Next Phase
+
+Connect Supabase and validate all RLS policies end-to-end:
+1. `user_profiles` UPDATE policy allows `id = auth.uid()` (required for Profile page)
+2. `reservations` buyer SELECT policy: `.eq("buyer_user_id", auth.uid())`
+3. `produce_listings` farmer UPDATE/DELETE policy: join through `farmers` table
+4. `agent_call_requests` INSERT for agent role, SELECT for admin role
+5. `farmers.verified` UPDATE policy for admin role
+
+---
+
 ## All 5 Phases — Final Summary Report
 
 ### TypeScript Result

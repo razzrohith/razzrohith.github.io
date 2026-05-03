@@ -1,0 +1,151 @@
+Context:
+This is RaithuFresh, a Telangana-first fruits and vegetables marketplace for farmers, buyers, agents, and admins.
+
+Final product goal:
+The final goal is to publish RaithuFresh as a real Android app on Google Play Store and a real iOS app on Apple App Store.
+For now, continue building the web/PWA MVP, but keep everything mobile-app-ready for a future free/open-source Capacitor-style wrapper.
+
+Rules:
+- Focus only on fruits and vegetables.
+- Use only free tools, free tiers, open-source libraries, and mock/local alternatives.
+- Do not use paid services or paid APIs.
+- Do not add background push notifications yet.
+- Do not add Web Push, VAPID keys, Push API subscription storage, or notification servers.
+- Do not touch DealNest/deals/coupons/stores/threads code or data.
+- Do not add delivery, online payments, admin promotion tools, Edge Functions, or paid services.
+- Do not use service_role key.
+- Do not expose secrets.
+- Do not weaken RLS.
+- Use only fake/mock names, phone numbers, emails, villages, and test details during testing.
+- Do not use real personal data.
+- Keep UI mobile-first and touch-friendly for future Android/iOS packaging.
+
+Task:
+Run a Farmer Dashboard Error Handling Consistency + Final Dashboard Regression phase.
+
+Current state:
+- Buyer Dashboard now has fetchError + Try Again.
+- Agent Dashboard now has error UI + Try Again.
+- Admin Dashboard Agent Requests tab now has error UI + Try Again.
+- Farmer Dashboard was heavily upgraded earlier but may not have the same consistent error handling.
+
+Goal:
+Make Farmer Dashboard error handling consistent with Buyer, Agent, and Admin dashboards, then run a focused dashboard regression.
+
+Part 1 — Farmer Dashboard error handling
+
+Audit FarmerDashboard.tsx.
+
+Add clear error handling for:
+- farmer profile/load failure
+- listings load failure
+- reservations load failure
+- listing create failure
+- listing edit failure
+- quick quantity update failure
+- listing status update failure
+- reservation status update failure
+- realtime unavailable state
+
+Requirements:
+- Show a clear user-friendly error card/message.
+- Add “Try Again” button where useful.
+- Do not show false “No listings” or “No reservations” while data is still loading.
+- Do not crash if Supabase returns an error.
+- Keep mock/local fallback where already intended.
+- Do not change RLS.
+- Do not add new database tables.
+
+Part 2 — Keep existing Farmer Dashboard features working
+
+Verify:
+- Farmer linked row still loads.
+- Add listing still works.
+- Edit listing still works.
+- Quick quantity update still works.
+- Mark Sold works.
+- Mark Out of Stock works.
+- Reactivate works if already implemented.
+- Reservation filters still work.
+- Reservation status updates still work.
+- Mark all as seen still works.
+- Navbar badge still updates without reload.
+- Realtime Live/Offline pill still works.
+- Manual Refresh still works.
+
+Part 3 — Dashboard consistency check
+
+Compare error/loading/empty patterns across:
+- Buyer Dashboard
+- Farmer Dashboard
+- Agent Dashboard
+- Admin Dashboard
+- Profile page
+
+Make sure wording is simple and consistent.
+
+Use patterns like:
+- “Could not load data. Please try again.”
+- “Try Again”
+- “No reservations yet.”
+- “No listings yet.”
+
+Part 4 — Mobile-readiness check
+
+Verify Farmer Dashboard at mobile width:
+- No horizontal overflow.
+- Edit modal fits screen.
+- Quantity editor is usable.
+- Reservation cards are readable.
+- Buttons are touch-friendly.
+- Realtime/offline badge does not break layout.
+- Error cards look clean on mobile.
+
+Part 5 — Regression
+
+Test:
+- Landing page works.
+- Browse Produce works.
+- Produce Detail works.
+- Farmer Profile works.
+- Buyer Dashboard works.
+- Buyer Reservation Detail works.
+- Farmer Dashboard works.
+- Agent Dashboard works.
+- Admin Dashboard works.
+- Profile page works.
+- Login/Signup work.
+- Waitlist works.
+- Contact Farmer dialog works.
+- WhatsApp/tel/copy still work.
+- Share Listing works.
+- PWA files still exist.
+- TypeScript has zero errors.
+- No console errors.
+- No secrets printed.
+- No paid services used.
+
+Part 6 — Documentation
+
+Update README with:
+- Farmer Dashboard error handling added
+- Try Again behavior
+- Loading/empty/error consistency
+- Mobile-readiness result
+- Fake/mock testing rule
+- No paid services used
+
+Final report format:
+Return a table with:
+- Area checked
+- Issue found
+- Fix made
+- Files changed
+- Test result
+
+Also include:
+- TypeScript result
+- Console error result
+- Mobile-readiness result
+- Remaining dashboard limitations
+- Recommended next phase

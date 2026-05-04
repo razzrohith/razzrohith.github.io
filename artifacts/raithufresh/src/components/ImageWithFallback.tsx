@@ -19,7 +19,7 @@ export default function ImageWithFallback({
   const [error, setError] = useState(false);
   const [loaded, setLoaded] = useState(false);
 
-  const currentSrc = error ? fallbackSrc : src;
+  const finalSrc = (!src || error) ? fallbackSrc : src;
 
   return (
     <div className={`relative overflow-hidden bg-muted/20 flex items-center justify-center ${containerClassName}`}>
@@ -29,7 +29,7 @@ export default function ImageWithFallback({
         </div>
       )}
       <img
-        src={currentSrc}
+        src={finalSrc}
         alt={alt || "Image"}
         onError={() => setError(true)}
         onLoad={() => setLoaded(true)}

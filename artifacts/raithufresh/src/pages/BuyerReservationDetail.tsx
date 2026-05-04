@@ -27,6 +27,7 @@ import {
   isSupabaseConfigured,
 } from "@/lib/supabase";
 import BilingualLabel from "@/components/BilingualLabel";
+import { getCategoryIcon } from "@/lib/images";
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
@@ -202,11 +203,11 @@ export default function BuyerReservationDetailPage({ id }: Props) {
             <div className="flex items-start justify-between gap-3 mb-2">
               <div className="flex items-center gap-2 min-w-0">
                 <img
-                  src={listing?.category === "Fruit" ? "/assets/icon-fruit.svg" : "/assets/icon-vegetable.svg"}
+                  src={getCategoryIcon(listing?.category || "")}
                   alt={listing?.category ?? "Produce"}
                   width={22}
                   height={22}
-                  className="shrink-0"
+                  className="shrink-0 rounded object-cover"
                 />
                 <h1 className="text-xl font-bold text-foreground truncate">
                   {listing?.produce_name ?? "Reservation"}

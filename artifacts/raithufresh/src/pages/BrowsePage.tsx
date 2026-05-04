@@ -16,6 +16,8 @@ import { ProduceListing } from "@/lib/types";
 import { isSupabaseConfigured, getSupabase, SupabaseListing } from "@/lib/supabase";
 import { shareListing } from "@/lib/share";
 import BilingualLabel from "@/components/BilingualLabel";
+import ImageWithFallback from "@/components/ImageWithFallback";
+import { getProduceImage } from "@/lib/images";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -396,13 +398,11 @@ export default function BrowsePage() {
             </div>
 
             {listings.length === 0 ? (
-              <div className="text-center py-16 px-6 bg-card border border-border border-dashed rounded-2xl">
+              <div className="text-center py-16 px-6 bg-card border border-border border-dashed rounded-2xl flex flex-col items-center">
                 <img
-                  src="/assets/empty-produce.svg"
+                  src="/assets/images/empty-states/empty-basket.png"
                   alt="No produce available"
-                  width={120}
-                  height={96}
-                  className="mx-auto mb-4 opacity-70"
+                  className="w-32 h-32 object-cover opacity-80 mix-blend-multiply dark:mix-blend-screen mb-4"
                 />
                 <p className="font-medium text-foreground mb-1">
                   <BilingualLabel en="No produce listed yet" te="ఇంకా ఎటువంటి పంటలు లేవు" />
@@ -440,100 +440,108 @@ export default function BrowsePage() {
                       initial={{ opacity: 0, y: 16 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: Math.min(i * 0.04, 0.3), duration: 0.3 }}
-                      className="bg-card border border-border rounded-2xl p-5 shadow-sm flex flex-col gap-3"
+                      className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm flex flex-col"
                     >
-                      <div className="flex items-start justify-between gap-2">
-                        <div>
-                          <h3 className="font-semibold text-foreground text-base">{listing.name}</h3>
-                          <p className="text-sm text-muted-foreground">
-                            {listing.farmerId ? (
-                              <Link
-                                href={`/farmers/${listing.farmerId}`}
-                                className="font-medium text-foreground hover:underline underline-offset-2"
-                              >
-                                {f?.name ?? "—"}
-                              </Link>
-                            ) : (f?.name ?? "—")}
-                            {f?.village ? ` · ${f.village}` : ""}
-                            {f?.district && f.district !== f.village ? `, ${f.district}` : ""}
+                      <ImageWithFallback
+                        src={"" /* No DB image support yet */}
+                        fallbackSrc={getProduceImage(listing.name, listing.category)}
+                        alt={listing.name}
+                        containerClassName="h-44 w-full"
+                      />
+                      <div className="p-5 flex flex-col gap-3">
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <h3 className="font-semibold text-foreground text-base">{listing.name}</h3>
+                            <p className="text-sm text-muted-foreground">
+                              {listing.farmerId ? (
+                                <Link
+                                  href={`/farmers/${listing.farmerId}`}
+                                  className="font-medium text-foreground hover:underline underline-offset-2"
+                                >
+                                  {f?.name ?? "—"}
+                                </Link>
+                              ) : (f?.name ?? "—")}
+                              {f?.village ? ` · ${f.village}` : ""}
+                              {f?.district && f.district !== f.village ? `, ${f.district}` : ""}
+                            </p>
+                          </div>
+                          <Badge
+                            variant={listing.category === "Fruit" ? "default" : "secondary"}
+                            className="shrink-0"
+                          >
+                            {listing.category}
+                          </Badge>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2 text-sm">
+                          <div className="bg-primary/5 rounded-lg p-2 text-center">
+                            <div className="font-bold text-primary text-lg">
+                              <BilingualLabel en={`Rs ${listing.pricePerKg}`} te={`Rs ${listing.pricePerKg}`} orientation="stacked" variant="onLight" />
+                            </div>
+                            <div className="text-muted-foreground text-[10px]">
+                              <BilingualLabel en="per kg" te="కేజీకి" variant="onLight" />
+                            </div>
+                          </div>
+                          <div className="bg-muted rounded-lg p-2 text-center">
+                            <div className="font-bold text-foreground text-lg">{listing.quantityKg}</div>
+                            <div className="text-muted-foreground text-[10px]">
+                              <BilingualLabel en="kg available" te="కేజీలు ఉన్నాయి" variant="onLight" />
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="space-y-1 text-xs text-muted-foreground">
+                          {listing.harvestDate && (
+                            <div className="flex items-center gap-1.5">
+                              <Calendar className="w-3.5 h-3.5 shrink-0" />
+                              Harvest: {listing.harvestDate}
+                            </div>
+                          )}
+                          {listing.pickupLocation && (
+                            <div className="flex items-center gap-1.5">
+                              <MapPin className="w-3.5 h-3.5 shrink-0" />
+                              {listing.pickupLocation}
+                              {listing.distanceKm > 0 ? ` · ${listing.distanceKm} km away` : ""}
+                            </div>
+                          )}
+                        </div>
+
+                        {listing.qualityNotes && (
+                          <p className="text-xs text-muted-foreground italic bg-muted/50 rounded-lg px-2 py-1">
+                            {listing.qualityNotes}
                           </p>
-                        </div>
-                        <Badge
-                          variant={listing.category === "Fruit" ? "default" : "secondary"}
-                          className="shrink-0"
-                        >
-                          {listing.category}
-                        </Badge>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-2 text-sm">
-                        <div className="bg-primary/5 rounded-lg p-2 text-center">
-                          <div className="font-bold text-primary text-lg">
-                            <BilingualLabel en={`Rs ${listing.pricePerKg}`} te={`Rs ${listing.pricePerKg}`} orientation="stacked" variant="onLight" />
-                          </div>
-                          <div className="text-muted-foreground text-[10px]">
-                            <BilingualLabel en="per kg" te="కేజీకి" variant="onLight" />
-                          </div>
-                        </div>
-                        <div className="bg-muted rounded-lg p-2 text-center">
-                          <div className="font-bold text-foreground text-lg">{listing.quantityKg}</div>
-                          <div className="text-muted-foreground text-[10px]">
-                            <BilingualLabel en="kg available" te="కేజీలు ఉన్నాయి" variant="onLight" />
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="space-y-1 text-xs text-muted-foreground">
-                        {listing.harvestDate && (
-                          <div className="flex items-center gap-1.5">
-                            <Calendar className="w-3.5 h-3.5 shrink-0" />
-                            Harvest: {listing.harvestDate}
-                          </div>
                         )}
-                        {listing.pickupLocation && (
-                          <div className="flex items-center gap-1.5">
-                            <MapPin className="w-3.5 h-3.5 shrink-0" />
-                            {listing.pickupLocation}
-                            {listing.distanceKm > 0 ? ` · ${listing.distanceKm} km away` : ""}
-                          </div>
-                        )}
-                      </div>
 
-                      {listing.qualityNotes && (
-                        <p className="text-xs text-muted-foreground italic bg-muted/50 rounded-lg px-2 py-1">
-                          {listing.qualityNotes}
-                        </p>
-                      )}
-
-                      <div className="flex gap-2 mt-auto pt-1">
-                        <Button size="sm" className="flex-1 h-auto py-2" onClick={() => handleReserve(listing)}>
-                          <BilingualLabel en="Reserve" te="రిజర్వ్" orientation="stacked" variant="button" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="flex-1 h-auto py-2"
-                          onClick={() => handleContact(listing)}
+                        <div className="flex gap-2 mt-auto pt-1">
+                          <Button size="sm" className="flex-1 h-auto py-2" onClick={() => handleReserve(listing)}>
+                            <BilingualLabel en="Reserve" te="రిజర్వ్" orientation="stacked" variant="button" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="flex-1 h-auto py-2"
+                            onClick={() => handleContact(listing)}
+                          >
+                            <BilingualLabel en="Contact" te="సంప్రదించండి" orientation="stacked" variant="onLight" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="shrink-0 px-2"
+                            onClick={() => handleShare(listing)}
+                            title="Share this listing"
+                            aria-label="Share this listing"
+                          >
+                            <Share2 className="w-3.5 h-3.5" />
+                          </Button>
+                        </div>
+                        <Link
+                          href={`/produce/${listing.id}`}
+                          className="text-xs text-center text-primary underline underline-offset-2"
                         >
-                          <BilingualLabel en="Contact" te="సంప్రదించండి" orientation="stacked" variant="onLight" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="shrink-0 px-2"
-                          onClick={() => handleShare(listing)}
-                          title="Share this listing"
-                          aria-label="Share this listing"
-                        >
-                          <Share2 className="w-3.5 h-3.5" />
-                        </Button>
+                          <BilingualLabel en="View full details" te="పూర్తి వివరాలు చూడండి" />
+                        </Link>
                       </div>
-                      <Link
-                        href={`/produce/${listing.id}`}
-                        className="text-xs text-center text-primary underline underline-offset-2"
-                      >
-                        <BilingualLabel en="View full details" te="పూర్తి వివరాలు చూడండి" />
-                      </Link>
                     </motion.div>
                   );
                 })}

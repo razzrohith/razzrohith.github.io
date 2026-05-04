@@ -24,6 +24,8 @@ import {
 } from "@/lib/supabase";
 import { shareListing } from "@/lib/share";
 import BilingualLabel from "@/components/BilingualLabel";
+import ImageWithFallback from "@/components/ImageWithFallback";
+import { getProduceImage, getCategoryIcon } from "@/lib/images";
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -70,12 +72,12 @@ type SimilarItem = {
 function CategoryIcon({ category, size = 20 }: { category: string; size?: number }) {
   return (
     <img
-      src={category === "Fruit" ? "/assets/icon-fruit.svg" : "/assets/icon-vegetable.svg"}
+      src={getCategoryIcon(category)}
       alt={category}
       width={size}
       height={size}
       style={{ width: size, height: size }}
-      className="shrink-0"
+      className="shrink-0 rounded-md object-cover"
     />
   );
 }
@@ -228,11 +230,9 @@ export default function ProduceDetailPage() {
         <Navbar />
         <div className="max-w-2xl mx-auto px-4 py-16 text-center">
           <img
-            src="/assets/empty-produce.svg"
+            src="/assets/images/empty-states/empty-basket.png"
             alt="Listing not found"
-            width={120}
-            height={96}
-            className="mx-auto mb-5 opacity-75"
+            className="w-32 h-32 object-cover mx-auto mb-5 opacity-80 mix-blend-multiply dark:mix-blend-screen"
           />
           <h2 className="text-xl font-bold text-foreground mb-2">Produce not found</h2>
           <p className="text-sm text-muted-foreground mb-6">
@@ -305,7 +305,14 @@ export default function ProduceDetailPage() {
         >
 
           {/* ── Main listing card ── */}
-          <div className="bg-card border border-border rounded-2xl p-6 mb-4 shadow-sm">
+          <div className="bg-card border border-border rounded-2xl overflow-hidden mb-4 shadow-sm">
+            <ImageWithFallback
+              src={"" /* No DB image support yet */}
+              fallbackSrc={getProduceImage(listing.name, listing.category)}
+              alt={listing.name}
+              containerClassName="w-full h-64 sm:h-80"
+            />
+            <div className="p-6">
             <div className="flex items-start justify-between gap-3 mb-4">
               <div>
                 <h1 className="text-2xl font-bold text-foreground">{listing.name}</h1>
@@ -389,6 +396,7 @@ export default function ProduceDetailPage() {
                   </span>
                 </span>
               </div>
+              </div>
             </div>
           </div>
 
@@ -397,12 +405,11 @@ export default function ProduceDetailPage() {
             <div className="bg-primary/5 border border-primary/15 rounded-2xl p-5 mb-4 shadow-sm">
               <div className="flex items-start justify-between gap-3 mb-3">
                 <div className="flex items-center gap-3">
-                  <img
-                    src="/assets/icon-farmer-week.svg"
+                  <ImageWithFallback
+                    src="/assets/images/farmers/generic-farmer.png"
                     alt="Farmer profile"
-                    width={40}
-                    height={40}
-                    className="shrink-0"
+                    containerClassName="w-12 h-12 rounded-full shrink-0"
+                    className="rounded-full"
                   />
                   <div>
                     <p className="font-semibold text-foreground leading-tight">{farmerName}</p>

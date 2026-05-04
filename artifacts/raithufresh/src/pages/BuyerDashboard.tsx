@@ -29,6 +29,7 @@ import {
   isSupabaseConfigured,
 } from "@/lib/supabase";
 import BilingualLabel from "@/components/BilingualLabel";
+import { getCategoryIcon } from "@/lib/images";
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
@@ -371,11 +372,9 @@ export default function BuyerDashboard() {
         ) : reservations.length === 0 ? (
           <div className="text-center py-16">
             <img
-              src="/assets/empty-produce.svg"
+              src="/assets/images/empty-states/empty-basket.png"
               alt="No reservations yet"
-              width={120}
-              height={96}
-              className="mx-auto mb-4 opacity-70"
+              className="mx-auto mb-4 w-32 h-32 object-cover opacity-80 mix-blend-multiply dark:mix-blend-screen"
             />
             <p className="font-semibold text-foreground mb-1">No reservations yet</p>
             <p className="text-sm text-muted-foreground mb-5 max-w-xs mx-auto">
@@ -430,11 +429,11 @@ export default function BuyerDashboard() {
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
                           <img
-                            src={listing?.category === "Fruit" ? "/assets/icon-fruit.svg" : "/assets/icon-vegetable.svg"}
+                            src={getCategoryIcon(listing?.category || "")}
                             alt={listing?.category ?? "Produce"}
                             width={18}
                             height={18}
-                            className="shrink-0"
+                            className="shrink-0 rounded object-cover"
                           />
                           <p className="font-semibold text-foreground truncate">
                             {listing?.produce_name ?? "Produce"}

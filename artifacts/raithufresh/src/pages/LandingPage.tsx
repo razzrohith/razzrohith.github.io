@@ -20,6 +20,8 @@ import {
   SupabaseListing,
 } from "@/lib/supabase";
 import BilingualLabel from "@/components/BilingualLabel";
+import { getCategoryIcon, getProduceImage } from "@/lib/images";
+import ImageWithFallback from "@/components/ImageWithFallback";
 
 // ── Static data ───────────────────────────────────────────────────────────────
 
@@ -93,14 +95,14 @@ function StarRating({ rating }: { rating: number | null }) {
 }
 
 function CategoryIcon({ category, size = 20 }: { category: string; size?: number }) {
-  const src = category === "Fruit" ? "/assets/icon-fruit.svg" : "/assets/icon-vegetable.svg";
+  const src = getCategoryIcon(category);
   return (
     <img
       src={src}
       alt={category}
       width={size}
       height={size}
-      className="shrink-0"
+      className="shrink-0 rounded-md object-cover"
       style={{ width: size, height: size }}
     />
   );
@@ -246,11 +248,9 @@ export default function LandingPage() {
               className="hidden md:flex items-center justify-center"
             >
               <img
-                src="/assets/hero-produce.svg"
+                src="/assets/images/hero/market-hero.png"
                 alt="Fresh fruits and vegetables from Telangana farmers"
-                width={480}
-                height={380}
-                className="w-full max-w-md drop-shadow-sm select-none"
+                className="w-full max-w-md drop-shadow-xl select-none rounded-2xl object-cover aspect-[4/3] border border-border"
                 draggable={false}
               />
             </motion.div>
@@ -321,7 +321,7 @@ export default function LandingPage() {
               transition={{ delay: 0.18, duration: 0.35 }}
               className="flex flex-col items-center gap-1.5 bg-amber-50 rounded-xl p-4 text-center"
             >
-              <img src="/assets/icon-fruit.svg" alt="Fruit" width={24} height={24} />
+              <img src={getCategoryIcon("Fruit")} alt="Fruit" width={24} height={24} className="rounded object-cover" />
               <span className="text-2xl font-bold text-amber-600 leading-none">
                 {dataLoading ? "—" : (landingStats?.fruitListings ?? 0)}
               </span>
@@ -337,7 +337,7 @@ export default function LandingPage() {
               transition={{ delay: 0.24, duration: 0.35 }}
               className="flex flex-col items-center gap-1.5 bg-violet-50 rounded-xl p-4 text-center"
             >
-              <img src="/assets/icon-vegetable.svg" alt="Vegetable" width={24} height={24} />
+              <img src={getCategoryIcon("Vegetable")} alt="Vegetable" width={24} height={24} className="rounded object-cover" />
               <span className="text-2xl font-bold text-violet-600 leading-none">
                 {dataLoading ? "—" : (landingStats?.vegetableListings ?? 0)}
               </span>
@@ -436,8 +436,13 @@ export default function LandingPage() {
               </div>
             ) : (
               <div className="bg-gradient-to-br from-primary/5 to-secondary/5 border border-border rounded-2xl p-6 flex flex-col sm:flex-row gap-6 items-start">
-                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center shrink-0 text-2xl font-bold text-primary">
-                  {farmerOfWeek.name.charAt(0).toUpperCase()}
+                <div className="shrink-0">
+                  <ImageWithFallback
+                    src="/assets/images/farmers/generic-farmer.png"
+                    alt={farmerOfWeek.name}
+                    containerClassName="w-16 h-16 rounded-full"
+                    className="rounded-full"
+                  />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap mb-1">
@@ -592,16 +597,16 @@ export default function LandingPage() {
                 <span>Loading listings...</span>
               </div>
             ) : landingListings.length === 0 ? (
-              <div className="text-center py-14 text-muted-foreground bg-card rounded-xl border border-border flex flex-col items-center gap-2">
+              <div className="text-center py-14 text-muted-foreground bg-card rounded-xl border border-border flex flex-col items-center gap-4">
                 <img
-                  src="/assets/empty-produce.svg"
+                  src="/assets/images/empty-states/empty-basket.png"
                   alt="No listings found"
-                  width={100}
-                  height={80}
-                  className="opacity-70"
+                  className="w-24 h-24 object-cover opacity-80 mix-blend-multiply dark:mix-blend-screen"
                 />
-                <p className="text-sm">No active listings right now.</p>
-                <p className="text-xs">Check back soon or browse all produce.</p>
+                <div>
+                  <p className="text-sm font-medium">No active listings right now.</p>
+                  <p className="text-xs mt-1">Check back soon or browse all produce.</p>
+                </div>
                 <Link href="/browse">
                   <Button variant="outline" size="sm" className="mt-2">
                     Browse All Produce
@@ -625,19 +630,26 @@ export default function LandingPage() {
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true }}
                         transition={{ delay: i * 0.07, duration: 0.35 }}
-                        className="bg-card border border-border rounded-2xl p-5 shadow-sm flex flex-col gap-3"
+                        className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm flex flex-col"
                       >
-                        <div className="flex items-start justify-between gap-2">
-                          <div>
-                            <h3 className="font-semibold text-foreground text-base">
-                              {listing.produce_name}
-                            </h3>
-                            {listing.farmers?.name && (
-                              <p className="text-xs text-muted-foreground mt-0.5">
-                                by {listing.farmers.name}
-                              </p>
-                            )}
-                          </div>
+                        <ImageWithFallback
+                          src={"" /* No DB image support yet */}
+                          fallbackSrc={`/assets/images/produce/${listing.produce_name.toLowerCase().replace(/[^a-z0-9]/g, "")}.png`}
+                          alt={listing.produce_name}
+                          containerClassName="h-40 w-full"
+                        />
+                        <div className="p-5 flex flex-col gap-3">
+                          <div className="flex items-start justify-between gap-2">
+                            <div>
+                              <h3 className="font-semibold text-foreground text-base">
+                                {listing.produce_name}
+                              </h3>
+                              {listing.farmers?.name && (
+                                <p className="text-xs text-muted-foreground mt-0.5">
+                                  by {listing.farmers.name}
+                                </p>
+                              )}
+                            </div>
                           <div className="flex items-center gap-1.5 shrink-0">
                             <CategoryIcon category={listing.category} size={18} />
                             <Badge
@@ -687,6 +699,7 @@ export default function LandingPage() {
                             <BilingualLabel en="View Details" te="వివరాలు చూడండి" orientation="stacked" />
                           </Button>
                         </Link>
+                        </div>
                       </motion.div>
                     );
                   })}

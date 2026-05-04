@@ -13,6 +13,8 @@ import Navbar from "@/components/Navbar";
 import ReservationModal from "@/components/ReservationModal";
 import ContactFarmerDialog from "@/components/ContactFarmerDialog";
 import BilingualLabel from "@/components/BilingualLabel";
+import ImageWithFallback from "@/components/ImageWithFallback";
+import { getProduceImage } from "@/lib/images";
 import { ProduceListing } from "@/lib/types";
 import {
   SupabaseFarmer, SupabaseListing,
@@ -301,11 +303,9 @@ export default function FarmerProfilePage() {
           {listings.length === 0 ? (
             <div className="bg-card border border-border rounded-2xl p-8 text-center shadow-sm">
               <img
-                src="/assets/empty-produce.svg"
+                src="/assets/images/empty-states/empty-basket.png"
                 alt="No active listings"
-                width={100}
-                height={80}
-                className="mx-auto mb-4 opacity-70"
+                className="mx-auto mb-4 w-24 h-24 object-cover opacity-80 mix-blend-multiply dark:mix-blend-screen"
               />
               <p className="text-muted-foreground text-sm">
                 No active listings from this farmer right now.
@@ -324,93 +324,101 @@ export default function FarmerProfilePage() {
                   initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.05, duration: 0.3 }}
-                  className="bg-card border border-border rounded-2xl p-5 shadow-sm"
+                  className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm flex flex-col"
                 >
-                  {/* Card header */}
-                  <div className="flex items-start justify-between gap-2 mb-3">
-                    <div>
-                      <h3 className="font-semibold text-foreground text-base">{listing.name}</h3>
-                    </div>
-                    <Badge
-                      variant={listing.category === "Fruit" ? "default" : "secondary"}
-                      className="shrink-0"
-                    >
-                      {listing.category}
-                    </Badge>
-                  </div>
-
-                  {/* Price / Qty */}
-                  <div className="grid grid-cols-2 gap-2 mb-3">
-                    <div className="bg-primary/5 rounded-lg p-2.5 text-center">
-                      <div className="font-bold text-primary text-lg">Rs {listing.pricePerKg}</div>
-                      <div className="text-muted-foreground text-xs">per kg</div>
-                    </div>
-                    <div className="bg-muted rounded-lg p-2.5 text-center">
-                      <div className="font-bold text-foreground text-lg">{listing.quantityKg}</div>
-                      <div className="text-muted-foreground text-xs">kg available</div>
-                    </div>
-                  </div>
-
-                  {/* Details */}
-                  <div className="space-y-1.5 text-xs text-muted-foreground mb-3">
-                    {listing.harvestDate && (
-                      <div className="flex items-center gap-1.5">
-                        <Calendar className="w-3.5 h-3.5 shrink-0" />
-                        Harvest: {listing.harvestDate}
+                  <ImageWithFallback
+                    src={"" /* No DB image support yet */}
+                    fallbackSrc={getProduceImage(listing.name, listing.category)}
+                    alt={listing.name}
+                    containerClassName="h-32 w-full"
+                  />
+                  <div className="p-5 flex flex-col">
+                    {/* Card header */}
+                    <div className="flex items-start justify-between gap-2 mb-3">
+                      <div>
+                        <h3 className="font-semibold text-foreground text-base">{listing.name}</h3>
                       </div>
-                    )}
-                    {listing.pickupLocation && (
-                      <div className="flex items-center gap-1.5">
-                        <MapPin className="w-3.5 h-3.5 shrink-0" />
-                        {listing.pickupLocation}
-                        {listing.distanceKm > 0 ? ` · ${listing.distanceKm} km away` : ""}
-                      </div>
-                    )}
-                    {listing.qualityNotes && (
-                      <div className="flex items-start gap-1.5">
-                        <FileText className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-                        {listing.qualityNotes}
-                      </div>
-                    )}
-                  </div>
+                      <Badge
+                        variant={listing.category === "Fruit" ? "default" : "secondary"}
+                        className="shrink-0"
+                      >
+                        {listing.category}
+                      </Badge>
+                    </div>
 
-                  {/* Actions */}
-                  <div className="flex gap-2">
-                    <Button size="sm" className="flex-1 h-auto py-2" onClick={() => handleReserve(listing)}>
-                      <BilingualLabel en="Reserve" te="రిజర్వ్" orientation="stacked" />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="flex-1 h-auto py-2"
-                      onClick={() => handleContact(listing.name)}
+                    {/* Price / Qty */}
+                    <div className="grid grid-cols-2 gap-2 mb-3">
+                      <div className="bg-primary/5 rounded-lg p-2.5 text-center">
+                        <div className="font-bold text-primary text-lg">Rs {listing.pricePerKg}</div>
+                        <div className="text-muted-foreground text-xs">per kg</div>
+                      </div>
+                      <div className="bg-muted rounded-lg p-2.5 text-center">
+                        <div className="font-bold text-foreground text-lg">{listing.quantityKg}</div>
+                        <div className="text-muted-foreground text-xs">kg available</div>
+                      </div>
+                    </div>
+
+                    {/* Details */}
+                    <div className="space-y-1.5 text-xs text-muted-foreground mb-3">
+                      {listing.harvestDate && (
+                        <div className="flex items-center gap-1.5">
+                          <Calendar className="w-3.5 h-3.5 shrink-0" />
+                          Harvest: {listing.harvestDate}
+                        </div>
+                      )}
+                      {listing.pickupLocation && (
+                        <div className="flex items-center gap-1.5">
+                          <MapPin className="w-3.5 h-3.5 shrink-0" />
+                          {listing.pickupLocation}
+                          {listing.distanceKm > 0 ? ` · ${listing.distanceKm} km away` : ""}
+                        </div>
+                      )}
+                      {listing.qualityNotes && (
+                        <div className="flex items-start gap-1.5">
+                          <FileText className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                          {listing.qualityNotes}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex gap-2">
+                      <Button size="sm" className="flex-1 h-auto py-2" onClick={() => handleReserve(listing)}>
+                        <BilingualLabel en="Reserve" te="రిజర్వ్" orientation="stacked" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="flex-1 h-auto py-2"
+                        onClick={() => handleContact(listing.name)}
+                      >
+                        <BilingualLabel en="Contact" te="సంప్రదించండి" orientation="stacked" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="shrink-0 px-2"
+                        title="Share this listing"
+                        aria-label="Share this listing"
+                        onClick={() =>
+                          shareListing({
+                            name: listing.name,
+                            pricePerKg: listing.pricePerKg,
+                            location,
+                            id: listing.id,
+                          })
+                        }
+                      >
+                        <Share2 className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
+                    <Link
+                      href={`/produce/${listing.id}`}
+                      className="block text-xs text-center text-primary underline underline-offset-2 mt-2"
                     >
-                      <BilingualLabel en="Contact" te="సంప్రదించండి" orientation="stacked" />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="shrink-0 px-2"
-                      title="Share this listing"
-                      aria-label="Share this listing"
-                      onClick={() =>
-                        shareListing({
-                          name: listing.name,
-                          pricePerKg: listing.pricePerKg,
-                          location,
-                          id: listing.id,
-                        })
-                      }
-                    >
-                      <Share2 className="w-3.5 h-3.5" />
-                    </Button>
+                      View full details
+                    </Link>
                   </div>
-                  <Link
-                    href={`/produce/${listing.id}`}
-                    className="block text-xs text-center text-primary underline underline-offset-2 mt-2"
-                  >
-                    View full details
-                  </Link>
                 </motion.div>
               ))}
             </div>

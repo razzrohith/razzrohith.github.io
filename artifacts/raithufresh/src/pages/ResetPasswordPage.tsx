@@ -69,17 +69,23 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center px-4 py-12 relative">
-      <div className="absolute top-4 right-4 sm:top-6 sm:right-6">
+    <div className="min-h-screen bg-background flex flex-col items-center justify-center px-4 py-12 relative overflow-hidden">
+      {/* Subtle Background */}
+      <div 
+        className="absolute inset-0 z-0 opacity-[0.03] dark:opacity-[0.05] pointer-events-none bg-cover bg-center bg-no-repeat blur-sm scale-105"
+        style={{ backgroundImage: "url('/assets/images/hero/market-hero.png')" }}
+      />
+
+      <div className="absolute top-4 right-4 sm:top-6 sm:right-6 z-10">
         <PreferenceControls className="bg-card border border-border rounded-lg shadow-sm" />
       </div>
 
-      <Link href="/" className="flex items-center gap-2 text-primary font-bold text-xl mb-8">
+      <Link href="/" className="flex items-center gap-2 text-primary font-bold text-xl mb-8 z-10 relative">
         <Leaf className="w-6 h-6" />
         RaithuFresh
       </Link>
 
-      <div className="w-full max-w-sm bg-card border border-border rounded-2xl p-7 shadow-sm">
+      <div className="w-full max-w-sm bg-card border border-border rounded-2xl p-7 shadow-sm z-10 relative">
         {success ? (
           <div className="text-center space-y-4 py-4">
             <div className="flex justify-center">

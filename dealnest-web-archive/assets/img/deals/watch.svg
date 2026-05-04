@@ -1,8 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="720" height="520" viewBox="0 0 720 520" role="img" aria-label="Fitness watch illustration">
-  <rect x="304" y="54" width="112" height="132" rx="42" fill="#405168"/>
-  <rect x="304" y="334" width="112" height="132" rx="42" fill="#405168"/>
-  <rect x="250" y="150" width="220" height="220" rx="58" fill="#14202f"/>
-  <rect x="284" y="184" width="152" height="152" rx="42" fill="#dff7ff"/>
-  <path d="M314 276l32-40 34 28 36-54" fill="none" stroke="#0f766e" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
-  <circle cx="454" cy="250" r="17" fill="#ffcf5a"/>
-</svg>

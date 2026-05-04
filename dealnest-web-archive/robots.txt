@@ -1,9 +1,0 @@
-User-agent: *
-Allow: /
-Disallow: /admin.html
-Disallow: /dashboard.html
-Disallow: /saved.html
-Disallow: /login.html
-Disallow: /redirect.html
-
-Sitemap: https://razzrohith.com/sitemap.xml

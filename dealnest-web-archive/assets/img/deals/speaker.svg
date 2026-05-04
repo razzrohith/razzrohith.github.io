@@ -1,9 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="720" height="520" viewBox="0 0 720 520" role="img" aria-label="Speaker pair illustration">
-  <rect x="182" y="108" width="146" height="304" rx="42" fill="#14202f"/>
-  <rect x="392" y="108" width="146" height="304" rx="42" fill="#14202f"/>
-  <circle cx="255" cy="210" r="44" fill="#a8f4de"/>
-  <circle cx="255" cy="318" r="56" fill="#dff7ff"/>
-  <circle cx="465" cy="210" r="44" fill="#ffcf5a"/>
-  <circle cx="465" cy="318" r="56" fill="#dff7ff"/>
-  <circle cx="255" cy="318" r="24" fill="#0f766e"/><circle cx="465" cy="318" r="24" fill="#0f766e"/>
-</svg>

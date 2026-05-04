@@ -60,7 +60,7 @@ type EditForm = z.infer<typeof editSchema>;
 
 // ── Constants & helpers ──────────────────────────────────────────────────────
 
-const MOCK_FARMER = mockFarmers[0];
+const ACTIVE_FARMER = mockFarmers[0];
 
 type ResFilter = "all" | ReservationStatus;
 
@@ -198,7 +198,7 @@ export default function FarmerDashboard() {
 
   const loadFarmerData = useCallback(async () => {
     if (!isSupabaseConfigured() || !user || !profile) {
-      setListings(mockListings.filter((l) => l.farmerId === MOCK_FARMER.id));
+      setListings(mockListings.filter((l) => l.farmerId === ACTIVE_FARMER.id));
       setListingsLoaded(true);
       return;
     }
@@ -363,7 +363,7 @@ export default function FarmerDashboard() {
 
     const localListing: ProduceListing = {
       id: `p${Date.now()}`,
-      farmerId: farmerRow?.id ?? MOCK_FARMER.id,
+      farmerId: farmerRow?.id ?? ACTIVE_FARMER.id,
       name: data.name,
       category: data.category,
       pricePerKg: data.pricePerKg,
@@ -531,10 +531,10 @@ export default function FarmerDashboard() {
 
   // ── Derived values ────────────────────────────────────────────────────────
 
-  const displayName   = farmerRow?.name     ?? profile?.full_name ?? MOCK_FARMER.name;
-  const displayVillage = farmerRow?.village ?? profile?.village   ?? MOCK_FARMER.village;
-  const displayPhone  = farmerRow?.phone    ?? profile?.phone     ?? MOCK_FARMER.phone;
-  const displayRating = farmerRow?.rating   ?? MOCK_FARMER.rating;
+  const displayName   = farmerRow?.name     ?? profile?.full_name ?? ACTIVE_FARMER.name;
+  const displayVillage = farmerRow?.village ?? profile?.village   ?? ACTIVE_FARMER.village;
+  const displayPhone  = farmerRow?.phone    ?? profile?.phone     ?? ACTIVE_FARMER.phone;
+  const displayRating = farmerRow?.rating   ?? ACTIVE_FARMER.rating;
   const isVerified    = farmerRow?.verified ?? false;
   const isRealFarmer  = isSupabaseConfigured() && !!user;
   const isLoading     = isRealFarmer && farmerLoading && !listingsLoaded;

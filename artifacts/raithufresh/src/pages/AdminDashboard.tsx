@@ -405,7 +405,7 @@ export default function AdminDashboard() {
     {
       label: "Resolved",
       value: callCounts ? callCounts.resolved : callRequests.filter((r) => r.status === "resolved").length,
-      sub: callCounts ? "fully resolved" : "mock data",
+      sub: callCounts ? "fully resolved" : "Pilot Overview",
       icon: CheckCircle2,
       color: "bg-green-50 text-green-700 border-green-100",
     },
@@ -427,7 +427,7 @@ export default function AdminDashboard() {
           </p>
         ) : (
           <p className="text-xs text-muted-foreground mb-4">
-            Supabase not configured — showing mock data
+            Supabase not configured — showing pilot overview
           </p>
         )}
 

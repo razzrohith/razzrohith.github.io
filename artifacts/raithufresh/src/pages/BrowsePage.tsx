@@ -118,7 +118,7 @@ export default function BrowsePage() {
         });
         setFarmerMap(fm);
       } catch (e) {
-        console.warn("Supabase load failed, using mock data:", e);
+        console.warn("Supabase load failed, using pilot data:", e);
         setListings(mockListings.filter((l) => l.status === "Available"));
         const fm: FarmerMap = {};
         mockFarmers.forEach((f) => {

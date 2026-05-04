@@ -163,17 +163,17 @@ export default function AgentDashboard() {
     };
 
     if (!isSupabaseConfigured()) {
-      // Mock fallback
-      const mockRow: AgentCallRequest = {
-        id: `mock-${Date.now()}`,
-        farmer_name: payload.farmer_name,
-        farmer_phone: payload.farmer_phone,
-        village: payload.village ?? null,
-        request_note: payload.request_note ?? null,
+      // Pilot fallback
+      const pilotRow: AgentCallRequest = {
+        id: `plt-${Date.now()}`,
+        farmer_name: data.farmerName,
+        farmer_phone: data.farmerPhone,
+        village: data.village || null,
+        request_note: data.requestNote || null,
         status: "pending",
         created_at: new Date().toISOString(),
       };
-      setRequests((prev) => [mockRow, ...prev]);
+      setRequests((prev) => [pilotRow, ...prev]);
       resetAssist();
       setAssistanceSubmitting(false);
       toast.success("Agent callback request saved successfully.");
@@ -244,7 +244,7 @@ export default function AgentDashboard() {
   };
 
   const onSubmitStock = (data: StockForm) => {
-    const farmer = mockFarmers.find((f) => f.id === data.farmerId);
+    const ACTIVE_FARMER = mockFarmers.find((f) => f.id === data.farmerId);
     const produce = listings.find((l) => l.id === data.produceId);
     setListings((prev) =>
       prev.map((l) => (l.id === data.produceId ? { ...l, quantityKg: data.newQuantity } : l))
@@ -252,7 +252,7 @@ export default function AgentDashboard() {
     setStockHistory((prev) => [
       {
         id: `s${Date.now()}`,
-        farmer: farmer?.name || "",
+        farmer: ACTIVE_FARMER?.name || "",
         produce: produce?.name || "",
         qty: data.newQuantity,
         date: new Date().toISOString().split("T")[0],

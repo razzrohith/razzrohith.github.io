@@ -17,6 +17,19 @@ The platform is currently in a "Pilot Preview" state, fully polished for stakeho
 
 ## Activity Log
 
+### [2026-05-04] - Produce Image Matching Fix
+- **Task**: Fix produce image mismatches across the entire project.
+- **Type**: `Code` / `Assets`
+- **Root Cause**: Overly broad keyword matching and missing dedicated assets for common produce (Watermelon, Papaya, Cucumber).
+- **Mappings Fixed**: 
+    - Added: Watermelon, Papaya, Cucumber.
+    - Aliases: Bhindi (Okra), Eggplant (Brinjal), Rice (Paddy).
+- **Files Changed**: `src/lib/images.ts`, `LandingPage.tsx`, `ProduceDetailPage.tsx`, `BuyerDashboard.tsx`, `BuyerReservationDetail.tsx`.
+- **Tests Run**: TypeScript Check (✅), Production Build (✅), Manual Verification.
+- **Source Commit**: `[PENDING]`
+- **Live Commit**: `[PENDING]`
+- **Remaining Issues**: None
+
 ### [2026-05-04] - Documentation Expansion
 - **Task**: Update progress log with comprehensive history and rehearsal results.
 - **Type**: `Docs`

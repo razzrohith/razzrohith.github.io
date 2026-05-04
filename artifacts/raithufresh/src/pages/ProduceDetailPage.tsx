@@ -69,10 +69,10 @@ type SimilarItem = {
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 
-function CategoryIcon({ category, size = 20 }: { category: string; size?: number }) {
+function CategoryIcon({ name, category, size = 20 }: { name?: string; category: string; size?: number }) {
   return (
     <img
-      src={getCategoryIcon(category)}
+      src={getProduceImage(name || "", category)}
       alt={category}
       width={size}
       height={size}
@@ -332,7 +332,7 @@ export default function ProduceDetailPage() {
                 </p>
               </div>
               <div className="flex items-center gap-1.5 shrink-0">
-                <CategoryIcon category={listing.category} size={22} />
+                <CategoryIcon name={listing.name} category={listing.category} size={22} />
                 <Badge variant={listing.category === "Fruit" ? "default" : "secondary"}>
                   {listing.category}
                 </Badge>
@@ -599,7 +599,7 @@ export default function ProduceDetailPage() {
                           </div>
                         </div>
                         <div className="flex items-center gap-1.5 shrink-0">
-                          <CategoryIcon category={item.category} size={18} />
+                          <CategoryIcon name={item.produce_name} category={item.category} size={18} />
                           <Badge
                             variant={item.category === "Fruit" ? "default" : "secondary"}
                           >

@@ -29,7 +29,7 @@ import {
   isSupabaseConfigured,
 } from "@/lib/supabase";
 import BilingualLabel from "@/components/BilingualLabel";
-import { getCategoryIcon } from "@/lib/images";
+import { getProduceImage } from "@/lib/images";
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
@@ -429,10 +429,10 @@ export default function BuyerDashboard() {
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
                           <img
-                            src={getCategoryIcon(listing?.category || "")}
-                            alt={listing?.category ?? "Produce"}
-                            width={18}
-                            height={18}
+                            src={getProduceImage(listing?.produce_name || "", listing?.category || "")}
+                            alt={listing?.produce_name ?? "Produce"}
+                            width={22}
+                            height={22}
                             className="shrink-0 rounded object-cover"
                           />
                           <p className="font-semibold text-foreground truncate">

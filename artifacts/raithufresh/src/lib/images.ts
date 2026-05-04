@@ -1,11 +1,21 @@
 export const PRODUCE_IMAGE_MAP: Record<string, string> = {
+  // Fruits
   mango: "/assets/images/produce/mango.png",
+  banana: "/assets/images/produce/banana.png",
+  papaya: "/assets/images/produce/papaya.png",
+  watermelon: "/assets/images/produce/watermelon.png",
+  
+  // Vegetables
   tomato: "/assets/images/produce/tomato.png",
   okra: "/assets/images/produce/okra.png",
+  bhindi: "/assets/images/produce/okra.png",
   brinjal: "/assets/images/produce/brinjal.png",
+  eggplant: "/assets/images/produce/brinjal.png",
   onion: "/assets/images/produce/onion.png",
   chilli: "/assets/images/produce/chilli.png",
-  banana: "/assets/images/produce/banana.png",
+  cucumber: "/assets/images/produce/cucumber.png",
+  
+  // Grains
   paddy: "/assets/images/produce/paddy.png",
   rice: "/assets/images/produce/paddy.png",
 };
@@ -15,17 +25,25 @@ export function getProduceImage(name: string, category: string, customUrl?: stri
   
   const normalizedName = name.toLowerCase().trim();
   
-  // Try exact match or partial match in map
-  for (const [key, path] of Object.entries(PRODUCE_IMAGE_MAP)) {
+  // 1. Try exact match in map
+  if (PRODUCE_IMAGE_MAP[normalizedName]) {
+    return PRODUCE_IMAGE_MAP[normalizedName];
+  }
+
+  // 2. Try partial match with specific priority keys
+  // We check for longer keys first to avoid accidental matches (e.g. "green chilli" matches "chilli")
+  const keys = Object.keys(PRODUCE_IMAGE_MAP).sort((a, b) => b.length - a.length);
+  for (const key of keys) {
     if (normalizedName.includes(key)) {
-      return path;
+      return PRODUCE_IMAGE_MAP[key];
     }
   }
 
-  // Fallback to category if no specific image found
-  if (category === "Fruit") {
+  // 3. Fallback to category icons
+  const lowerCat = category.toLowerCase();
+  if (lowerCat.includes("fruit")) {
     return "/assets/images/categories/fruit.png";
-  } else if (category === "Vegetable") {
+  } else if (lowerCat.includes("veg")) {
     return "/assets/images/categories/vegetable.png";
   }
 

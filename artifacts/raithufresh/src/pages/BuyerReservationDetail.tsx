@@ -27,7 +27,7 @@ import {
   isSupabaseConfigured,
 } from "@/lib/supabase";
 import BilingualLabel from "@/components/BilingualLabel";
-import { getCategoryIcon } from "@/lib/images";
+import { getProduceImage } from "@/lib/images";
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
@@ -203,8 +203,8 @@ export default function BuyerReservationDetailPage({ id }: Props) {
             <div className="flex items-start justify-between gap-3 mb-2">
               <div className="flex items-center gap-2 min-w-0">
                 <img
-                  src={getCategoryIcon(listing?.category || "")}
-                  alt={listing?.category ?? "Produce"}
+                  src={getProduceImage(listing?.produce_name || "", listing?.category || "")}
+                  alt={listing?.produce_name ?? "Produce"}
                   width={22}
                   height={22}
                   className="shrink-0 rounded object-cover"

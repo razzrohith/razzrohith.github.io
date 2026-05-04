@@ -94,8 +94,8 @@ function StarRating({ rating }: { rating: number | null }) {
   );
 }
 
-function CategoryIcon({ category, size = 20 }: { category: string; size?: number }) {
-  const src = getCategoryIcon(category);
+function CategoryIcon({ name, category, size = 20 }: { name?: string; category: string; size?: number }) {
+  const src = getProduceImage(name || "", category);
   return (
     <img
       src={src}
@@ -651,7 +651,7 @@ export default function LandingPage() {
                               )}
                             </div>
                           <div className="flex items-center gap-1.5 shrink-0">
-                            <CategoryIcon category={listing.category} size={18} />
+                            <CategoryIcon name={listing.produce_name} category={listing.category} size={18} />
                             <Badge
                               variant={listing.category === "Fruit" ? "default" : "secondary"}
                             >

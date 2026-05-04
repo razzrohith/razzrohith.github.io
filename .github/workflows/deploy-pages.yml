@@ -1,4 +1,4 @@
-﻿name: Deploy GitHub Pages
+name: Deploy GitHub Pages
 
 on:
   push:
@@ -40,7 +40,7 @@ jobs:
           };
           fs.writeFileSync(
             'assets/js/runtime-config.js',
-            `window.DealNestConfig = ${JSON.stringify(config, null, 2)};\n`
+            `window.__RAITHUFRESH_CONFIG__ = ${JSON.stringify(config, null, 2)};\n`
           );
           NODE
 

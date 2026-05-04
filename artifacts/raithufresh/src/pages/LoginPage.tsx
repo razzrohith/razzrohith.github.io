@@ -113,7 +113,7 @@ export default function LoginPage() {
           <>
             {!isSupabaseConfigured() && (
               <div className="bg-amber-50 border border-amber-200 text-amber-800 text-xs rounded-lg px-3 py-2 mb-4">
-                Supabase is not configured. Authentication is unavailable in demo mode.
+                Supabase is not configured. Authentication is currently unavailable.
               </div>
             )}
 

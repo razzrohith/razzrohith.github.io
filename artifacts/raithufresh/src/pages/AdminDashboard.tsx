@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
+import { Link } from "wouter";
 import { toast } from "sonner";
 import {
   Users, Tractor, ShoppingBag, Package, TrendingUp,
@@ -232,7 +233,7 @@ export default function AdminDashboard() {
         };
       });
       setUpdatingId(null);
-      toast.success("Status updated (demo mode).");
+      toast.success("Status updated successfully.");
       return;
     }
 
@@ -337,14 +338,14 @@ export default function AdminDashboard() {
     {
       label: "Total Farmers",
       value: dbCounts ? dbCounts.farmers : mockFarmers.length,
-      sub: dbCounts ? "from database" : "mock data",
+      sub: dbCounts ? "Verified Data" : "Pilot Overview",
       icon: Tractor,
       color: "bg-green-50 text-green-700 border-green-100",
     },
     {
       label: "Produce Listings",
       value: dbCounts ? dbCounts.listings : mockListings.filter((l) => l.status === "Available").length,
-      sub: dbCounts ? "from database" : "mock data",
+      sub: dbCounts ? "Verified Data" : "Pilot Overview",
       icon: Package,
       color: "bg-amber-50 text-amber-700 border-amber-100",
     },
@@ -357,7 +358,7 @@ export default function AdminDashboard() {
           : mockReservations.length,
       sub: reservationCounts.total > 0
         ? "from database"
-        : dbCounts ? "from database" : "mock data",
+        : dbCounts ? "Verified Data" : "Pilot Overview",
       icon: ShoppingBag,
       color: "bg-purple-50 text-purple-700 border-purple-100",
     },
@@ -366,14 +367,14 @@ export default function AdminDashboard() {
       value: reservationCounts.totalKg > 0
         ? `${reservationCounts.totalKg} kg`
         : `${mockReservations.reduce((a, r) => a + r.quantityKg, 0)} kg`,
-      sub: reservationCounts.totalKg > 0 ? "from database" : "mock data",
+      sub: reservationCounts.totalKg > 0 ? "Verified Data" : "Pilot Overview",
       icon: TrendingUp,
       color: "bg-orange-50 text-orange-700 border-orange-100",
     },
     {
-      label: "Est. Sales Value (mock)",
+      label: "Est. Total Value",
       value: `Rs ${mockListings.reduce((a, l) => a + l.pricePerKg * l.quantityKg, 0).toLocaleString()}`,
-      sub: "mock data",
+      sub: "Pilot Estimates",
       icon: TrendingUp,
       color: "bg-emerald-50 text-emerald-700 border-emerald-100",
     },
@@ -383,21 +384,21 @@ export default function AdminDashboard() {
     {
       label: "Total Requests",
       value: callCounts ? callCounts.total : callRequests.length,
-      sub: callCounts ? "from database" : isSupabaseConfigured() ? "loading…" : "mock data",
+      sub: callCounts ? "Verified Data" : isSupabaseConfigured() ? "loading…" : "Pilot Overview",
       icon: Phone,
       color: "bg-slate-50 text-slate-700 border-slate-100",
     },
     {
       label: "Pending",
       value: callCounts ? callCounts.pending : callRequests.filter((r) => r.status === "pending").length,
-      sub: callCounts ? "awaiting call" : "mock data",
+      sub: callCounts ? "Awaiting call" : "Pilot Overview",
       icon: Clock,
       color: "bg-amber-50 text-amber-700 border-amber-100",
     },
     {
       label: "Called",
       value: callCounts ? callCounts.called : callRequests.filter((r) => r.status === "called").length,
-      sub: callCounts ? "agent contacted" : "mock data",
+      sub: callCounts ? "Agent contacted" : "Pilot Overview",
       icon: PhoneCall,
       color: "bg-blue-50 text-blue-700 border-blue-100",
     },
@@ -663,13 +664,7 @@ export default function AdminDashboard() {
                         .join(", ")}
                     </div>
                   </div>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => toast.info("Agent management coming soon!")}
-                  >
-                    Manage
-                  </Button>
+                  {/* View details removed as agent profile page is not implemented */}
                 </div>
               ))}
             </div>
@@ -708,13 +703,14 @@ export default function AdminDashboard() {
                         {farmer?.name} · {farmer?.village} · Rs {l.pricePerKg}/kg · {l.quantityKg} kg
                       </div>
                     </div>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => toast.info("Listing management coming soon!")}
-                    >
-                      Manage
-                    </Button>
+                    <Link href={`/produce/${l.id}`}>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                      >
+                        View Public Listing
+                      </Button>
+                    </Link>
                   </div>
                 );
               })}

@@ -152,10 +152,10 @@ export default function ReservationModal({ open, onClose, listing }: Props) {
               </div>
               <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 text-sm text-amber-800 space-y-1">
                 <p className="font-semibold flex items-center gap-1.5">
-                  <BilingualLabel en="No online payment" te="ఆన్‌లైన్ పేమెంట్ లేదు" />
+                  <BilingualLabel en="No online payment" te="ఆన్‌లైన్ పేమెంట్ లేదు" variant="onLight" />
                 </p>
                 <p className="text-xs">
-                  <BilingualLabel en="Pay the farmer directly during pickup." te="పికప్ సమయంలో రైతుకు నేరుగా చెల్లించండి." />
+                  <BilingualLabel en="Pay the farmer directly during pickup." te="పికప్ సమయంలో రైతుకు నేరుగా చెల్లించండి." variant="onLight" />
                 </p>
               </div>
               <Button type="submit" className="w-full h-auto py-2" disabled={submitting}>
@@ -181,16 +181,18 @@ export default function ReservationModal({ open, onClose, listing }: Props) {
                 en="The farmer may confirm or cancel based on availability. Please call or WhatsApp before going." 
                 te="అందుబాటును బట్టి రైతు ధృవీకరించవచ్చు లేదా రద్దు చేయవచ్చు. వెళ్లే ముందు దయచేసి కాల్ లేదా వాట్సాప్ చేయండి."
                 orientation="stacked"
+                variant="muted"
               />
             </p>
             <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 text-sm text-amber-800 w-full text-left space-y-1">
               <p className="font-semibold">
-                <BilingualLabel en="Pay directly at pickup" te="పికప్ వద్ద నేరుగా చెల్లించండి" />
+                <BilingualLabel en="Pay directly at pickup" te="పికప్ వద్ద నేరుగా చెల్లించండి" variant="onLight" />
               </p>
               <p className="text-xs">
                 <BilingualLabel 
                   en="Pay by cash or UPI directly to the farmer. No online payment is collected here." 
                   te="రైతుకు నగదు లేదా UPI ద్వారా నేరుగా చెల్లించండి. ఇక్కడ ఎటువంటి ఆన్‌లైన్ పేమెంట్ తీసుకోబడదు."
+                  variant="onLight"
                 />
               </p>
             </div>

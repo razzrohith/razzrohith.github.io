@@ -135,6 +135,13 @@ DealNest must be preserved separately in `razzrohith/dealnest-web-archive`.
 - **Direct URLs (SPA Fallback):** The app uses a `404.html` redirect script to ensure direct URL navigation (e.g., `razzrohith.com/login`) works flawlessly on GitHub Pages.
 - **No Real Data:** Never use real personal data for testing purposes.
 
+## Pilot Phase Note
+
+The RaithuFresh platform is currently in a **Pilot Preview** phase.
+- **Sample Data**: Current listings, farmers, and reservations are pilot/sample data for presentation purposes.
+- **Data Cleanup**: All demonstration data will be cleaned before the final production release.
+- **No Online Payments**: RaithuFresh does not collect payments. All transactions are handled directly between the buyer and farmer during pickup (Cash or UPI).
+
 ## Next phase
 
 Flutter native mobile app planning.

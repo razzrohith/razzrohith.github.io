@@ -186,7 +186,7 @@ export default function ProfilePage() {
 
             {!isSupabaseConfigured() && (
               <div className="bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-xs text-amber-700">
-                Supabase not configured — profile saves are disabled in demo mode.
+                Supabase not configured — profile updates are currently disabled.
               </div>
             )}
 

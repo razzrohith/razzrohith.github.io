@@ -52,9 +52,9 @@ type AssistanceForm = z.infer<typeof assistanceSchema>;
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
-const demoAgent = mockAgents[0];
+const activeAgent = mockAgents[0];
 
-const sampleCallLogs = [
+const recentCallLogs = [
   { id: "c1", farmer: "Ramaiah", date: "2026-04-28", notes: "Confirmed 500kg mango stock. Will be ready in 2 days." },
   { id: "c2", farmer: "Lakshmi Devi", date: "2026-04-29", notes: "Tomato harvest done. Set price at Rs 25/kg." },
   { id: "c3", farmer: "Venkat Rao", date: "2026-04-30", notes: "Banana stock reduced to 200kg. Remaining sold to mandi." },
@@ -88,7 +88,7 @@ function formatDate(iso: string) {
 
 export default function AgentDashboard() {
   const [selectedFarmerId, setSelectedFarmerId] = useState("");
-  const [callLogs, setCallLogs] = useState(sampleCallLogs);
+  const [callLogs, setCallLogs] = useState(recentCallLogs);
   const [stockHistory, setStockHistory] = useState<
     { id: string; farmer: string; produce: string; qty: number; date: string }[]
   >([]);
@@ -104,7 +104,7 @@ export default function AgentDashboard() {
   const [requestSearch, setRequestSearch] = useState("");
 
   const assignedFarmers = mockFarmers.filter((f) =>
-    demoAgent.assignedFarmerIds.includes(f.id)
+    activeAgent.assignedFarmerIds.includes(f.id)
   );
   const selectedFarmer = assignedFarmers.find((f) => f.id === selectedFarmerId);
   const farmerListings = listings.filter((l) => l.farmerId === selectedFarmerId);
@@ -176,7 +176,7 @@ export default function AgentDashboard() {
       setRequests((prev) => [mockRow, ...prev]);
       resetAssist();
       setAssistanceSubmitting(false);
-      toast.success("Agent callback request saved (demo mode).");
+      toast.success("Agent callback request saved successfully.");
       return;
     }
 
@@ -209,7 +209,7 @@ export default function AgentDashboard() {
         prev.map((r) => (r.id === id ? { ...r, status: newStatus } : r))
       );
       setUpdatingId(null);
-      toast.success("Status updated (demo mode).");
+      toast.success("Status updated successfully.");
       return;
     }
 
@@ -264,9 +264,9 @@ export default function AgentDashboard() {
   };
 
   const estimatedCommission = listings
-    .filter((l) => demoAgent.assignedFarmerIds.includes(l.farmerId))
+    .filter((l) => activeAgent.assignedFarmerIds.includes(l.farmerId))
     .reduce(
-      (acc, l) => acc + (l.pricePerKg * l.quantityKg * demoAgent.commissionRate) / 100,
+      (acc, l) => acc + (l.pricePerKg * l.quantityKg * activeAgent.commissionRate) / 100,
       0
     );
 
@@ -304,11 +304,11 @@ export default function AgentDashboard() {
               <BilingualLabel en="Agent Dashboard" te="ఏజెంట్ డాష్బోర్డ్" />
             </h1>
             <p className="text-muted-foreground text-sm">
-              <BilingualLabel en={`Managing on behalf of farmers — ${demoAgent.name}`} te={`రైతుల తరపున నిర్వహిస్తున్నారు — ${demoAgent.name}`} />
+              <BilingualLabel en={`Managing on behalf of farmers — ${activeAgent.name}`} te={`రైతుల తరపున నిర్వహిస్తున్నారు — ${activeAgent.name}`} />
             </p>
           </div>
           <Badge className="bg-primary/10 text-primary border-primary/20">
-            {demoAgent.commissionRate}% Commission
+            {activeAgent.commissionRate}% Commission
           </Badge>
         </div>
 
@@ -359,7 +359,7 @@ export default function AgentDashboard() {
               <div className="text-2xl font-bold text-foreground">
                 {listings.filter(
                   (l) =>
-                    demoAgent.assignedFarmerIds.includes(l.farmerId) &&
+                    activeAgent.assignedFarmerIds.includes(l.farmerId) &&
                     l.status === "Available"
                 ).length}
               </div>

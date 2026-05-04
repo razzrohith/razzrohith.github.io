@@ -474,7 +474,7 @@ export default function ProduceDetailPage() {
                 : "Contact the farmer after reserving for pickup directions."}
             </p>
             <p className="text-xs text-muted-foreground mt-2 bg-muted rounded-lg px-3 py-2">
-              Google Maps directions will be added in a future version.
+              Please contact the farmer to get the exact Google Maps location for pickup.
             </p>
           </div>
 
@@ -491,7 +491,7 @@ export default function ProduceDetailPage() {
                 "Contact the farmer before traveling to confirm the produce is still available.",
                 "Confirm the exact quantity you need — the farmer may already have partial reservations.",
                 "Payment is Cash or UPI directly to the farmer at pickup. No online payment is collected by RaithuFresh.",
-                "RaithuFresh does not handle delivery in this version. Pickup is arranged directly with the farmer.",
+                "RaithuFresh does not handle delivery. Pickup is arranged directly with the farmer.",
               ].map((note) => (
                 <li key={note} className="flex items-start gap-2.5 text-sm text-muted-foreground">
                   <CheckCircle2 className="w-4 h-4 text-primary shrink-0 mt-0.5" />

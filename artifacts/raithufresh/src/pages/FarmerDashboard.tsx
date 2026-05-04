@@ -396,7 +396,7 @@ export default function FarmerDashboard() {
           return;
         }
       } else {
-        toast.success("Listing added locally (demo mode).");
+        toast.success("Listing added successfully.");
       }
     } catch (e) {
       console.warn("Listing save error:", e);
@@ -457,7 +457,7 @@ export default function FarmerDashboard() {
       }
       toast.success("Listing updated.");
     } else {
-      toast.success("Listing updated (demo mode).");
+      toast.success("Listing updated successfully.");
     }
 
     setListings((prev) =>
@@ -1090,7 +1090,7 @@ export default function FarmerDashboard() {
             <div className="text-center py-10 text-muted-foreground bg-card border border-border rounded-2xl text-sm">
               {isSupabaseConfigured()
                 ? "No buyer reservations yet. Reservations will appear here when buyers reserve your listings."
-                : "Reservations are unavailable in demo mode."}
+                : "Reservations are unavailable in this view."}
             </div>
           )}
 

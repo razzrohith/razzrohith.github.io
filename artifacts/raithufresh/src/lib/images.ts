@@ -5,6 +5,9 @@ export const PRODUCE_IMAGE_MAP: Record<string, string> = {
   brinjal: "/assets/images/produce/brinjal.png",
   onion: "/assets/images/produce/onion.png",
   chilli: "/assets/images/produce/chilli.png",
+  banana: "/assets/images/produce/banana.png",
+  paddy: "/assets/images/produce/paddy.png",
+  rice: "/assets/images/produce/paddy.png",
 };
 
 export function getProduceImage(name: string, category: string, customUrl?: string): string {

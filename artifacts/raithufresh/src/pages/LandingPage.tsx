@@ -638,7 +638,7 @@ export default function LandingPage() {
                           alt={listing.produce_name}
                           containerClassName="h-40 w-full"
                         />
-                        <div className="p-5 flex flex-col gap-3">
+                        <div className="p-5 flex flex-col gap-3 flex-1">
                           <div className="flex items-start justify-between gap-2">
                             <div>
                               <h3 className="font-semibold text-foreground text-base">

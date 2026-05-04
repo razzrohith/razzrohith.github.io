@@ -48,6 +48,35 @@ The platform is currently in a "Pilot Preview" state, fully polished for stakeho
 
 ---
 
+## Pilot Rehearsal & Verification
+
+### Rehearsal Results
+A full end-to-end "Pilot Rehearsal" was conducted across all user roles (Farmer, Buyer, Agent, Admin). The app correctly handled registration, listing creation, reservation, and agent support flows.
+
+### Bugs Found & Fixed
+- **Bilingual Contrast**: Fixed unreadable Telugu text in the Reservation Modal during Dark Mode (Applied `onLight` variant).
+- **Broken Imports**: Fixed missing `Link` import in `AdminDashboard` after linking produce items to public detail pages.
+- **Variable Consistency**: Completed the transition from `demoAgent` to `activeAgent` in the `AgentDashboard` to ensure code professionalism.
+- **Image Fallbacks**: Fixed `ImageWithFallback` component failing to show placeholders when `src` was an empty string.
+- **Duplicate Labels**: Removed redundant "Demo Mode" and "Mock Data" markers that persisted in console logs and secondary dashboards.
+
+### Test Accounts (Internal Use Only)
+*No passwords stored in logs.*
+- **Farmer**: `farmer@example.com`
+- **Buyer**: `buyer@example.com`
+- **Agent**: `agent@example.com`
+- **Admin**: `admin@example.com`
+
+### Deployment Snapshot
+- **Source Commit**: `e47c252` (Source logic polish)
+- **Live Commit**: `3ee574e` (Production deployment)
+- **URL**: [razzrohith.com](https://razzrohith.com)
+
+### Final Pilot Readiness Verdict: **VERIFIED READY** ✅
+The application is considered safe and professional enough for the initial pilot group. All primary workflows are stable, and the UI is free of development markers.
+
+---
+
 ## Technical Health Check
 - **TypeScript**: ✅ 0 Errors
 - **Production Build**: ✅ Successful

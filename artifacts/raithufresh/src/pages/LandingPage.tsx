@@ -634,7 +634,7 @@ export default function LandingPage() {
                       >
                         <ImageWithFallback
                           src={"" /* No DB image support yet */}
-                          fallbackSrc={`/assets/images/produce/${listing.produce_name.toLowerCase().replace(/[^a-z0-9]/g, "")}.png`}
+                          fallbackSrc={getProduceImage(listing.produce_name, listing.category)}
                           alt={listing.produce_name}
                           containerClassName="h-40 w-full"
                         />

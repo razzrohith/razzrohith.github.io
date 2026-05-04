@@ -26,7 +26,7 @@ The platform is currently in a "Pilot Preview" state, fully polished for stakeho
     - Aliases: Bhindi (Okra), Eggplant (Brinjal), Rice (Paddy).
 - **Files Changed**: `src/lib/images.ts`, `LandingPage.tsx`, `ProduceDetailPage.tsx`, `BuyerDashboard.tsx`, `BuyerReservationDetail.tsx`.
 - **Tests Run**: TypeScript Check (✅), Production Build (✅), Manual Verification.
-- **Source Commit**: `[PENDING]`
+- **Source Commit**: `d5bd8c0`
 - **Live Commit**: `[PENDING]`
 - **Remaining Issues**: None
 
